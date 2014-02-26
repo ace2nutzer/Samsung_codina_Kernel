@@ -40,6 +40,7 @@
 #include <linux/swap.h>
 #include <linux/rcupdate.h>
 #include <linux/notifier.h>
+#include <linux/proc_fs.h>
 
 static uint32_t lowmem_debug_level = 0;
 static int lowmem_adj[6] = {
@@ -81,7 +82,8 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 	int other_free = global_page_state(NR_FREE_PAGES) - totalreserve_pages;
 	int other_file = global_page_state(NR_FILE_PAGES) -
 				global_page_state(NR_SHMEM) -
-				global_page_state(NR_UNEVICTABLE);
+				global_page_state(NR_UNEVICTABLE) -
+				total_swapcache_pages;
 
 	if (lowmem_adj_size < array_size)
 		array_size = lowmem_adj_size;
