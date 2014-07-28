@@ -1423,8 +1423,8 @@ ARM_STEP(arm_step06, 6);
 ARM_STEP(arm_step07, 7);
 ARM_STEP(arm_step08, 8);
 ARM_STEP(arm_step09, 9);
-#ifdef CONFIG_LIVEOPP_EXTENDED_FREQ
 ARM_STEP(arm_step10, 10);
+#ifdef CONFIG_LIVEOPP_EXTENDED_FREQ
 ARM_STEP(arm_step11, 11);
 ARM_STEP(arm_step12, 12);
 ARM_STEP(arm_step13, 13);
