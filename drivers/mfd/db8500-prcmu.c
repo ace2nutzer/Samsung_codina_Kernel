@@ -1524,6 +1524,8 @@ static int db8500_prcmu_set_arm_opp(u8 opp)
 static int db8500_prcmu_set_arm_lopp(u8 opp, int idx)
 {
 	int r;
+	struct liveopp_arm_table table;
+	u8 voltage = 0x12;
 
 	if (opp < ARM_NO_CHANGE || opp > ARM_EXTCLK)
 		return -EINVAL;
@@ -1535,6 +1537,11 @@ static int db8500_prcmu_set_arm_lopp(u8 opp, int idx)
 
 	while (readl(PRCM_MBOX_CPU_VAL) & MBOX_BIT(1))
 		cpu_relax();
+
+	if (last_arm_idx < 2 && idx >= 2) {
+		table = liveopp_arm[1];
+		prcmu_abb_write(AB8500_REGU_CTRL2, table.varm_sel, &voltage, 1);
+	}
 
 	writeb(MB1H_ARM_APE_OPP, (tcdm_base + PRCM_MBOX_HEADER_REQ_MB1));
 	writeb(opp, (tcdm_base + PRCM_REQ_MB1_ARM_OPP));
