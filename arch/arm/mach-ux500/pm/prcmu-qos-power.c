@@ -334,8 +334,9 @@ static void update_target(int target, bool sem)
 			break;
 	case PRCMU_QOS_APE_OPP:
 		switch (extreme_value) {
+		case 25:
 		case 50:
-			if (ape_opp_50_partly_25_enabled)
+			if (ape_opp_50_partly_25_enabled || extreme_value == 25)
 				op = APE_50_PARTLY_25_OPP;
 			else
 				op = APE_50_OPP;

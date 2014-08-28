@@ -42,9 +42,9 @@ struct state_history {
 static struct state_history ape_sh = {
 	.name = "APE OPP",
 	.req = PRCMU_QOS_APE_OPP,
-	.opps = {APE_50_OPP, APE_100_OPP},
-	.state_names = {50, 100},
-	.max_states = 2,
+	.opps = {APE_50_PARTLY_25_OPP, APE_50_OPP, APE_100_OPP},
+	.state_names = {25, 50, 100},
+	.max_states = 3,
 };
 
 static struct state_history ddr_sh = {
@@ -204,9 +204,10 @@ static void log_set(struct state_history *sh, u8 opp)
 
 void prcmu_debug_ape_opp_log(u8 opp)
 {
+/*
 	if (opp == APE_50_PARTLY_25_OPP)
 		opp = APE_50_OPP;
-
+*/
 	log_set(&ape_sh, opp);
 }
 
