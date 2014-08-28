@@ -947,8 +947,10 @@ static int __init prcmu_qos_power_init(void)
 			PRCMU_QOS_DEFAULT_VALUE);
 	cpufreq_requirement_set = PRCMU_QOS_DEFAULT_VALUE;
 	cpufreq_requirement_queued = PRCMU_QOS_DEFAULT_VALUE;
+/*
 	cpufreq_register_notifier(&qos_delayed_cpufreq_notifier_block,
 			CPUFREQ_TRANSITION_NOTIFIER);
+*/
 	if (cpu_is_u9540()) {
 		prcmu_qos_add_requirement(PRCMU_QOS_ARM_KHZ, "cpufreq",
 				PRCMU_QOS_DEFAULT_VALUE);
