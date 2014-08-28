@@ -1288,165 +1288,175 @@ static ssize_t arm_pllclk_show(struct kobject *kobj, struct kobj_attribute *attr
 }
 ATTR_RO(arm_pllclk);
 
+static ssize_t arm_step_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf, int _index)
+{
+	sprintf(buf, "[LiveOPP ARM Step %d]\n\n", _index);
+	sprintf(buf, "%sSet EXTARM:\t\t%s\n", buf, liveopp_arm[_index].set_extarm ? "Enabled" : "Disabled");
+	sprintf(buf, "%sSet PLLARM:\t\t%s\n", buf, liveopp_arm[_index].set_pllarm ? "Enabled" : "Disabled");
+	sprintf(buf, "%sSet Voltage:\t\t%s\n", buf, liveopp_arm[_index].set_volt ? "Enabled" : "Disabled");
+	sprintf(buf, "%sFrequency show:\t\t%d kHz\n", buf, liveopp_arm[_index].freq_show);
+	sprintf(buf, "%sFrequency real:\t\t%d kHz\n", buf, liveopp_arm[_index].set_pllarm ?
+			pllarm_freq(liveopp_arm[_index].pllarm_raw) : liveopp_arm[_index].freq_raw);
+	sprintf(buf, "%sArmFix:\t\t\t%#010x\n", buf, liveopp_arm[_index].extarm_raw);
+	sprintf(buf, "%sArmPLL:\t\t\t%#010x\n", buf, liveopp_arm[_index].pllarm_raw);
+	sprintf(buf, "%sArmOPP:\t\t\t%s (%#04x)\n", buf, armopp_name[(int)liveopp_arm[_index].arm_opp],
+								     (int)liveopp_arm[_index].arm_opp);
+	sprintf(buf, "%sVarm:\t\t\t%d uV (%#04x)\n", buf, varm_voltage(liveopp_arm[_index].varm_raw),
+								     (int)liveopp_arm[_index].varm_raw);
+	sprintf(buf, "%sVbbx:\t\t\t%#04x\n", buf, (int)liveopp_arm[_index].vbbx_raw);
+	sprintf(buf, "%sQOS_DDR_OPP:\t\t\t%d\n", buf, (int)((signed char)liveopp_arm[_index].ddr_opp));
+	sprintf(buf, "%sQOS_APE_OPP:\t\t\t%d\n", buf, (int)((signed char)liveopp_arm[_index].ape_opp));
+
+	return sprintf(buf, "%s\n", buf);
+}
+
+static ssize_t arm_step_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count, int _index)
+{
+	int ret;
+	int val;
+
+	if (!strncmp(buf, "set_ext=", 8)) {
+		ret = sscanf(&buf[8], "%d", &val);
+		if ((!ret) || (val != 0 && val != 1)) {
+			pr_err("[LiveOPP] Invalid value\n");
+			return -EINVAL;
+		}
+
+		liveopp_arm[_index].set_extarm = val;
+
+		return count;
+	}
+
+	if (!strncmp(buf, "set_pll=", 8)) {
+		ret = sscanf(&buf[8], "%d", &val);
+		if ((!ret) || (val != 0 && val != 1)) {
+			pr_err("[LiveOPP] Invalid value\n");
+			return -EINVAL;
+		}
+
+		liveopp_arm[_index].set_pllarm = val;
+
+		return count;
+	}
+
+	if (!strncmp(buf, "set_volt=", 9)) {
+		ret = sscanf(&buf[9], "%d", &val);
+		if ((!ret) || (val != 0 && val != 1)) {
+			pr_err("[LiveOPP] Invalid value\n");
+			return -EINVAL;
+		}
+
+		liveopp_arm[_index].set_volt = val;
+
+		return count;
+	}
+
+	if (!strncmp(buf, "opp=", 4)) {
+		ret = sscanf(&buf[4], "%d", &val);
+		if ((!ret) || (val < 0x00 || val > 0x07)) {
+			pr_err("[LiveOPP] Invalid value\n");
+			return -EINVAL;
+		}
+
+		liveopp_arm[_index].arm_opp = (unsigned char)val;
+
+		return count;
+	}
+
+	if (!strncmp(buf, "pll=", 4)) {
+		ret = sscanf(&buf[4], "%x", &val);
+		if ((!ret)) {
+			pr_err("[LiveOPP] Invalid value\n");
+			return -EINVAL;
+		}
+
+		liveopp_arm[_index].pllarm_raw = val;
+
+		return count;
+	}
+
+	if (!strncmp(buf, "ext=", 4)) {
+		ret = sscanf(&buf[4], "%x", &val);
+		if ((!ret)) {
+			pr_err("[LiveOPP] Invalid value\n");
+			return -EINVAL;
+		}
+
+		liveopp_arm[_index].extarm_raw = val;
+
+		return count;
+	}
+
+	if (!strncmp(buf, "varm+", 5)) {
+		liveopp_arm[_index].varm_raw ++;
+
+		return count;
+	}
+
+	if (!strncmp(buf, "varm-", 5)) {
+		liveopp_arm[_index].varm_raw --;
+
+		return count;
+	}
+	if (!strncmp(buf, "varm=", 5)) {
+		ret = sscanf(&buf[5], "%x", &val);
+		if ((!ret)) {
+			pr_err("[LiveOPP] Invalid value\n");
+			return -EINVAL;
+		}
+
+		liveopp_arm[_index].varm_raw = val;
+
+		return count;
+	}
+	if (!strncmp(buf, "vbbx=", 5)) {
+		ret = sscanf(&buf[5], "%x", &val);
+		if ((!ret)) {
+			pr_err("[LiveOPP] Invalid value\n");
+			return -EINVAL;
+		}
+
+		liveopp_arm[_index].vbbx_raw = val;
+
+		return count;
+	}
+
+	if (!strncmp(buf, "apeopp=", 7)) {
+		ret = sscanf(&buf[7], "%d", &val);
+		if ((!ret) || (val != 25 && val != 50 && val != 100 && val != -1 && val != -2)) {
+			pr_err("[LiveOPP] Invalid QOS_APE_OPP value. Enter 25, 50 or 100\n");
+			return -EINVAL;
+		}
+
+		liveopp_arm[_index].ape_opp = (signed char)val;
+
+		return count;
+	}
+
+	if (!strncmp(buf, "ddropp=", 7)) {
+		ret = sscanf(&buf[7], "%d", &val);
+		if ((!ret) || (val != 25 && val != 50 && val != 100 && val != -1 && val != -2)) {
+			pr_err("[LiveOPP] Invalid QOS_DDR_OPP value. Enter 25, 50 or 100\n");
+			return -EINVAL;
+		}
+
+		liveopp_arm[_index].ddr_opp = (signed char)val;
+
+		return count;
+	}
+
+	return count;
+}
+
 #define ARM_STEP(_name, _index)	\
 static ssize_t _name##_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)	\
 {	\
-	sprintf(buf, "[LiveOPP ARM Step %d]\n\n", _index);	\
-	sprintf(buf, "%sSet EXTARM:\t\t%s\n", buf, liveopp_arm[_index].set_extarm ? "Enabled" : "Disabled");	\
-	sprintf(buf, "%sSet PLLARM:\t\t%s\n", buf, liveopp_arm[_index].set_pllarm ? "Enabled" : "Disabled");	\
-	sprintf(buf, "%sSet Voltage:\t\t%s\n", buf, liveopp_arm[_index].set_volt ? "Enabled" : "Disabled");	\
-	sprintf(buf, "%sFrequency show:\t\t%d kHz\n", buf, liveopp_arm[_index].freq_show);	\
-	sprintf(buf, "%sFrequency real:\t\t%d kHz\n", buf, liveopp_arm[_index].set_pllarm ? 	\
-			pllarm_freq(liveopp_arm[_index].pllarm_raw) : liveopp_arm[_index].freq_raw);	\
-	sprintf(buf, "%sArmFix:\t\t\t%#010x\n", buf, liveopp_arm[_index].extarm_raw);	\
-	sprintf(buf, "%sArmPLL:\t\t\t%#010x\n", buf, liveopp_arm[_index].pllarm_raw);	\
-	sprintf(buf, "%sArmOPP:\t\t\t%s (%#04x)\n", buf, armopp_name[(int)liveopp_arm[_index].arm_opp],	\
-								     (int)liveopp_arm[_index].arm_opp);	\
-	sprintf(buf, "%sVarm:\t\t\t%d uV (%#04x)\n", buf, varm_voltage(liveopp_arm[_index].varm_raw), 	\
-								     (int)liveopp_arm[_index].varm_raw);	\
-	sprintf(buf, "%sVbbx:\t\t\t%#04x\n", buf, (int)liveopp_arm[_index].vbbx_raw);	\
-	sprintf(buf, "%sQOS_DDR_OPP:\t\t\t%d\n", buf, (int)((signed char)liveopp_arm[_index].ddr_opp));	\
-	sprintf(buf, "%sQOS_APE_OPP:\t\t\t%d\n", buf, (int)((signed char)liveopp_arm[_index].ape_opp));	\
-	\
-	return sprintf(buf, "%s\n", buf);	\
+	return arm_step_show(kobj, attr, buf, _index);	\
 }	\
 	\
 static ssize_t _name##_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)	\
 {	\
-	int ret;	\
-	int val;	\
-	\
-	if (!strncmp(buf, "set_ext=", 8)) {	\
-		ret = sscanf(&buf[8], "%d", &val);	\
-		if ((!ret) || (val != 0 && val != 1)) {	\
-			pr_err("[LiveOPP] Invalid value\n");	\
-			return -EINVAL;	\
-		}	\
-	\
-		liveopp_arm[_index].set_extarm = val;	\
-	\
-		return count;	\
-	}	\
-	\
-	if (!strncmp(buf, "set_pll=", 8)) {	\
-		ret = sscanf(&buf[8], "%d", &val);	\
-		if ((!ret) || (val != 0 && val != 1)) {	\
-			pr_err("[LiveOPP] Invalid value\n");	\
-			return -EINVAL;	\
-		}	\
-	\
-		liveopp_arm[_index].set_pllarm = val;	\
-	\
-		return count;	\
-	}	\
-	\
-	if (!strncmp(buf, "set_volt=", 9)) {	\
-		ret = sscanf(&buf[9], "%d", &val);	\
-		if ((!ret) || (val != 0 && val != 1)) {	\
-			pr_err("[LiveOPP] Invalid value\n");	\
-			return -EINVAL;	\
-		}	\
-	\
-		liveopp_arm[_index].set_volt = val;	\
-	\
-		return count;	\
-	}	\
-	\
-	if (!strncmp(buf, "opp=", 4)) {	\
-		ret = sscanf(&buf[4], "%d", &val);	\
-		if ((!ret) || (val < 0x00 || val > 0x07)) {	\
-			pr_err("[LiveOPP] Invalid value\n");	\
-			return -EINVAL;	\
-		}	\
-	\
-		liveopp_arm[_index].arm_opp = (unsigned char)val;	\
-	\
-		return count;	\
-	}	\
-	\
-	if (!strncmp(buf, "pll=", 4)) {	\
-		ret = sscanf(&buf[4], "%x", &val);	\
-		if ((!ret)) {	\
-			pr_err("[LiveOPP] Invalid value\n");	\
-			return -EINVAL;	\
-		}	\
-	\
-		liveopp_arm[_index].pllarm_raw = val;	\
-	\
-		return count;	\
-	}	\
-	\
-	if (!strncmp(buf, "ext=", 4)) {	\
-		ret = sscanf(&buf[4], "%x", &val);	\
-		if ((!ret)) {	\
-			pr_err("[LiveOPP] Invalid value\n");	\
-			return -EINVAL;	\
-		}	\
-	\
-		liveopp_arm[_index].extarm_raw = val;	\
-	\
-		return count;	\
-	}	\
-	\
-	if (!strncmp(buf, "varm+", 5)) {	\
-		liveopp_arm[_index].varm_raw ++;	\
-	\
-		return count;	\
-	}	\
-	\
-	if (!strncmp(buf, "varm-", 5)) {	\
-		liveopp_arm[_index].varm_raw --;	\
-	\
-		return count;	\
-	}	\
-	if (!strncmp(buf, "varm=", 5)) {	\
-		ret = sscanf(&buf[5], "%x", &val);	\
-		if ((!ret)) {	\
-			pr_err("[LiveOPP] Invalid value\n");	\
-			return -EINVAL;	\
-		}	\
-	\
-		liveopp_arm[_index].varm_raw = val;	\
-	\
-		return count;	\
-	}	\
-	if (!strncmp(buf, "vbbx=", 5)) {	\
-		ret = sscanf(&buf[5], "%x", &val);	\
-		if ((!ret)) {	\
-			pr_err("[LiveOPP] Invalid value\n");	\
-			return -EINVAL;	\
-		}	\
-	\
-		liveopp_arm[_index].vbbx_raw = val;	\
-	\
-		return count;	\
-	}	\
-	\
-	if (!strncmp(buf, "apeopp=", 7)) {	\
-		ret = sscanf(&buf[7], "%d", &val);	\
-		if ((!ret) || (val != 25 && val != 50 && val != 100 && val != -1 && val != -2)) {	\
-			pr_err("[LiveOPP] Invalid QOS_APE_OPP value. Enter 25, 50 or 100\n");	\
-			return -EINVAL;	\
-		}	\
-	\
-		liveopp_arm[_index].ape_opp = (signed char)val;	\
-	\
-		return count;	\
-	}	\
-	\
-	if (!strncmp(buf, "ddropp=", 7)) {	\
-		ret = sscanf(&buf[7], "%d", &val);	\
-		if ((!ret) || (val != 25 && val != 50 && val != 100 && val != -1 && val != -2)) {	\
-			pr_err("[LiveOPP] Invalid QOS_DDR_OPP value. Enter 25, 50 or 100\n");	\
-			return -EINVAL;	\
-		}	\
-	\
-		liveopp_arm[_index].ddr_opp = (signed char)val;	\
-	\
-		return count;	\
-	}	\
-	\
-	return count;	\
+	return arm_step_store(kobj, attr, buf, count, _index);	\
 }	\
 ATTR_RW(_name);
 
