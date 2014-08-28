@@ -22,6 +22,11 @@
 #include <linux/cpufreq.h>
 #include <linux/mfd/dbx500-prcmu.h>
 
+#ifdef CONFIG_DEBUG_FS
+#include <linux/seq_file.h>
+#include <linux/debugfs.h>
+#endif
+
 #include <mach/prcmu-debug.h>
 
 #define ARM_THRESHOLD_FREQ 400000
@@ -136,6 +141,84 @@ static struct prcmu_qos_object *prcmu_qos_array[] = {
 	&arm_khz_qos,
 	&vsafe_opp_qos,
 };
+
+#ifdef CONFIG_DEBUG_FS
+static int requirements_print(struct seq_file *s, struct prcmu_qos_object *qo)
+{
+	struct requirement_list *node;
+	//TODO locking
+	list_for_each_entry(node, &qo->requirements.list, list) {
+		seq_printf(s, "%s: %d\n", node->name, node->value);
+	}
+	return 0;
+}
+
+static int ape_requirements_print(struct seq_file *s, void *p)
+{
+	requirements_print(s, prcmu_qos_array[PRCMU_QOS_APE_OPP]);
+	return 0;
+}
+
+static int ddr_requirements_print(struct seq_file *s, void *p)
+{
+	requirements_print(s, prcmu_qos_array[PRCMU_QOS_DDR_OPP]);
+	return 0;
+}
+
+static int ape_requirements_open_file(struct inode *inode, struct file *file)
+{
+	return single_open(file, ape_requirements_print, inode->i_private);
+}
+
+static int ddr_requirements_open_file(struct inode *inode, struct file *file)
+{
+	return single_open(file, ddr_requirements_print, inode->i_private);
+}
+
+static const struct file_operations ape_requirements_fops = {
+	.open = ape_requirements_open_file,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = single_release,
+	.owner = THIS_MODULE,
+};
+
+static const struct file_operations ddr_requirements_fops = {
+	.open = ddr_requirements_open_file,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = single_release,
+	.owner = THIS_MODULE,
+};
+
+static int setup_debugfs(void)
+{
+	struct dentry *dir;
+	struct dentry *file;
+
+	dir = debugfs_create_dir("prcmu-qos", NULL);
+	if (IS_ERR_OR_NULL(dir))
+		goto fail;
+
+	file = debugfs_create_file("ape_requirements", (S_IRUGO),
+				   dir, NULL, &ape_requirements_fops);
+	if (IS_ERR_OR_NULL(file))
+		goto fail;
+
+	file = debugfs_create_file("ddr_requirements", (S_IRUGO),
+				   dir, NULL, &ddr_requirements_fops);
+	if (IS_ERR_OR_NULL(file))
+		goto fail;
+
+	return 0;
+fail:
+	if (!IS_ERR_OR_NULL(dir))
+		debugfs_remove_recursive(dir);
+
+	pr_err("prcmu qos debug: debugfs entry failed\n");
+	return -ENOMEM;
+}
+#endif
 
 static DEFINE_MUTEX(prcmu_qos_mutex);
 static DEFINE_SPINLOCK(prcmu_qos_lock);
@@ -968,6 +1051,10 @@ static int __init prcmu_qos_power_init(void)
 		prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP, "cross_opp_arm",
 				PRCMU_QOS_DEFAULT_VALUE);
 	}
+
+#ifdef CONFIG_DEBUG_FS
+	ret = setup_debugfs();
+#endif
 
 	return ret;
 
