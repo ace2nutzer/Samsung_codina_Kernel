@@ -81,7 +81,7 @@ static struct prcmu_qos_object ape_opp_qos = {
 	.notifiers = &prcmu_ape_opp_notifier,
 	.name = "ape_opp",
 	/* Target value in % APE OPP */
-	.default_value = 50,
+	.default_value = 25,
 	.max_value = 100,
 	.force_value = 0,
 	.target_value = ATOMIC_INIT(100),
