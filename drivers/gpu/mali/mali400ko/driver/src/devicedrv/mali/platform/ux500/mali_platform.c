@@ -451,6 +451,7 @@ ATTR_RO(mali_gpu_load);
 static ssize_t mali_gpu_vape_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
 	u8 value;
+	bool opp50;
 
 	/*
 	 * cocafe:
@@ -458,12 +459,13 @@ static ssize_t mali_gpu_vape_show(struct kobject *kobj, struct kobj_attribute *a
 	 * In APE 50OPP, Vape uses SEL2. 
 	 * And the clocks are half.
 	 */
+	opp50 = (prcmu_get_ape_opp() != APE_100_OPP);
 	prcmu_abb_read(AB8500_REGU_CTRL2, 
-			AB8500_VAPE_SEL1, 
+			opp50 ? AB8500_VAPE_SEL2 : AB8500_VAPE_SEL1,
 			&value, 
 			1);
 
-	return sprintf(buf, "%u uV\n", vape_voltage(value));
+	return sprintf(buf, "%u uV - 0x%x (OPP:%d)\n", vape_voltage(value), value, opp50 ? 50 : 100);
 }
 ATTR_RO(mali_gpu_vape);
 
