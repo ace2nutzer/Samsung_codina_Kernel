@@ -578,6 +578,11 @@ static int __prcmu_qos_add_requirement(int prcmu_qos_class, char *name,
 	struct requirement_list *dep;
 	unsigned long flags;
 
+	//ignore duplicate names
+	list_for_each_entry(dep, &prcmu_qos_array[prcmu_qos_class]->requirements.list, list) {
+		if (!strcmp(dep->name, name)) return 0;
+	}
+
 	dep = kzalloc(sizeof(struct requirement_list), GFP_KERNEL);
 	if (dep == NULL)
 		return -ENOMEM;
