@@ -113,6 +113,7 @@ static struct wake_lock wakelock;
 
 static u32 boost_enable 	= 1;
 static u32 boost_working 	= 0;
+static u32 boost_scheduled 	= 0;
 static u32 boost_required 	= 0;
 static u32 boost_delay 		= 500;
 static u32 boost_low 		= 0;
@@ -168,40 +169,35 @@ static void mali_boost_update(void)
 	u8 vape;
 	u32 pll;
 
-	if (!boost_required) {
-		if (boost_utilization >= boost_upthreshold) {
-			prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP, "mali_boost", PRCMU_QOS_MAX_VALUE);
-			prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP, "mali_boost", PRCMU_QOS_MAX_VALUE);
-			vape = mali_dvfs[boost_high].vape_raw;
-			pll = mali_dvfs[boost_high].clkpll;
+	if (boost_required) {
+		prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP, "mali_boost", PRCMU_QOS_MAX_VALUE);
+		prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP, "mali_boost", PRCMU_QOS_MAX_VALUE);
+		vape = mali_dvfs[boost_high].vape_raw;
+		pll = mali_dvfs[boost_high].clkpll;
 
-			pr_err("[Mali] @%u kHz - Boost\n", mali_dvfs[boost_high].freq);
+		pr_err("[Mali] @%u kHz - Boost\n", mali_dvfs[boost_high].freq);
 
-			prcmu_abb_write(AB8500_REGU_CTRL2, 
-				AB8500_VAPE_SEL1, 
-				&vape, 
-				1);
-			prcmu_write(PRCMU_PLLSOC0, pll);
-
-			boost_required = 1;
-		}
+		prcmu_abb_write(AB8500_REGU_CTRL2,
+			AB8500_VAPE_SEL1,
+			&vape,
+			1);
+		prcmu_write(PRCMU_PLLSOC0, pll);
+		boost_working = true;
 	} else {
-		if (boost_utilization <= boost_downthreshold) {
-			vape = mali_dvfs[boost_low].vape_raw;
-			pll = mali_dvfs[boost_low].clkpll;
+		vape = mali_dvfs[boost_low].vape_raw;
+		pll = mali_dvfs[boost_low].clkpll;
 
-			pr_err("[Mali] @%u kHz - Deboost\n", mali_dvfs[boost_low].freq);
+		pr_err("[Mali] @%u kHz - Deboost\n", mali_dvfs[boost_low].freq);
 
-			prcmu_write(PRCMU_PLLSOC0, pll);
-			prcmu_abb_write(AB8500_REGU_CTRL2, 
-				AB8500_VAPE_SEL1, 
-				&vape, 
-				1);
+		prcmu_write(PRCMU_PLLSOC0, pll);
+		prcmu_abb_write(AB8500_REGU_CTRL2,
+			AB8500_VAPE_SEL1,
+			&vape,
+			1);
 
-			prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP, "mali_boost", PRCMU_QOS_DEFAULT_VALUE);
-			prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP, "mali_boost", PRCMU_QOS_DEFAULT_VALUE);
-			boost_required = 0;
-		}
+		prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP, "mali_boost", PRCMU_QOS_DEFAULT_VALUE);
+		prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP, "mali_boost", PRCMU_QOS_DEFAULT_VALUE);
+		boost_working = false;
 	}
 }
 
@@ -223,7 +219,7 @@ static void mali_clock_apply(u32 idx)
 static void mali_boost_work(struct work_struct *work)
 {
 	mali_boost_update();
-	boost_working = false;
+	boost_scheduled = false;
 }
 
 static void mali_boost_init(void)
@@ -303,7 +299,7 @@ error:
 	MALI_ERROR(_MALI_OSK_ERR_FAULT);
 }
 
-/* Rationale behind the values for:
+/* Rationale behind the values for: (switching between APE_50_OPP and APE_100_OPP)
 * MALI_HIGH_LEVEL_UTILIZATION_LIMIT and MALI_LOW_LEVEL_UTILIZATION_LIMIT
 * When operating at half clock frequency a faster clock is requested when
 * reaching 75% utilization. When operating at full clock frequency a slower
@@ -323,46 +319,82 @@ error:
 * |-------|-------|-------|-------|
 * Utilization on half speed clock
 */
+
+/* boost switching logic:
+ * - boost_working means that freq is already set to high value
+ * - boost_scheduled means that job is scheduled to turn boost either on or off
+ * - boost_required is a flag for scheduled job telling it what to do with boost
+ *
+ * if we are in APE_50_OPP, skip boost
+ * if we are in APE_100_OPP and util>boost_up_thresh, shedule boost if its not on or - if its on and scheduled to be turned off -  cancel that schedule
+ * if boost is scheduled and not yet working and util < util_high_to_low, then cancel scheduled boost
+ * if boost is on and util < boost_down_thresh, schedule boost to be turned off
+ */
 void mali_utilization_function(struct work_struct *ptr)
 {
 	/*By default, platform start with 50% APE OPP and 25% DDR OPP*/
 	static u32 has_requested_low = 1;
 
-	if (mali_last_utilization > mali_utilization_low_to_high) {
-		if (has_requested_low) {
-			MALI_DEBUG_PRINT(5, ("MALI GPU utilization: %u SIGNAL_HIGH\n", mali_last_utilization));
-			/*Request 100% APE_OPP.*/
-			prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP, "mali", PRCMU_QOS_MAX_VALUE);
-			/*
-			* Since the utilization values will be reported higher
-			* if DDR_OPP is lowered, we also request 100% DDR_OPP.
-			*/
-			prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP, "mali", PRCMU_QOS_MAX_VALUE);
-			has_requested_low = 0;
-		}
-	} else {
-		if (mali_last_utilization < mali_utilization_high_to_low) {
-			if (!has_requested_low) {
-				/*Remove APE_OPP and DDR_OPP requests*/
-				prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP, "mali", PRCMU_QOS_DEFAULT_VALUE);
-				prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP, "mali", PRCMU_QOS_DEFAULT_VALUE);
-				MALI_DEBUG_PRINT(5, ("MALI GPU utilization: %u SIGNAL_LOW\n", mali_last_utilization));
-				has_requested_low = 1;
+	MALI_DEBUG_PRINT(5, ("MALI GPU utilization: %u\n", mali_last_utilization));
+
+	if (!boost_required && !boost_working && !boost_scheduled || !boost_enable) {
+		// consider power saving mode (APE_50_OPP) only if we're not on boost
+		if (mali_last_utilization > mali_utilization_low_to_high) {
+			if (has_requested_low) {
+				MALI_DEBUG_PRINT(5, ("MALI GPU utilization: %u SIGNAL_HIGH\n", mali_last_utilization));
+				/*Request 100% APE_OPP.*/
+				prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP, "mali", PRCMU_QOS_MAX_VALUE);
+				/*
+				* Since the utilization values will be reported higher
+				* if DDR_OPP is lowered, we also request 100% DDR_OPP.
+				*/
+				prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP, "mali", PRCMU_QOS_MAX_VALUE);
+				has_requested_low = 0;
+				return;		//After we switch to APE_100_OPP we want to measure utilization once again before entering boost logic
+			}
+		} else {
+			if (mali_last_utilization < mali_utilization_high_to_low) {
+				if (!has_requested_low) {
+					/*Remove APE_OPP and DDR_OPP requests*/
+					prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP, "mali", PRCMU_QOS_DEFAULT_VALUE);
+					prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP, "mali", PRCMU_QOS_DEFAULT_VALUE);
+					MALI_DEBUG_PRINT(5, ("MALI GPU utilization: %u SIGNAL_LOW\n", mali_last_utilization));
+					has_requested_low = 1;
+				}
 			}
 		}
 	}
 
-	if (boost_enable) {
-		if (!boost_working) {
-			boost_utilization = mali_last_utilization;
-			boost_working = true;
-
-			schedule_delayed_work(&mali_boost_delayedwork, 
-				msecs_to_jiffies(boost_delay));
+	if (!has_requested_low && boost_enable) {
+		// consider boost only if we are in APE_100_OPP mode
+		if (!boost_required && mali_last_utilization > boost_upthreshold) {
+			boost_required = true;
+			if (!boost_scheduled) {
+				//schedule job to turn boost on
+				boost_scheduled = true;
+				schedule_delayed_work(&mali_boost_delayedwork, msecs_to_jiffies(boost_delay));
+			} else {
+				//cancel job meant to turn boost off
+				boost_scheduled = false;
+				cancel_delayed_work(&mali_boost_delayedwork);
+			}
+		} else if (boost_required && !boost_working && mali_last_utilization < mali_utilization_high_to_low) {
+			boost_required = false;
+			if (boost_scheduled) {
+				//if it's not working yet, but is scheduled to be turned on, than cancel scheduled job
+				cancel_delayed_work(&mali_boost_delayedwork);
+				boost_scheduled = false;
+			}
+		} else if (boost_required && boost_working && mali_last_utilization < boost_downthreshold) {
+			boost_required = false;
+			if (!boost_scheduled) {
+				// if boost is on and isn't yet scheduled to be turned off then schedule it
+				boost_scheduled = true;
+				schedule_delayed_work(&mali_boost_delayedwork, msecs_to_jiffies(boost_delay));
+			}
 		}
 	}
 
-	MALI_DEBUG_PRINT(5, ("MALI GPU utilization: %u\n", mali_last_utilization));
 }
 
 #define ATTR_RO(_name)	\
@@ -471,7 +503,7 @@ ATTR_RO(mali_gpu_vape);
 
 static ssize_t mali_auto_boost_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	return sprintf(buf, "%d\n", boost_enable);
+	return sprintf(buf, "enabled: %d, required: %d, scheduled: %d, working: %d\n", boost_enable, boost_required, boost_scheduled, boost_working);
 }
 
 static ssize_t mali_auto_boost_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
@@ -479,12 +511,15 @@ static ssize_t mali_auto_boost_store(struct kobject *kobj, struct kobj_attribute
 	if(sysfs_streq(buf, "0")) {
 		boost_enable = 0;
 
-		if (boost_working) {
+		if (boost_scheduled) {
 			cancel_delayed_work(&mali_boost_delayedwork);
-			mali_clock_apply(boost_low);
-			boost_required = 0;
-			boost_working = 0;
+			boost_scheduled = false;
 		}
+		if (boost_working) {
+			boost_working = false;
+			mali_clock_apply(boost_low);
+		}
+		boost_required = 0;
 	} else {
 		boost_enable = 1;
 		mali_clock_apply(boost_low);
