@@ -170,8 +170,6 @@ static void mali_boost_update(void)
 	u32 pll;
 
 	if (boost_required) {
-		prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP, "mali_boost", PRCMU_QOS_MAX_VALUE);
-		prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP, "mali_boost", PRCMU_QOS_MAX_VALUE);
 		vape = mali_dvfs[boost_high].vape_raw;
 		pll = mali_dvfs[boost_high].clkpll;
 
@@ -195,8 +193,6 @@ static void mali_boost_update(void)
 			&vape,
 			1);
 
-		prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP, "mali_boost", PRCMU_QOS_DEFAULT_VALUE);
-		prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP, "mali_boost", PRCMU_QOS_DEFAULT_VALUE);
 		boost_working = false;
 	}
 }
@@ -767,8 +763,6 @@ _mali_osk_errcode_t mali_platform_init()
 
 		prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP, "mali", PRCMU_QOS_DEFAULT_VALUE);
 		prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP, "mali", PRCMU_QOS_DEFAULT_VALUE);
-		prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP, "mali_boost", PRCMU_QOS_DEFAULT_VALUE);
-		prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP, "mali_boost", PRCMU_QOS_DEFAULT_VALUE);
 
 		pr_info("[Mali] DB8500 GPU OC Initialized (%s)\n", MALI_UX500_VERSION);
 
@@ -793,8 +787,6 @@ _mali_osk_errcode_t mali_platform_deinit()
 	kobject_put(mali_kobject);
 	is_running = false;
 	mali_last_utilization = 0;
-	prcmu_qos_remove_requirement(PRCMU_QOS_APE_OPP, "mali_boost");
-	prcmu_qos_remove_requirement(PRCMU_QOS_DDR_OPP, "mali_boost");
 	prcmu_qos_remove_requirement(PRCMU_QOS_APE_OPP, "mali");
 	prcmu_qos_remove_requirement(PRCMU_QOS_DDR_OPP, "mali");
 	is_initialized = false;
