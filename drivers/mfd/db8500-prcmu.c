@@ -1543,19 +1543,21 @@ static int db8500_prcmu_set_arm_lopp(u8 opp, int idx)
 		prcmu_abb_write(AB8500_REGU_CTRL2, table.varm_sel, &voltage, 1);
 	}
 
-	writeb(MB1H_ARM_APE_OPP, (tcdm_base + PRCM_MBOX_HEADER_REQ_MB1));
-	writeb(opp, (tcdm_base + PRCM_REQ_MB1_ARM_OPP));
-	writeb(APE_NO_CHANGE, (tcdm_base + PRCM_REQ_MB1_APE_OPP));
+	if (opp != liveopp_arm[last_arm_idx].arm_opp) {
+		writeb(MB1H_ARM_APE_OPP, (tcdm_base + PRCM_MBOX_HEADER_REQ_MB1));
+		writeb(opp, (tcdm_base + PRCM_REQ_MB1_ARM_OPP));
+		writeb(APE_NO_CHANGE, (tcdm_base + PRCM_REQ_MB1_APE_OPP));
 
-	log_this(120, "OPP", opp, NULL, 0);
-	writel(MBOX_BIT(1), PRCM_MBOX_CPU_SET);
-	wait_for_completion_timeout(&mb1_transfer.work, SET_ARM_OPP_TIMEOUT);
+		log_this(120, "OPP", opp, NULL, 0);
+		writel(MBOX_BIT(1), PRCM_MBOX_CPU_SET);
+		wait_for_completion_timeout(&mb1_transfer.work, SET_ARM_OPP_TIMEOUT);
 
-	if ((mb1_transfer.ack.header != MB1H_ARM_APE_OPP) ||
-	    (mb1_transfer.ack.arm_opp != opp)) {
-		pr_err("%s: error: timed out (%ds)\n", __func__,
-		       SET_ARM_OPP_TIMEOUT / HZ);
-		r = -EIO;
+		if ((mb1_transfer.ack.header != MB1H_ARM_APE_OPP) ||
+		    (mb1_transfer.ack.arm_opp != opp)) {
+			pr_err("%s: error: timed out (%ds)\n", __func__,
+			       SET_ARM_OPP_TIMEOUT / HZ);
+			r = -EIO;
+		}
 	}
 	liveopp_update_arm(liveopp_arm[idx]);
 	compute_armss_rate();
