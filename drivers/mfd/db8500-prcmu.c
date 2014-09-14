@@ -1153,7 +1153,7 @@ static struct liveopp_arm_table liveopp_arm[] = {
 #endif
 };
 
-static void liveopp_set_armvolt(struct liveopp_arm_table table)
+static inline void liveopp_set_armvolt(struct liveopp_arm_table table)
 {
 	/* Varm */
 	prcmu_abb_write(AB8500_REGU_CTRL2, table.varm_sel, &table.varm_raw, 1);
@@ -1162,19 +1162,19 @@ static void liveopp_set_armvolt(struct liveopp_arm_table table)
 	prcmu_abb_write(AB8500_REGU_CTRL2, AB8500_VBBX_REG, &table.vbbx_raw, 1);
 }
 
-static void liveopp_set_armpll(struct liveopp_arm_table table)
+static inline void liveopp_set_armpll(struct liveopp_arm_table table)
 {
 	/* ARM PLL */
 	db8500_prcmu_writel(PRCMU_PLLARM_REG, table.pllarm_raw);
 }
 
-static void liveopp_set_armext(struct liveopp_arm_table table)
+static inline void liveopp_set_armext(struct liveopp_arm_table table)
 {
 	/* ArmFixClk */
 	db8500_prcmu_writel(PRCMU_ARMFIX_REG, table.extarm_raw);
 }
 
-static void liveopp_update_arm(struct liveopp_arm_table table)
+static inline void liveopp_update_arm(struct liveopp_arm_table table)
 {
 	if (table.set_volt)
 		liveopp_set_armvolt(table);
@@ -1186,7 +1186,7 @@ static void liveopp_update_arm(struct liveopp_arm_table table)
 		liveopp_set_armext(table);
 }
 
-static void liveopp_update_opp(struct liveopp_arm_table table)
+static inline void liveopp_update_opp(struct liveopp_arm_table table)
 {
 	if (table.ddr_opp)
 		prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP, "cpufreq",
@@ -1568,7 +1568,7 @@ static int db8500_prcmu_set_arm_opp(u8 opp)
 }
 
 #ifdef CONFIG_DB8500_LIVEOPP
-static int db8500_prcmu_set_arm_lopp(u8 opp, int idx)
+static inline int db8500_prcmu_set_arm_lopp(u8 opp, int idx)
 {
 	int r;
 	struct liveopp_arm_table table;
