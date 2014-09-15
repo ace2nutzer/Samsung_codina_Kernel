@@ -1098,8 +1098,35 @@ static void db8500_prcmu_get_abb_event_buffer(void __iomem **buf)
 static unsigned int last_arm_idx = 0;
 
 /**
+ * PLLARM REGISTER: 0xAABBCCDD
+ * AA - OPP_50_enabled
+ * BB - divisor
+ * CC - unknown
+ * DD - multiplier
+ *
+ * when going from OPP100 to  OPP50 mode, it doesn't set BB and DD, only AA to 01
+ * OPPMAX -> OPP100/50 sets pll BB, DD and optionally AA (for opp 50)
+ */
+
+/**
+ * VARM REG
+ * every OPP sets 0C to 0x12
+ *
+ */
+/**
  * Hard-coded Custom ARM Frequency and Voltage Table
  */
+
+#ifdef CONFIG_LIVEOPP_EXTENDED_FREQ
+#define ARM_50_OPP_IDX 3
+#define ARM_100_OPP_IDX 7
+#define ARM_MAX_OPP_IDX 9
+#else
+#define ARM_50_OPP_IDX 2
+#define ARM_100_OPP_IDX 4
+#define ARM_MAX_OPP_IDX 5
+#endif
+
 static struct liveopp_arm_table liveopp_arm[] = {
 //     freq_show, f_raw                                                             varm_sel, varm, vbbx, ddr, ape
 #ifdef CONFIG_MACH_CODINA
@@ -1127,25 +1154,25 @@ static struct liveopp_arm_table liveopp_arm[] = {
 	{1200000, 1200000, ARM_MAX_OPP, NOCHG,   0x741, SET_PLL, 0x0004017D, SET_VOLT, 0x0B, 0x39, 0x8F, PRCMU_QOS_MAX_VALUE, PRCMU_QOS_MAX_VALUE},
 	{1250000, 1228800, ARM_MAX_OPP, NOCHG,   0x741, SET_PLL, 0x00010120, SET_VOLT, 0x0B, 0x39, 0x8F, PRCMU_QOS_MAX_VALUE, PRCMU_QOS_MAX_VALUE},
 #else
-	{100000,    99840, ARM_EXTCLK,  SET_EXT, 0x582, NOCHG,   0x00050168, SET_VOLT, 0x0C, 0x18, 0xDB, 25, 25},
+	{100000,    99840, ARM_EXTCLK,  SET_EXT, 0x582, NOCHG,   0x00050168, SET_VOLT, 0x0C, 0x16, 0xDB, 25, 25},
 	{200000,   199680, ARM_EXTCLK,  NOCHG,   0x581, NOCHG,   0x00050168, SET_VOLT, 0x0C, 0x18, 0xDB, 25, 25},
 #ifdef CONFIG_LIVEOPP_EXTENDED_FREQ
-	{300000,   299520, ARM_50_OPP,  NOCHG,   0x741, SET_PLL, 0x00050127, SET_VOLT, 0x0C, 0x19, 0xDB, 25, 25},
+	{300000,   299520, ARM_50_OPP,  NOCHG,   0x741, SET_PLL, 0x0105014E, SET_VOLT, 0x0C, 0x19, 0xDB, 25, 25},
 #endif
 	{400000,   399360, ARM_50_OPP,  NOCHG,   0x741, SET_PLL, 0x01050168, SET_VOLT, 0x0C, 0x1A, 0xDB, 25, 50},
 #ifdef CONFIG_LIVEOPP_EXTENDED_FREQ
-	{500000,   499200, ARM_50_OPP,  NOCHG,   0x741, SET_PLL, 0x0001010D, SET_VOLT, 0x0C, 0x1E, 0xDB, 25, 50},
+	{500000,   499200, ARM_50_OPP,  NOCHG,   0x741, SET_PLL, 0x01050182, SET_VOLT, 0x0C, 0x1D, 0xDB, 25, 50},
 #endif
-	{600000,   599040, ARM_50_OPP,  NOCHG,   0x741, SET_PLL, 0x0005014E, SET_VOLT, 0x0C, 0x20, 0xDB, 50, 50},
+	{600000,   599040, ARM_50_OPP,  NOCHG,   0x741, SET_PLL, 0x0105019C, SET_VOLT, 0x0C, 0x20, 0xDB, 50, 50},
 #ifdef CONFIG_LIVEOPP_EXTENDED_FREQ
-	{700000,   698880, ARM_50_OPP,  NOCHG,   0x741, SET_PLL, 0x0005015B, SET_VOLT, 0x0C, 0x22, 0xDB, 50, 50},
+	{700000,   698880, ARM_50_OPP,  NOCHG,   0x741, SET_PLL, 0x010501B6, SET_VOLT, 0x0C, 0x22, 0xDB, 50, 50},
 #endif
-	{800000,   798720, ARM_100_OPP, NOCHG,   0x741, SET_PLL, 0x00050168, NOCHG,    0x0B, 0x24, 0xDB, 100, 50},
+	{800000,   798720, ARM_100_OPP, NOCHG,   0x741, SET_PLL, 0x00050168, SET_VOLT, 0x0B, 0x24, 0xDB, 100, 50},
 #ifdef CONFIG_LIVEOPP_EXTENDED_FREQ
-	{900000,   898560, ARM_100_OPP, NOCHG,   0x741, SET_PLL, 0x00050175, SET_VOLT, 0x0B, 0x26, 0xDB, 100, 100},
+	{900000,   898560, ARM_100_OPP, NOCHG,   0x741, SET_PLL, 0x00050175, SET_VOLT, 0x0B, 0x2B, 0xDB, 100, 100},
 #endif
-	{1000000,  998400, ARM_MAX_OPP, NOCHG,   0x741, NOCHG,   0x0001011A, NOCHG,    0x0B, 0x2F, 0xDB, 100, 100},
-	{1050000, 1049600, ARM_MAX_OPP, NOCHG,   0x741, SET_PLL, 0x00030152, SET_VOLT, 0x0B, 0x32, 0xDB, 100, 100},
+	{1000000,  998400, ARM_MAX_OPP, NOCHG,   0x741, SET_PLL, 0x0001011A, SET_VOLT, 0x0B, 0x2F, 0xDB, 100, 100},
+	{1050000, 1049600, ARM_MAX_OPP, NOCHG,   0x741, SET_PLL, 0x00030152, SET_VOLT, 0x0B, 0x34, 0xDB, 100, 100},
 	{1100000, 1100800, ARM_MAX_OPP, NOCHG,   0x741, SET_PLL, 0x00030156, SET_VOLT, 0x0B, 0x3F, 0x8F, 100, 100},
 	{1150000, 1152000, ARM_MAX_OPP, NOCHG,   0x741, SET_PLL, 0x0001011E, SET_VOLT, 0x0B, 0x3F, 0x8F, 100, 100},
 	{1200000, 1200000, ARM_MAX_OPP, NOCHG,   0x741, SET_PLL, 0x0004017D, SET_VOLT, 0x0B, 0x3F, 0x8F, 100, 100},
@@ -1174,9 +1201,9 @@ static inline void liveopp_set_armext(struct liveopp_arm_table table)
 	db8500_prcmu_writel(PRCMU_ARMFIX_REG, table.extarm_raw);
 }
 
-static inline void liveopp_update_arm(struct liveopp_arm_table table)
+static inline void liveopp_update_arm(struct liveopp_arm_table table, bool voltage_first)
 {
-	if (table.set_volt)
+	if (table.set_volt && voltage_first)
 		liveopp_set_armvolt(table);
 
 	if (table.set_pllarm)
@@ -1184,6 +1211,9 @@ static inline void liveopp_update_arm(struct liveopp_arm_table table)
 
 	if (table.set_extarm)
 		liveopp_set_armext(table);
+
+	if (table.set_volt && !voltage_first)
+		liveopp_set_armvolt(table);
 }
 
 static inline void liveopp_update_opp(struct liveopp_arm_table table)
@@ -1586,8 +1616,10 @@ static int db8500_prcmu_set_arm_opp(u8 opp)
 static inline int db8500_prcmu_set_arm_lopp(u8 opp, int idx)
 {
 	int r;
-	struct liveopp_arm_table table;
+	struct liveopp_arm_table table = liveopp_arm[idx];
 	u8 voltage = 0x12;
+	u8 last_opp = liveopp_arm[last_arm_idx].arm_opp;
+	bool voltage_first = true;
 
 	if (opp < ARM_NO_CHANGE || opp > ARM_EXTCLK)
 		return -EINVAL;
@@ -1600,12 +1632,31 @@ static inline int db8500_prcmu_set_arm_lopp(u8 opp, int idx)
 	while (readl(PRCM_MBOX_CPU_VAL) & MBOX_BIT(1))
 		cpu_relax();
 
-	if (last_arm_idx < 2 && idx >= 2) {
-		table = liveopp_arm[1];
-		prcmu_abb_write(AB8500_REGU_CTRL2, table.varm_sel, &voltage, 1);
-	}
-
-	if (opp != liveopp_arm[last_arm_idx].arm_opp) {
+	if (opp != last_opp) {
+		if (last_opp == ARM_EXTCLK && opp == ARM_50_OPP) {
+			table = liveopp_arm[ARM_50_OPP_IDX];
+			prcmu_abb_write(AB8500_REGU_CTRL2, table.varm_sel, &table.varm_raw, 1);
+			db8500_prcmu_writel(PRCMU_PLLARM_REG, table.pllarm_raw);
+			voltage_first = (idx > ARM_50_OPP_IDX);
+		}
+		else if ((last_opp == ARM_50_OPP || last_opp == ARM_EXTCLK) && opp == ARM_100_OPP) {
+			if (last_arm_idx != ARM_50_OPP_IDX) {
+				table = liveopp_arm[ARM_50_OPP_IDX];
+				db8500_prcmu_writel(PRCMU_PLLARM_REG, table.pllarm_raw);
+			}
+		}
+		else if (last_opp == ARM_100_OPP && opp == ARM_50_OPP) {
+			if (last_arm_idx != ARM_100_OPP_IDX) {
+				table = liveopp_arm[ARM_100_OPP_IDX];
+				db8500_prcmu_writel(PRCMU_PLLARM_REG, table.pllarm_raw);
+			}
+			voltage_first = (idx > ARM_50_OPP_IDX);
+		}
+		else if (last_opp == ARM_MAX_OPP && opp == ARM_100_OPP) {
+			table = liveopp_arm[ARM_100_OPP_IDX];
+			db8500_prcmu_writel(PRCMU_PLLARM_REG, table.pllarm_raw);
+			//FIXME it still oopses when changing 1000->800 @ varm(800)==0x20
+		}
 		writeb(MB1H_ARM_APE_OPP, (tcdm_base + PRCM_MBOX_HEADER_REQ_MB1));
 		writeb(opp, (tcdm_base + PRCM_REQ_MB1_ARM_OPP));
 		writeb(APE_NO_CHANGE, (tcdm_base + PRCM_REQ_MB1_APE_OPP));
@@ -1620,8 +1671,10 @@ static inline int db8500_prcmu_set_arm_lopp(u8 opp, int idx)
 			       SET_ARM_OPP_TIMEOUT / HZ);
 			r = -EIO;
 		}
+	} else {
+		voltage_first = (idx > last_arm_idx);
 	}
-	liveopp_update_arm(liveopp_arm[idx]);
+	liveopp_update_arm(liveopp_arm[idx], voltage_first);
 	compute_armss_rate();
 	mutex_unlock(&mb1_transfer.lock);
 
