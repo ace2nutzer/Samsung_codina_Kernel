@@ -444,6 +444,36 @@ static ssize_t mali_gpu_clock_store(struct kobject *kobj, struct kobj_attribute 
 
 ATTR_RW(mali_gpu_clock);
 
+static ssize_t mali_gpu_vape_50_opp_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+{
+	u8 value;
+
+	prcmu_abb_read(AB8500_REGU_CTRL2,
+			AB8500_VAPE_SEL2,
+			&value,
+			1);
+
+	return sprintf(buf, "%u uV - 0x%x\n", vape_voltage(value), value);
+}
+
+static ssize_t mali_gpu_vape_50_opp_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
+{
+	int val;
+	u8 vape;
+
+	if (sscanf(buf, "%x", &vape)) {
+		prcmu_abb_write(AB8500_REGU_CTRL2,
+			AB8500_VAPE_SEL2,
+			&vape,
+			1);
+		return count;
+	}
+
+	return -EINVAL;
+}
+
+ATTR_RW(mali_gpu_vape_50_opp);
+
 static ssize_t mali_gpu_fullspeed_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
 	/*
@@ -696,6 +726,7 @@ static struct attribute *mali_attrs[] = {
 	&mali_gpu_fullspeed_interface.attr, 
 	&mali_gpu_load_interface.attr, 
 	&mali_gpu_vape_interface.attr, 
+	&mali_gpu_vape_50_opp_interface.attr,
 	&mali_auto_boost_interface.attr, 
 	&mali_boost_delay_interface.attr, 
 	&mali_boost_low_interface.attr, 
