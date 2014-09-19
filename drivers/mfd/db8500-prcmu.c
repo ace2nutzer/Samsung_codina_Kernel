@@ -1259,34 +1259,48 @@ ATTR_RO(version);
 
 static ssize_t arm_extclk_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	u32 r;
+	u32 r, r2, r3;
 	unsigned long rate;
 
 	r = readl(PRCM_ARM_CHGCLKREQ);
+	r2 = db8500_prcmu_readl(PRCMU_PLLDDR_REG);
 
 	/* External ARM clock uses PLLDDR */
 	/* We use PLLARM function here, they are common */
-	rate = pllarm_freq(db8500_prcmu_readl(PRCMU_PLLDDR_REG));
+	rate = pllarm_freq(r2);
 
 	/* Check PRCM_ARM_CHGCLKREQ divider */
 	if (!(r & PRCM_ARM_CHGCLKREQ_PRCM_ARM_DIVSEL))
 		rate /= 2;
 
 	/* Check PRCM_ARMCLKFIX_MGT divider */
-	r = readl(PRCM_ARMCLKFIX_MGT);
-	r &= PRCM_CLK_MGT_CLKPLLDIV_MASK;
-	rate /= r;
+	r3 = readl(PRCM_ARMCLKFIX_MGT);
+	r3 &= PRCM_CLK_MGT_CLKPLLDIV_MASK;
+	rate /= r3;
 
 	/* PLLDDR belongs to PLL_FIX branch */
-	return sprintf(buf, "%lu kHz\n", rate / 2);
+	return sprintf(buf, "%lu kHz PRCM_ARM_CHGCLKREQ & PRCM_ARM_CHGCLKREQ_PRCM_ARM_DIVSEL: %#08x PRCMU_PLLDDR_REG: %#08x PRCM_ARMCLKFIX_MGT & PRCM_CLK_MGT_CLKPLLDIV_MASK: %#08x\n", rate / 2, r & PRCM_ARM_CHGCLKREQ_PRCM_ARM_DIVSEL, r2, r3);
 }
 ATTR_RO(arm_extclk);
 
 static ssize_t arm_pllclk_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	return sprintf(buf, "%d kHz\n", pllarm_freq(db8500_prcmu_readl(PRCMU_PLLARM_REG)));
+	u32 reg = db8500_prcmu_readl(PRCMU_PLLARM_REG);
+	return sprintf(buf, "%d kHz %#08x\n", pllarm_freq(reg), reg);
 }
 ATTR_RO(arm_pllclk);
+
+static ssize_t arm_varm_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+{
+	u8 varm[3];
+	prcmu_abb_read(AB8500_REGU_CTRL2, 0x0A, &varm[0], 1);
+	prcmu_abb_read(AB8500_REGU_CTRL2, 0x0B, &varm[1], 1);
+	prcmu_abb_read(AB8500_REGU_CTRL2, 0x0C, &varm[2], 1);
+	sprintf(buf, "last_arm_idx: %d\n", last_arm_idx);
+	sprintf(buf, "%svarm_sel: 0x%x\n", buf, liveopp_arm[last_arm_idx].varm_sel);
+	return sprintf(buf, "%svarm[0x0A, 0x0B, 0x0C] = [%#04x,%#04x,%#04x]\n", buf, varm[0], varm[1], varm[2]);
+}
+ATTR_RO(arm_varm);
 
 static ssize_t arm_step_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf, int _index)
 {
@@ -1482,6 +1496,7 @@ static struct attribute *liveopp_attrs[] = {
 	&version_interface.attr, 
 	&arm_extclk_interface.attr, 
 	&arm_pllclk_interface.attr, 
+	&arm_varm_interface.attr,
 	&arm_step00_interface.attr, 
 	&arm_step01_interface.attr, 
 	&arm_step02_interface.attr, 
