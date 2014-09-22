@@ -1105,13 +1105,19 @@ static unsigned int last_arm_idx = 0;
  * DD - multiplier
  *
  * when going from OPP100 to  OPP50 mode, it doesn't set BB and DD, only AA to 01
+ * and when going 50 -> 100, only AA=00, so from 700MHz it'll do 1.4GHz
  * OPPMAX -> OPP100/50 sets pll BB, DD and optionally AA (for opp 50)
  */
 
 /**
- * VARM REG
- * every OPP sets 0C to 0x12
- *
+ * VARM REG CHANGES
+ * OPP_EXT -> OPP* 0C = 0x12
+ * OPP* -> OPPMAX 0B = 0x32
+ * OPP* -> OPP100 0B = 0x28
+ * NO-OPS:
+ *   - OPP* -> OPPEXT
+ *   - OPP100 -> OPP50
+ *   - OPPMAX -> OPP50
  */
 /**
  * Hard-coded Custom ARM Frequency and Voltage Table
@@ -1155,7 +1161,7 @@ static struct liveopp_arm_table liveopp_arm[] = {
 	{1250000, 1228800, ARM_MAX_OPP, NOCHG,   0x741, SET_PLL, 0x00010120, SET_VOLT, 0x0B, 0x39, 0x8F, PRCMU_QOS_MAX_VALUE, PRCMU_QOS_MAX_VALUE},
 #else
 	{100000,    99840, ARM_EXTCLK,  SET_EXT, 0x582, NOCHG,   0x00050168, SET_VOLT, 0x0C, 0x16, 0xDB, 25, 25},
-	{200000,   199680, ARM_EXTCLK,  NOCHG,   0x581, NOCHG,   0x00050168, SET_VOLT, 0x0C, 0x18, 0xDB, 25, 25},
+	{200000,   199680, ARM_EXTCLK,  SET_EXT, 0x581, NOCHG,   0x00050168, SET_VOLT, 0x0C, 0x18, 0xDB, 25, 25},
 #ifdef CONFIG_LIVEOPP_EXTENDED_FREQ
 	{300000,   299520, ARM_50_OPP,  NOCHG,   0x741, SET_PLL, 0x0105014E, SET_VOLT, 0x0C, 0x19, 0xDB, 25, 25},
 #endif
@@ -1619,7 +1625,7 @@ static inline int db8500_prcmu_set_arm_lopp(u8 opp, int idx)
 	struct liveopp_arm_table table = liveopp_arm[idx];
 	u8 voltage = 0x12;
 	u8 last_opp = liveopp_arm[last_arm_idx].arm_opp;
-	bool voltage_first = true;
+	bool voltage_first = (idx > last_arm_idx);
 
 	if (opp < ARM_NO_CHANGE || opp > ARM_EXTCLK)
 		return -EINVAL;
@@ -1636,26 +1642,38 @@ static inline int db8500_prcmu_set_arm_lopp(u8 opp, int idx)
 		if (last_opp == ARM_EXTCLK && opp == ARM_50_OPP) {
 			table = liveopp_arm[ARM_50_OPP_IDX];
 			prcmu_abb_write(AB8500_REGU_CTRL2, table.varm_sel, &table.varm_raw, 1);
+
 			db8500_prcmu_writel(PRCMU_PLLARM_REG, table.pllarm_raw);
 			voltage_first = (idx > ARM_50_OPP_IDX);
 		}
-		else if ((last_opp == ARM_50_OPP || last_opp == ARM_EXTCLK) && opp == ARM_100_OPP) {
+		else if ((last_opp == ARM_50_OPP || last_opp == ARM_EXTCLK) && (opp == ARM_100_OPP || opp == ARM_MAX_OPP)) {
 			if (last_arm_idx != ARM_50_OPP_IDX) {
 				table = liveopp_arm[ARM_50_OPP_IDX];
+				if (last_arm_idx < ARM_50_OPP_IDX)
+					prcmu_abb_write(AB8500_REGU_CTRL2, table.varm_sel, &table.varm_raw, 1);
 				db8500_prcmu_writel(PRCMU_PLLARM_REG, table.pllarm_raw);
 			}
 		}
 		else if (last_opp == ARM_100_OPP && opp == ARM_50_OPP) {
-			if (last_arm_idx != ARM_100_OPP_IDX) {
+			table = liveopp_arm[max(idx, ARM_50_OPP_IDX)];
+			prcmu_abb_write(AB8500_REGU_CTRL2, table.varm_sel, &table.varm_raw, 1);
+			if (last_arm_idx > ARM_100_OPP_IDX) {
 				table = liveopp_arm[ARM_100_OPP_IDX];
 				db8500_prcmu_writel(PRCMU_PLLARM_REG, table.pllarm_raw);
 			}
 			voltage_first = (idx > ARM_50_OPP_IDX);
 		}
-		else if (last_opp == ARM_MAX_OPP && opp == ARM_100_OPP) {
-			table = liveopp_arm[ARM_100_OPP_IDX];
-			db8500_prcmu_writel(PRCMU_PLLARM_REG, table.pllarm_raw);
-			//FIXME it still oopses when changing 1000->800 @ varm(800)==0x20
+		else if (last_opp == ARM_MAX_OPP) {
+			if (last_arm_idx > ARM_MAX_OPP_IDX) {
+				table = liveopp_arm[ARM_MAX_OPP_IDX];
+				db8500_prcmu_writel(PRCMU_PLLARM_REG, table.pllarm_raw);
+			}
+			if (opp == ARM_50_OPP || opp == ARM_EXTCLK) {
+				table = liveopp_arm[max(idx, ARM_50_OPP_IDX)];
+				prcmu_abb_write(AB8500_REGU_CTRL2, table.varm_sel, &table.varm_raw, 1);
+				voltage_first = (idx > ARM_50_OPP_IDX);
+			} else
+				voltage_first = (idx > ARM_100_OPP_IDX);
 		}
 		writeb(MB1H_ARM_APE_OPP, (tcdm_base + PRCM_MBOX_HEADER_REQ_MB1));
 		writeb(opp, (tcdm_base + PRCM_REQ_MB1_ARM_OPP));
@@ -1671,8 +1689,6 @@ static inline int db8500_prcmu_set_arm_lopp(u8 opp, int idx)
 			       SET_ARM_OPP_TIMEOUT / HZ);
 			r = -EIO;
 		}
-	} else {
-		voltage_first = (idx > last_arm_idx);
 	}
 	liveopp_update_arm(liveopp_arm[idx], voltage_first);
 	compute_armss_rate();
@@ -1746,15 +1762,6 @@ static int arm_set_rate(unsigned long rate)
 
 	for (i = 0; i < ARRAY_SIZE(liveopp_arm); i++) {
 		if (frequency == freq_table[i].frequency) {
-			if (db8500_prcmu_get_arm_opp() == ARM_MAX_OPP) {
-				db8500_prcmu_writel(PRCMU_PLLARM_REG, PLLARM_MAXOPP);
-			}
-			#if defined CONFIG_LIVEOPP_EXTENDED_FREQ || defined CONFIG_MACH_CODINA
-			 else if (db8500_prcmu_get_arm_opp() == ARM_100_OPP) {
-				db8500_prcmu_writel(PRCMU_PLLARM_REG, PLLARM_FREQ100OPP);
-			}
-			#endif
-
 			db8500_prcmu_set_arm_lopp(liveopp_arm[i].arm_opp, i);
 			last_arm_idx = i;
 
