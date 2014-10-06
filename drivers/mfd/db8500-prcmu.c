@@ -1088,7 +1088,7 @@ static void db8500_prcmu_get_abb_event_buffer(void __iomem **buf)
 #include <linux/kobject.h>
 #include <linux/mfd/db8500-liveopp.h>
 
-#define LiveOPP_VER		"1.0.1"
+#define LiveOPP_VER		"2.0.0"
 
 #define NOCHG			0
 #define SET_PLL			1
