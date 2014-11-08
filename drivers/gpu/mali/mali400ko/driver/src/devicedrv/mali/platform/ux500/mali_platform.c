@@ -57,7 +57,7 @@
 #define AB8500_VAPE_MAX_UV		1362500
 
 #define MALI_CLOCK_DEFLO		399360
-#define MALI_CLOCK_DEFHI		600000
+#define MALI_CLOCK_DEFHI		480000
 
 struct mali_dvfs_data
 {
