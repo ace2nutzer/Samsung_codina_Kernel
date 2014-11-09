@@ -28,7 +28,7 @@ static bool bln_enabled = true;
 static bool bln_ongoing = false; /* ongoing LED Notification */
 static int bln_blink_state = 0;
 static bool bln_blink_mode = true; /* blink by default */
-static int bln_blink_delay = 1000; /* blink with 1000msec delay by default */
+static int bln_blink_delay = 300; /* blink with 300msec delay by default */
 static bool bln_suspended = false; /* is system suspended */
 static struct bln_implementation *bln_imp = NULL;
 
