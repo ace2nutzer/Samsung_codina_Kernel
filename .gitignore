@@ -1,4 +1,0 @@
-arch/arm/boot/compressed/ashldi3.S
-drivers/gpu/mali/mali400ko/driver/src/devicedrv/mali/arch
-usr/u8500_initramfs_files/boot.cpio
-usr/u8500_initramfs_files/recovery.cpio
