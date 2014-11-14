@@ -319,19 +319,19 @@ static const struct battery_type bat_type[] = {
 		.nominal_voltage = 3820,
 		.termination_vol = 4340,
 #ifdef CONFIG_SAMSUNG_CHARGER_SPEC
-		.termination_curr_1st = 150,
-		.termination_curr_2nd = 150,
-		.recharge_vol = 4300,
+		.termination_curr_1st = 100,
+		.termination_curr_2nd = 100,
+		.recharge_vol = 4211,
 #else
-		.termination_curr = 150,
+		.termination_curr = 100,
 #endif
-		.normal_cur_lvl = 900,
+		.normal_cur_lvl = 400,
 		.normal_vol_lvl = 4340,
-		.maint_a_cur_lvl = 600,
-		.maint_a_vol_lvl = 4150,
+		.maint_a_cur_lvl = 400,
+		.maint_a_vol_lvl = 4050,
 		.maint_a_chg_timer_h = 60,
-		.maint_b_cur_lvl = 600,
-		.maint_b_vol_lvl = 4100,
+		.maint_b_cur_lvl = 400,
+		.maint_b_vol_lvl = 4000,
 		.maint_b_chg_timer_h = 200,
 		.low_high_cur_lvl = 300,
 		.low_high_vol_lvl = 4000,
@@ -388,11 +388,11 @@ static const struct battery_type bat_type[] = {
 		.nominal_voltage = 3820,
 		.termination_vol =  4340,
 #ifdef CONFIG_SAMSUNG_CHARGER_SPEC
-		.termination_curr_1st = 150,	/* 100 */
-		.termination_curr_2nd = 150,	/* 100 */
-		.recharge_vol = 4300,		/* 4130 */
+		.termination_curr_1st = 100,	/* 100 */
+		.termination_curr_2nd = 100,	/* 100 */
+		.recharge_vol = 4211,		/* 4130 */
 #else
-		.termination_curr = 150,	/* 200 */
+		.termination_curr = 100,	/* 200 */
 #endif
 		.normal_cur_lvl = 900,		/* was 700 */
 		.normal_vol_lvl = 4340,		/* 4210 */
