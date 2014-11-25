@@ -522,7 +522,7 @@ static const struct ab8500_bm_charger_parameters chg = {
 	   and ac voltage when discharging.
 	*/
 	.ac_volt_max		= 6650,
-	.ac_curr_max		= 900,
+	.ac_curr_max		= 600,
 #ifdef CONFIG_SAMSUNG_CHARGER_SPEC
 	.ac_volt_max_recovery	= 6800,
 	.usb_volt_max_recovery	= 5700,
@@ -538,8 +538,8 @@ struct ab8500_bm_data ab8500_bm_data = {
 	.temp_interval_chg	= 20,
 	.temp_interval_nochg	= 120,
 #if defined( CONFIG_USB_SWITCHER ) || defined( CONFIG_INPUT_AB8505_MICRO_USB_DETECT )
-	.ta_chg_current		= 500,
-	.ta_chg_current_input	= 900,
+	.ta_chg_current		= 900,
+	.ta_chg_current_input	= 600,
 	.ta_chg_voltage		= 4340,
 	.usb_chg_current	= 500,
 	.usb_chg_current_input	= 500,
