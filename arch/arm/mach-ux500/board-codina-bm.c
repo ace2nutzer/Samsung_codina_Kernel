@@ -103,8 +103,8 @@ static struct v_to_cap cap_tbl_B[] = {
 /* Temporarily, we use this table */
 /* 1500 mAh battery table used in Janice (OCV from STE) */
 static struct v_to_cap cap_tbl[] = {
-	{4250,	100},
-	{4245,	99},
+	{4260,	100},
+	{4250,	99},
 	{4240,	98},
 	{4211,	95},
 	{4183,	90},
@@ -146,8 +146,8 @@ static struct v_to_cap cap_tbl[] = {
 /* Temporarily, we use this table */
 /* 1500 mAh battery table used in Janice (OCV from STE) */
 static struct v_to_cap cap_tbl_5ma[] = {
-	{4250,	100},
-	{4245,	99},
+	{4260,	100},
+	{4250,	99},
 	{4240,	98},
 	{4211,	95},
 	{4183,	90},
@@ -522,7 +522,7 @@ static const struct ab8500_bm_charger_parameters chg = {
 	   and ac voltage when discharging.
 	*/
 	.ac_volt_max		= 6650,
-	.ac_curr_max		= 600,
+	.ac_curr_max		= 900,
 #ifdef CONFIG_SAMSUNG_CHARGER_SPEC
 	.ac_volt_max_recovery	= 6800,
 	.usb_volt_max_recovery	= 5700,

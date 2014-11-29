@@ -340,8 +340,8 @@ static int polling_time_table[] = {
 };
 
 static struct v_to_cap cap_tbl[] = {
-	{4250,	100},
-	{4245,	99},
+	{4260,	100},
+	{4250,	99},
 	{4240,	98},
 	{4211,	95},
 	{4183,	90},
@@ -381,8 +381,8 @@ static struct v_to_cap cap_tbl[] = {
 };
 
 static struct v_to_cap cap_tbl_5ma[] = {
-	{4250,	100},
-	{4245,	99},
+	{4260,	100},
+	{4250,	99},
 	{4240,	98},
 	{4211,	95},
 	{4183,	90},

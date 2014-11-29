@@ -345,10 +345,10 @@ extern void mxt224e_ts_change_vbus_state(bool vbus_status);
 static void (*mxt224e_ts_vbus_state)(bool vbus_status);
 #endif
 
-/* ace2nutzer: ABB Charger Control */
+/* ace2nutzer: ABB Charger Control based on cocafes mods */
 /* On codina board, the max current allowed is 900mA */
-/* Current limitation on AC is 900mA and on USB is 500mA */
-/* Note: The org. AC Charger max. output current is 700mA !!! */
+/* Current limitation on AC/USB is 900mA and on USB-Host (PC) is 500mA */
+/* Note: The org. AC Charger max. current output is 700mA !!! */
 
 /* Current Control */
 static bool bCurrentControl = false;
@@ -356,9 +356,9 @@ static bool bCurrentControl = false;
 /* VBUS Drop Status - When VBUS droped, input current will be changed! */
 static bool bVBUSDropped = false;
 
-/* (codina) AC and USB use the same current */
-/* but only till 500mA due to USB 2.0 current limitation */
-static unsigned int vChargeCurrent = 500;
+/* (codina) AC and USB-Charger use the same current */
+/* On USB-Host (PC) max is 500mA due to USB 1.x - 2.0 current limitation */
+static unsigned int vChargeCurrent = 600;
 
 static void ab8500_charger_set_usb_connected(struct ab8500_charger *di,
 	bool connected)
@@ -1278,9 +1278,9 @@ static int ab8500_charger_set_main_in_curr(struct ab8500_charger *di, int ich_in
 
 	/* cocafe: Skip the loweset current limit */
 	if(!bCurrentControl) {
-		input_curr_index = ab8500_main_in_curr_to_regval(min_value);
-	} else {
 		input_curr_index = ab8500_main_in_curr_to_regval(vChargeCurrent);
+	} else {
+		input_curr_index = ab8500_main_in_curr_to_regval(min_value);
 	}
 
 	if (input_curr_index < 0) {
@@ -1443,14 +1443,15 @@ static int ab8500_charger_ac_en(struct ux500_charger *charger,
 	vbus_status = ab8500_vbus_is_detected(di);
 
 	if (!bCurrentControl) {
-		di->bat->ta_chg_current_input = di->bat->chg_params->ac_curr_max;
-		di->bat->usb_chg_current_input = di->bat->chg_params->usb_curr_max;
-	} else {
-		pr_warn("[ABB-Charger] Switched custom input current\n");
-
-		/* AC and USB ues the same current */
 		di->bat->ta_chg_current_input = vChargeCurrent;
 		di->bat->usb_chg_current_input = vChargeCurrent;
+
+		pr_warn("[ABB-Charger] Switched custom input current\n");
+
+	} else {
+
+		di->bat->ta_chg_current_input = 600;
+		di->bat->usb_chg_current_input = 500;
 	}
 
 	ab8500_charger_init_vdrop_state(di);
@@ -1788,10 +1789,10 @@ static void ab8500_charger_siop_activation(
 
 		if (enable) {
 			/* USB input current limit */
-			ich_in = di->bat->usb_chg_current_input;
+			ich_in = di->bat->usb_chg_current;
 		} else {
 			/* AC input current limit */
-			ich_in = di->bat->ta_chg_current_input ;
+			ich_in = di->bat->ta_chg_current;
 		}
 
 		dev_dbg(di->dev, "adjust input current to %dmA\n", ich_in);
@@ -3181,9 +3182,9 @@ static ssize_t abb_charger_current_store(struct kobject *kobj, struct kobj_attri
 		bCurrentControl = true;
 
 		/* Setup Params */
-		di->bat->ta_chg_current = 900;
+		di->bat->ta_chg_current = di->bat->chg_params->ac_curr_max;
 		di->bat->ta_chg_current_input = vChargeCurrent;
-		di->bat->usb_chg_current = 500;
+		di->bat->usb_chg_current = di->bat->chg_params->usb_curr_max;
 		di->bat->usb_chg_current_input = vChargeCurrent;
 
 		return count;
@@ -3196,10 +3197,10 @@ static ssize_t abb_charger_current_store(struct kobject *kobj, struct kobj_attri
 		bCurrentControl = false;
 
 		/* Restore Params */
-		di->bat->ta_chg_current = 900;
-		di->bat->ta_chg_current_input = di->bat->chg_params->ac_curr_max;
-		di->bat->usb_chg_current = 500;
-		di->bat->usb_chg_current_input = di->bat->chg_params->usb_curr_max;
+		di->bat->ta_chg_current = di->bat->chg_params->ac_curr_max;
+		di->bat->ta_chg_current_input = 600;
+		di->bat->usb_chg_current = di->bat->chg_params->usb_curr_max;
+		di->bat->usb_chg_current_input = 500;
 
 		return count;
 	}
@@ -3215,9 +3216,9 @@ static ssize_t abb_charger_current_store(struct kobject *kobj, struct kobj_attri
 			vChargeCurrent = val;
 			
 			/* Write default value first */
-			di->bat->ta_chg_current = 900;
+			di->bat->ta_chg_current = di->bat->chg_params->ac_curr_max;
 			di->bat->ta_chg_current_input = vChargeCurrent;
-			di->bat->usb_chg_current = 500;
+			di->bat->usb_chg_current = di->bat->chg_params->usb_curr_max;
 			di->bat->usb_chg_current_input = vChargeCurrent;
 
 			return count;
