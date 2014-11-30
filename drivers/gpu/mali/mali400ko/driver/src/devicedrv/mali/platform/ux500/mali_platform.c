@@ -48,7 +48,7 @@
 #define PRCMU_PLLSOC0			0x0080
 
 #define PRCMU_SGACLK_INIT		0x00000021
-#define PRCMU_PLLSOC0_INIT		0x01050168
+#define PRCMU_PLLSOC0_INIT		0x00050134
 
 #define AB8500_VAPE_SEL1 		0x0E
 #define AB8500_VAPE_SEL2	 	0x0F
@@ -57,7 +57,7 @@
 #define AB8500_VAPE_MAX_UV		1362500
 
 #define MALI_CLOCK_DEFLO		399360
-#define MALI_CLOCK_DEFHI		600000
+#define MALI_CLOCK_DEFHI			453120
 
 struct mali_dvfs_data
 {
@@ -67,30 +67,21 @@ struct mali_dvfs_data
 };
 
 static struct mali_dvfs_data mali_dvfs[] = {
-	{192000, 0x0101010A, 0x1d},
-	{256000, 0x01030128, 0x1d},
-	{299520, 0x0105014E, 0x1d},
-	{320000, 0x01030132, 0x1d},
-	{360000, 0x0105015E, 0x1d},
-	{399360, 0x01050168, 0x1d},
-	{422400, 0x01010116, 0x30},
-	{441600, 0x0102012E, 0x30},
-	{460800, 0x01010118, 0x30},
-	{480000, 0x01020132, 0x30},
-	{499200, 0x0101011A, 0x30},
-	{518400, 0x01020136, 0x30},
-	{537600, 0x0101011C, 0x30},
-	{560640, 0x01050192, 0x30},
-	{579840, 0x01050197, 0x30},
-	{600000, 0x0104017D, 0x30},
-	{619200, 0x01040181, 0x3F},
-	{640000, 0x01030164, 0x3F},
-	{660480, 0x010501AC, 0x3F},
-	{679680, 0x010501B1, 0x3F},
-	{700800, 0x01040192, 0x3F},
-	{710400, 0x01010125, 0x3F},
-	{720000, 0x01040196, 0x3F},
-	{729600, 0x01010126, 0x3F},
+	{399360, 0x00050134, 0x1d},
+	{453120, 0x0005013B, 0x30},
+	{499200, 0x00050141, 0x30},
+	{552960, 0x00050148, 0x30},
+	{599040, 0x0005014E, 0x30},
+	{652800, 0x00050155, 0x3F},
+	{675840, 0x00050158, 0x3F},
+	{691200, 0x0005015A, 0x3F},
+	{706560, 0x0005015C, 0x3F},
+	{721920, 0x0005015E, 0x3F},
+	{737280, 0x00050160, 0x3F},
+	{752640, 0x00050162, 0x3F},
+	{768000, 0x00050164, 0x3F},
+	{783360, 0x00050166, 0x3F},
+	{798720, 0x00050168, 0x3F},
 };
 
 int mali_utilization_high_to_low = MALI_HIGH_TO_LOW_LEVEL_UTILIZATION_LIMIT;
@@ -118,8 +109,8 @@ static u32 boost_required 	= 0;
 static u32 boost_delay 		= 0;
 static u32 boost_low 		= 0;
 static u32 boost_high 		= 0;
-static u32 boost_upthreshold 	= 64;
-static u32 boost_downthreshold 	= 8;
+static u32 boost_upthreshold 	= 128;
+static u32 boost_downthreshold 	= 16;
 //mutex to protect above variables
 static DEFINE_MUTEX(mali_boost_lock);
 
