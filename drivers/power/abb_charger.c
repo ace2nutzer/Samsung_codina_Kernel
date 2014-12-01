@@ -841,7 +841,7 @@ static int ab8500_charger_max_usb_curr(struct ab8500_charger *di,
 				 so we assume it isn't active we will try to charge with out enumerating 
 				 we must have been in this state for at least one second.				
 				*/
-			 	 di->max_usb_in_curr =  MAX_NON_ENUMERATED_USB_CURRENT ; 
+			 	 di->max_usb_in_curr = MAX_NON_ENUMERATED_USB_CURRENT;
 			  break ;	
 			} else {
 				/* start a timer to retry detection in a second */
@@ -1278,9 +1278,9 @@ static int ab8500_charger_set_main_in_curr(struct ab8500_charger *di, int ich_in
 
 	/* cocafe: Skip the loweset current limit */
 	if(!bCurrentControl) {
-		input_curr_index = ab8500_main_in_curr_to_regval(vChargeCurrent);
-	} else {
 		input_curr_index = ab8500_main_in_curr_to_regval(min_value);
+	} else {
+		input_curr_index = ab8500_main_in_curr_to_regval(vChargeCurrent);
 	}
 
 	if (input_curr_index < 0) {
@@ -1443,15 +1443,16 @@ static int ab8500_charger_ac_en(struct ux500_charger *charger,
 	vbus_status = ab8500_vbus_is_detected(di);
 
 	if (!bCurrentControl) {
-		di->bat->ta_chg_current_input = vChargeCurrent;
-		di->bat->usb_chg_current_input = vChargeCurrent;
-
-		pr_warn("[ABB-Charger] Switched custom input current\n");
-
-	} else {
 
 		di->bat->ta_chg_current_input = 600;
 		di->bat->usb_chg_current_input = 500;
+
+	} else {
+
+		pr_warn("[ABB-Charger] Switched custom input current\n");
+
+		di->bat->ta_chg_current_input = vChargeCurrent;
+		di->bat->usb_chg_current_input = vChargeCurrent;
 	}
 
 	ab8500_charger_init_vdrop_state(di);
@@ -1789,10 +1790,10 @@ static void ab8500_charger_siop_activation(
 
 		if (enable) {
 			/* USB input current limit */
-			ich_in = di->bat->usb_chg_current;
+			ich_in = di->bat->usb_chg_current_input;
 		} else {
 			/* AC input current limit */
-			ich_in = di->bat->ta_chg_current;
+			ich_in = di->bat->ta_chg_current_input;
 		}
 
 		dev_dbg(di->dev, "adjust input current to %dmA\n", ich_in);
