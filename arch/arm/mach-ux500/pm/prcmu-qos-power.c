@@ -86,7 +86,7 @@ static struct prcmu_qos_object ape_opp_qos = {
 	.notifiers = &prcmu_ape_opp_notifier,
 	.name = "ape_opp",
 	/* Target value in % APE OPP */
-	.default_value = 25,
+	.default_value = 50,
 	.max_value = 100,
 	.force_value = 0,
 	.target_value = ATOMIC_INIT(100),
@@ -249,52 +249,13 @@ void prcmu_qos_set_cpufreq_opp_delay(unsigned long n)
 	}
 	cpufreq_opp_delay = n;
 }
-
-unsigned int orig_min_freq = 0, last_min_freq = 0;
-volatile bool ignore_cpufreq_notifier = false;
-
-static int policy_cpufreq_notifier(struct notifier_block *nb, unsigned long event, void *data)
-{
-	struct cpufreq_policy *policy = data;
-	struct cpufreq_policy old_policy;
-
-	if (ignore_cpufreq_notifier || event != CPUFREQ_ADJUST || policy->cpu != 0)
-		return 0;
-
-	//FIXME: I don't know why, but CPUFREQ_NOTIFY event never occurs... only _ADJUST(0) and _INCOMPATIBLE(1) - sometimes _START(3)
-
-	if (cpufreq_get_policy(&old_policy, policy->cpu)) {
-		pr_err("prcmu qos notifier: get cpufreq policy failed\n");
-		return 0;
-	}
-
-	if (policy->min == old_policy.min) {
-		//ignore events that don't realy change min freq
-		return 0;
-	}
-
-	orig_min_freq = policy->min;
-	policy->min = max(orig_min_freq, last_min_freq);
-	//pr_debug("PRCMU QOS cpufreq notify: req:%d / orig:%d -> %d\n", last_min_freq, orig_min_freq, policy->min);
-	return 0;
-}
-
-static struct notifier_block policy_cpufreq_notifier_block = {
-	.notifier_call = policy_cpufreq_notifier,
-};
-
 #ifdef CONFIG_CPU_FREQ
 static void update_cpu_limits(s32 min_freq)
 {
 	int cpu;
 	struct cpufreq_policy policy;
 	int ret;
-	unsigned int freq = max(min_freq, orig_min_freq);
 
-	ignore_cpufreq_notifier = true;
-	last_min_freq = min_freq;
-
-	//pr_debug("PRCMU QOS update_cpu_limits: req:%d / orig:%d -> %d\n", min_freq, orig_min_freq, freq);
 	for_each_online_cpu(cpu) {
 		ret = cpufreq_get_policy(&policy, cpu);
 		if (ret) {
@@ -303,12 +264,11 @@ static void update_cpu_limits(s32 min_freq)
 			continue;
 		}
 
-		ret = cpufreq_update_freq(cpu, freq, policy.max);
+		ret = cpufreq_update_freq(cpu, min_freq, policy.max);
 		if (ret)
 			pr_err("prcmu qos: update cpufreq "
 			       "frequency limits failed\n");
 	}
-	ignore_cpufreq_notifier = false;
 }
 #else
 static inline void update_cpu_limits(s32 min_freq) { }
@@ -446,9 +406,8 @@ static void update_target(int target, bool sem)
 			break;
 	case PRCMU_QOS_APE_OPP:
 		switch (extreme_value) {
-		case 25:
 		case 50:
-			if (ape_opp_50_partly_25_enabled || extreme_value == 25)
+			if (ape_opp_50_partly_25_enabled)
 				op = APE_50_PARTLY_25_OPP;
 			else
 				op = APE_50_OPP;
@@ -1008,7 +967,6 @@ static int __init prcmu_qos_power_init(void)
 {
 	int ret;
 	struct cpufreq_frequency_table *table;
-	struct cpufreq_policy policy;
 	unsigned int min_freq = UINT_MAX;
 	unsigned int max_freq = 0;
 	int i;
@@ -1029,11 +987,6 @@ static int __init prcmu_qos_power_init(void)
 	arm_khz_qos.default_value = min_freq;
 	/* CPUs start at max */
 	atomic_set(&arm_khz_qos.target_value, arm_khz_qos.max_value);
-
-	ret = cpufreq_get_policy(&policy, 0);
-	last_min_freq = policy.min;
-	orig_min_freq = policy.min;
-	cpufreq_register_notifier(&policy_cpufreq_notifier_block, CPUFREQ_POLICY_NOTIFIER);
 
 	prcmu_qos_cpufreq_init_done = true;
 
