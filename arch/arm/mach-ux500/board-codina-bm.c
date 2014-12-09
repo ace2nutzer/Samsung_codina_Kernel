@@ -511,7 +511,7 @@ static const struct ab8500_maxim_parameters maxi_params = {
 
 static const struct ab8500_bm_charger_parameters chg = {
 	.usb_volt_max		= 5500,
-	.usb_curr_max		= 500,
+	.usb_curr_max		= 600,
 	/* When power supply set as 7000mV (OVP SPEC above 6.8V)
 	   SET read it as .ac_volt_max.
 	   After charging is disabled, SET read the voltage
@@ -541,8 +541,8 @@ struct ab8500_bm_data ab8500_bm_data = {
 	.ta_chg_current		= 900,
 	.ta_chg_current_input	= 600,
 	.ta_chg_voltage		= 4340,
-	.usb_chg_current	= 500,
-	.usb_chg_current_input	= 500,
+	.usb_chg_current	= 600,
+	.usb_chg_current_input	= 600,
 	.usb_chg_voltage	= 4340,
 #endif
 	.main_safety_tmr_h	= 4,

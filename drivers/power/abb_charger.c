@@ -347,8 +347,9 @@ static void (*mxt224e_ts_vbus_state)(bool vbus_status);
 
 /* ace2nutzer: ABB Charger Control based on cocafes mods */
 /* On codina board, the max current allowed is 900mA */
-/* Current limitation on AC/USB is 900mA and on USB-Host (PC) is 500mA */
-/* Note: The org. AC Charger max. current output is 700mA !!! */
+/* Current limitation on AC/USB-Charger* is 900mA and on USB-Host (PC) is 500mA (but programmed 600mA to reach real 500mA) */
+/* Note: The org. AC Charger max. current output is 700mA ! But it can draw anyway real 800mA !! */
+/* 	*only with org. Samsung USB-Charger or Hacked USB-Charger */
 
 /* Current Control */
 static bool bCurrentControl = false;
@@ -1445,7 +1446,7 @@ static int ab8500_charger_ac_en(struct ux500_charger *charger,
 	if (!bCurrentControl) {
 
 		di->bat->ta_chg_current_input = 600;
-		di->bat->usb_chg_current_input = 500;
+		di->bat->usb_chg_current_input = 600;
 
 	} else {
 
@@ -3201,7 +3202,7 @@ static ssize_t abb_charger_current_store(struct kobject *kobj, struct kobj_attri
 		di->bat->ta_chg_current = di->bat->chg_params->ac_curr_max;
 		di->bat->ta_chg_current_input = 600;
 		di->bat->usb_chg_current = di->bat->chg_params->usb_curr_max;
-		di->bat->usb_chg_current_input = 500;
+		di->bat->usb_chg_current_input = 600;
 
 		return count;
 	}
