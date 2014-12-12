@@ -1446,7 +1446,7 @@ static int ab8500_charger_ac_en(struct ux500_charger *charger,
 	if (!bCurrentControl) {
 
 		di->bat->ta_chg_current_input = 600;
-		di->bat->usb_chg_current_input = 600;
+		di->bat->usb_chg_current_input = 500;
 
 	} else {
 
@@ -3202,7 +3202,7 @@ static ssize_t abb_charger_current_store(struct kobject *kobj, struct kobj_attri
 		di->bat->ta_chg_current = di->bat->chg_params->ac_curr_max;
 		di->bat->ta_chg_current_input = 600;
 		di->bat->usb_chg_current = di->bat->chg_params->usb_curr_max;
-		di->bat->usb_chg_current_input = 600;
+		di->bat->usb_chg_current_input = 500;
 
 		return count;
 	}
