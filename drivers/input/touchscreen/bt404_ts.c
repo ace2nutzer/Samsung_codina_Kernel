@@ -427,8 +427,8 @@ static DECLARE_WORK(bt404_ponkey_work, bt404_ponkey_thread);
 
 #ifdef TOUCH_S2W
 /* cocafe: SweepToWake with wakelock implementation */
-#define ABS_THRESHOLD_X			350
-#define ABS_THRESHOLD_Y			450
+#define ABS_THRESHOLD_X			250
+#define ABS_THRESHOLD_Y			350
 
 static unsigned int x_press, x_release;
 static unsigned int y_press, y_release;
