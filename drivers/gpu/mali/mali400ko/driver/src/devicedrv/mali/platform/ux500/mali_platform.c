@@ -48,7 +48,7 @@
 #define PRCMU_PLLSOC0			0x0080
 
 #define PRCMU_SGACLK_INIT		0x00000021
-#define PRCMU_PLLSOC0_INIT		0x00050134
+#define PRCMU_PLLSOC0_INIT		0x01050168
 
 #define AB8500_VAPE_SEL1 		0x0E
 #define AB8500_VAPE_SEL2	 	0x0F
@@ -57,7 +57,7 @@
 #define AB8500_VAPE_MAX_UV		1362500
 
 #define MALI_CLOCK_DEFLO		399360
-#define MALI_CLOCK_DEFHI			453120
+#define MALI_CLOCK_DEFHI			449280
 
 struct mali_dvfs_data
 {
@@ -67,21 +67,21 @@ struct mali_dvfs_data
 };
 
 static struct mali_dvfs_data mali_dvfs[] = {
-	{399360, 0x00050134, 0x1d},
-	{453120, 0x0005013B, 0x22},
-	{499200, 0x00050141, 0x3F},
-	{552960, 0x00050148, 0x3F},
-	{599040, 0x0005014E, 0x3F},
-	{652800, 0x00050155, 0x3F},
-	{675840, 0x00050158, 0x3F},
-	{691200, 0x0005015A, 0x3F},
-	{706560, 0x0005015C, 0x3F},
-	{721920, 0x0005015E, 0x3F},
-	{737280, 0x00050160, 0x3F},
-	{752640, 0x00050162, 0x3F},
-	{768000, 0x00050164, 0x3F},
-	{783360, 0x00050166, 0x3F},
-	{798720, 0x00050168, 0x3F},
+	{399360, 0x01050168, 0x1d},
+	{449280, 0x01050175, 0x22},
+	{499200, 0x01050182, 0x3F},
+	{549120, 0x0105018F, 0x3F},
+	{599040, 0x0105019C, 0x3F},
+	{648960, 0x010501A9, 0x3F},
+	{675840, 0x010501B0, 0x3F},
+	{691200, 0x010501B4, 0x3F},
+	{706560, 0x010501B8, 0x3F},
+	{721920, 0x010501BC, 0x3F},
+	{737280, 0x010501C0, 0x3F},
+	{752640, 0x010501C4, 0x3F},
+	{768000, 0x010501C8, 0x3F},
+	{783360, 0x010501CC, 0x3F},
+	{798720, 0x010501D0, 0x3F},
 };
 
 int mali_utilization_high_to_low = MALI_HIGH_TO_LOW_LEVEL_UTILIZATION_LIMIT;
@@ -102,7 +102,7 @@ static struct workqueue_struct *mali_utilization_workqueue;
 static struct wake_lock wakelock;
 #endif
 
-static u32 boost_enable 	= 0;
+static u32 boost_enable 	= 1;
 static u32 boost_working 	= 0;
 static u32 boost_scheduled 	= 0;
 static u32 boost_required 	= 0;
