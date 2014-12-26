@@ -468,7 +468,7 @@ void prcmu_qos_force_opp(int prcmu_qos_class, s32 i)
 	update_target(prcmu_qos_class, true);
 }
 
-#define LPA_OVERRIDE_VOLTAGE_SETTING 0x22 /* 1.125V */
+#define LPA_OVERRIDE_VOLTAGE_SETTING 0x18    /* 1.0V   and was 0x22  1.125V */
 
 int prcmu_qos_lpa_override(bool enable)
 {
@@ -503,7 +503,7 @@ int prcmu_qos_lpa_override(bool enable)
 					      AB8500_VAPESEL2_REG,
 					      &override_voltage_val, 1);
 
-			lpa_override_enabled = true;
+			lpa_override_enabled = false;
 		}
 	} else {
 		if (lpa_override_enabled) {
