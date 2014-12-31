@@ -121,8 +121,9 @@ static int __cpuinit dbx500_cpufreq_init(struct cpufreq_policy *policy)
 	 *	   function with no/some/all drivers in the notification
 	 *	   list.
 	 */
+
 	#ifdef CONFIG_DB8500_LIVEOPP
-	policy->cpuinfo.transition_latency = 30 * 1000; /* in ns */
+	policy->cpuinfo.transition_latency = 20 * 1000; /* in ns and was 30 */
 	#else
 	policy->cpuinfo.transition_latency = 20 * 1000; /* in ns */
 	#endif
