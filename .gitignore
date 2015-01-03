@@ -4856,3 +4856,5 @@ net/sunrpc/timer.o
 net/sunrpc/xdr.o
 net/sunrpc/xprt.o
 net/sunrpc/xprtsock.o
+lib/.decompress_unlz4.o.cmd
+lib/decompress_unlz4.o
