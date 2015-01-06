@@ -250,6 +250,7 @@ config UX500_DEBUG_HWREG
 
 config UX500_DEBUG_NO_LAUTERBACH
        bool "Disable clocks needed for Lauterbach debugging"
+	default y
        help
 	  Disable clocks needed for Lauterbach debugging at boot.
 	  If yes, you will reduce the power consumption.
