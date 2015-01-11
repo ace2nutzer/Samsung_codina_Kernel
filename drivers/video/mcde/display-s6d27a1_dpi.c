@@ -352,12 +352,14 @@ error:
 static void s6d27a1_request_opp(struct s6d27a1_dpi *lcd)
 {
 	if ((!lcd->opp_is_requested) && (lcd->pd->min_ddr_opp > 0)) {
+#if 0
 		if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
 						LCD_DRIVER_NAME_S6D27A1,
 						lcd->pd->min_ddr_opp)) {
 			dev_err(lcd->dev, "add DDR OPP %d failed\n",
 				lcd->pd->min_ddr_opp);
 		}
+#endif
 		dev_dbg(lcd->dev, "DDR OPP requested at %d%%\n",lcd->pd->min_ddr_opp);
 		lcd->opp_is_requested = true;
 	}
@@ -366,7 +368,9 @@ static void s6d27a1_request_opp(struct s6d27a1_dpi *lcd)
 static void s6d27a1_release_opp(struct s6d27a1_dpi *lcd)
 {
 	if (lcd->opp_is_requested) {
+#if 0
 		prcmu_qos_remove_requirement(PRCMU_QOS_DDR_OPP, LCD_DRIVER_NAME_S6D27A1);
+#endif
 		lcd->opp_is_requested = false;
 		dev_dbg(lcd->dev, "DDR OPP removed\n");
 	}
@@ -1136,8 +1140,12 @@ static int __devinit s6d27a1_dpi_mcde_probe(
 	//when screen is on, APE_OPP 25 sometimes messes it up
 	//TODO change these to add/update/remove
 	if (prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
-			"codina_lcd_dpi", 50)) {
+			"codina_lcd_dpi", PRCMU_QOS_MAX_VALUE)) {
 		pr_info("pcrm_qos_add APE failed\n");
+	}
+	if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
+			"codina_lcd_dpi", PRCMU_QOS_MAX_VALUE)) {
+		pr_info("pcrm_qos_add DDR failed\n");
 	}
 	
 	dev_dbg(&ddev->dev, "DPI display probed\n");
@@ -1244,6 +1252,8 @@ static void s6d27a1_dpi_mcde_early_suspend(
 	
 	prcmu_qos_remove_requirement(PRCMU_QOS_APE_OPP,
 				"codina_lcd_dpi");
+	prcmu_qos_remove_requirement(PRCMU_QOS_DDR_OPP,
+				"codina_lcd_dpi");
 }
 
 static void s6d27a1_dpi_mcde_late_resume(
@@ -1254,8 +1264,12 @@ static void s6d27a1_dpi_mcde_late_resume(
 						earlysuspend);
 
 	if (prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
-			"codina_lcd_dpi", 50)) {
+			"codina_lcd_dpi", PRCMU_QOS_MAX_VALUE)) {
 		pr_info("pcrm_qos_add APE failed\n");
+	}
+	if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
+			"codina_lcd_dpi", PRCMU_QOS_MAX_VALUE)) {
+		pr_info("pcrm_qos_add DDR failed\n");
 	}
 	
 	s6d27a1_dpi_mcde_resume(lcd->mdd);
