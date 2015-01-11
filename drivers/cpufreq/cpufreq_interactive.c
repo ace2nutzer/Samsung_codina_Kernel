@@ -63,8 +63,15 @@ static struct mutex set_speed_lock;
 static u64 hispeed_freq;
 
 /* Go to hi speed when CPU load at or above this value. */
-#define DEFAULT_GO_HISPEED_LOAD 95
-static unsigned long go_hispeed_load;
+#define DEFAULT_GO_HISPEED_LOAD 70
+static unsigned long go_hispeed_load = DEFAULT_GO_HISPEED_LOAD;
+
+/* Go to min speed when CPU load at or below this value. */
+#define DEFAULT_GO_MINSPEED_LOAD 5
+static unsigned long go_minspeed_load = DEFAULT_GO_MINSPEED_LOAD;
+
+/* Sampling down factor to be applied to min_sample_time at max freq */
+static unsigned int sampling_down_factor;
 
 /*
  * The minimum amount of time to spend at a frequency before we can ramp down.
