@@ -352,14 +352,12 @@ error:
 static void s6d27a1_request_opp(struct s6d27a1_dpi *lcd)
 {
 	if ((!lcd->opp_is_requested) && (lcd->pd->min_ddr_opp > 0)) {
-#if 0
 		if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
 						LCD_DRIVER_NAME_S6D27A1,
 						lcd->pd->min_ddr_opp)) {
 			dev_err(lcd->dev, "add DDR OPP %d failed\n",
 				lcd->pd->min_ddr_opp);
 		}
-#endif
 		dev_dbg(lcd->dev, "DDR OPP requested at %d%%\n",lcd->pd->min_ddr_opp);
 		lcd->opp_is_requested = true;
 	}
@@ -368,9 +366,7 @@ static void s6d27a1_request_opp(struct s6d27a1_dpi *lcd)
 static void s6d27a1_release_opp(struct s6d27a1_dpi *lcd)
 {
 	if (lcd->opp_is_requested) {
-#if 0
 		prcmu_qos_remove_requirement(PRCMU_QOS_DDR_OPP, LCD_DRIVER_NAME_S6D27A1);
-#endif
 		lcd->opp_is_requested = false;
 		dev_dbg(lcd->dev, "DDR OPP removed\n");
 	}
