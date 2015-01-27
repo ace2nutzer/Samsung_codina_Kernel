@@ -1111,9 +1111,9 @@ static int liveopp_start = 0;
  * 	References of PLL register bits: dbx500-prcmu-regs.h L#138
  * 
 *  ace2nutzer:
-*	don't use this Voltages: 0x39; 0x3A; 0x3B; 0x3C; 0x3D; 0x3E
-*	max. Voltage for vbbx: 0x9F
-*	max. Voltage for varm: 0x3F
+*	don't use this Voltages: coming soon
+*	max. Voltage for vbbx: coming soon
+*	max. Voltage for varm: coming soon
  */
 
 static struct liveopp_arm_table liveopp_arm[] = {
@@ -1122,13 +1122,13 @@ static struct liveopp_arm_table liveopp_arm[] = {
 	{ 600000,  599040,  0x0005014E,   0x1E,  0xDB,  100,  100},
 	{ 800000,  798720,  0x00050168,   0x24,  0xDB,  100,  100},
 	{1000000,  998400,  0x00050182,   0x32,  0xDB,  100,  100},
-	{1100000,  1098240, 0x0005018F,   0x3F,  0x9F,  100,  100},
-	{1150000,  1152000, 0x00050196,   0x3F,  0x9F,  100,  100},
-	{1200000,  1198080, 0x0005019C,   0x3F,  0x9F,  100,  100},
-	{1250000,  1251840, 0x000501A3,   0x3F,  0x9F,  100,  100},
-	{1300000,  1297920, 0x000501A9,   0x3F,  0x9F,  100,  100},
-	{1350000,  1351680, 0x000501B0,   0x3F,  0x9F,  100,  100},
-	{1400000,  1397760, 0x000501B6,   0x3F,  0x9F,  100,  100},
+	{1100000,  1098240, 0x0005018F,   0x37,  0x8F,  100,  100},
+	{1150000,  1152000, 0x00050196,   0x37,  0x8F,  100,  100},
+	{1200000,  1198080, 0x0005019C,   0x37,  0x8F,  100,  100},
+	{1250000,  1251840, 0x000501A3,   0x37,  0x8F,  100,  100},
+	{1300000,  1297920, 0x000501A9,   0x37,  0x8F,  100,  100},
+	{1350000,  1351680, 0x000501B0,   0x37,  0x8F,  100,  100},
+	{1400000,  1397760, 0x000501B6,   0x37,  0x8F,  100,  100},
 };
 
 static const char *armopp_name[] = 
