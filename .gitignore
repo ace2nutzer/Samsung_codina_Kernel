@@ -4888,3 +4888,9 @@ net/wireless/.debugfs.o.cmd
 net/wireless/.lib80211.o.cmd
 net/wireless/debugfs.o
 net/wireless/lib80211.o
+kernel/.res_counter.o.cmd
+kernel/res_counter.o
+mm/.memcontrol.o.cmd
+mm/.page_cgroup.o.cmd
+mm/memcontrol.o
+mm/page_cgroup.o
