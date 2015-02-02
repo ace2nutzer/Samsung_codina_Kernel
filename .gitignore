@@ -4962,3 +4962,8 @@ net/sunrpc/auth_gss/gss_mech_switch.o
 net/sunrpc/auth_gss/svcauth_gss.o
 net/sunrpc/backchannel_rqst.o
 net/sunrpc/bc_svc.o
+drivers/mmc/host/.mmc_spi.o.cmd
+drivers/mmc/host/mmc_spi.o
+lib/.crc-itu-t.o.cmd
+lib/crc-itu-t.o
+
