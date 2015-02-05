@@ -4966,4 +4966,4 @@ drivers/mmc/host/.mmc_spi.o.cmd
 drivers/mmc/host/mmc_spi.o
 lib/.crc-itu-t.o.cmd
 lib/crc-itu-t.o
-
+fs/exfat/exfat.mod.c
