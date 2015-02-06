@@ -4967,3 +4967,5 @@ drivers/mmc/host/mmc_spi.o
 lib/.crc-itu-t.o.cmd
 lib/crc-itu-t.o
 fs/exfat/exfat.mod.c
+arch/arm/lib/.uaccess_with_memcpy.o.cmd
+arch/arm/lib/uaccess_with_memcpy.o
