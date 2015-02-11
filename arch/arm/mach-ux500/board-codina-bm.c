@@ -103,8 +103,8 @@ static struct v_to_cap cap_tbl_B[] = {
 /* Temporarily, we use this table */
 /* 1500 mAh battery table used in Janice (OCV from STE) */
 static struct v_to_cap cap_tbl[] = {
-	{4260,	100},
-	{4250,	99},
+	{4250,	100},
+	{4245,	99},
 	{4240,	98},
 	{4211,	95},
 	{4183,	90},
@@ -146,8 +146,8 @@ static struct v_to_cap cap_tbl[] = {
 /* Temporarily, we use this table */
 /* 1500 mAh battery table used in Janice (OCV from STE) */
 static struct v_to_cap cap_tbl_5ma[] = {
-	{4260,	100},
-	{4250,	99},
+	{4250,	100},
+	{4245,	99},
 	{4240,	98},
 	{4211,	95},
 	{4183,	90},
