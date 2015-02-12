@@ -56,10 +56,10 @@ struct liveopp_arm_table
 };
 
 /* Varm in 12.5mV steps */
-#define AB8500_VARM_VSEL_MASK 		0x3f	/* 0011 1111 */
+#define AB8500_VARM_VSEL_MASK 		0x37	/* was 0x3F  0011 1111 */
 #define AB8500_VARM_STEP_UV		12500
 #define AB8500_VARM_MIN_UV		700000
-#define AB8500_VARM_MAX_UV		1362500
+#define AB8500_VARM_MAX_UV		1387500
 
 /* PLLARM in 38.4MHz steps */
 #define PLLARM_FREQ_STEPS		38400

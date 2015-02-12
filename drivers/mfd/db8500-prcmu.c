@@ -1109,11 +1109,6 @@ static int liveopp_start = 0;
  * 
  * cocafe: 
  * 	References of PLL register bits: dbx500-prcmu-regs.h L#138
- * 
-*  ace2nutzer:
-*	don't use this Voltages: coming soon
-*	max. Voltage for vbbx: coming soon
-*	max. Voltage for varm: coming soon
  */
 
 static struct liveopp_arm_table liveopp_arm[] = {
@@ -1145,7 +1140,7 @@ static const char *armopp_name[] =
 
 static int varm_uv(u8 raw)
 {
-	if (raw <= 0x35) {
+	if (raw <= 0x37) {
 		return (AB8500_VARM_MIN_UV + (raw * AB8500_VARM_STEP_UV));
 	} else {
 		return AB8500_VARM_MAX_UV;
