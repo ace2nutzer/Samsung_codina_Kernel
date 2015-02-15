@@ -4969,3 +4969,7 @@ lib/crc-itu-t.o
 fs/exfat/exfat.mod.c
 arch/arm/lib/.uaccess_with_memcpy.o.cmd
 arch/arm/lib/uaccess_with_memcpy.o
+block/.cfq-iosched.o.cmd
+block/.deadline-iosched.o.cmd
+block/cfq-iosched.o
+block/deadline-iosched.o
