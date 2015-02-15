@@ -838,7 +838,7 @@ static const struct regulator_volt_range vape_vmod_vsel[] = {
 static const struct regulator_volt_range ab8500_vbbp_vsel[] = {
 	{ {0x00,       0}, {0x10,  100000}, {0x40,  400000} },
 	{ {0x50,  400000}, {0x10,       0}, {0x70,  400000} },
-	{ {0x90, -500000}, {0x10,       0}, {0xb0, -400000} },
+	{ {0x80, -400000}, {0x10,       0}, {0xb0, -400000} },
 	{ {0xc0, -400000}, {0x10,  100000}, {0xf0, -100000} },
 };
 
