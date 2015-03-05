@@ -503,7 +503,7 @@ int prcmu_qos_lpa_override(bool enable)
 					      AB8500_VAPESEL2_REG,
 					      &override_voltage_val, 1);
 
-			lpa_override_enabled = false;
+			lpa_override_enabled = true;
 		}
 	} else {
 		if (lpa_override_enabled) {
