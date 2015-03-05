@@ -39,7 +39,7 @@
 #ifdef CONFIG_FB_MCDE
 
 #define PRCMU_DPI_CLK_SHARP_FREQ	30720000
-#define PRCMU_DPI_CLK_SMD_FREQ		49920000
+#define PRCMU_DPI_CLK_SMD_FREQ		57051428
 
 enum {
 	PRIMARY_DISPLAY_ID,
@@ -135,8 +135,8 @@ struct ssg_dpi_display_platform_data codina_dpi_pri_display_info = {
 	.reset_gpio		= LCD_RESX_CODINA_R0_0,
 	.pwr_gpio		= LCD_PWR_EN_CODINA_R0_0,
 	.bl_ctrl		= false,
-	.power_on_delay		= 10,
-	.reset_delay		= 10,
+	.power_on_delay		= 5,
+	.reset_delay		= 5,
 	.sleep_out_delay	= 120, /* 50ms for WS2401, but 120ms for S6D27A1 */
 
 	.display_off_delay	= 25,
