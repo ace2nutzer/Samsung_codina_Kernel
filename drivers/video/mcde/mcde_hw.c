@@ -1157,7 +1157,106 @@ static int wait_for_vsync(struct mcde_chnl_state *chnl)
 		return 0;
 	}
 }
+/* PRCMU LCDCLK
+ * 60 Hz  	49920000  Default
+ * 60+ Hz  	57051428  Boost
+ */
+#include <linux/kobject.h>
+#include <linux/mfd/dbx500-prcmu.h>
+#include <linux/mfd/db8500-prcmu.h>
 
+#define LCDCLK_SET(clk) prcmu_set_clock_rate(PRCMU_LCDCLK, (unsigned long) clk);
+
+struct lcdclk_prop
+{
+	char *name;
+	unsigned int clk;
+};
+
+static struct lcdclk_prop lcdclk_prop[] = {
+  	[0] = {
+		.name = "60 Hz (Default)",
+		.clk = 49920000,
+	},
+  	[1] = {
+		.name = "60+ Hz (Boost)",
+		.clk = 57051428,
+	},
+};
+
+static int lcdclk_usr = 0; /* 60 Hz */
+static unsigned int custom_lcdclk = 49920000;
+
+static void lcdclk_thread(struct work_struct *ws2401_lcdclk_work)
+{
+	msleep(200);
+
+	if ((custom_lcdclk != 0) && (lcdclk_usr == 0)) {
+		pr_err("[MCDE] LCDCLK %dHz\n", custom_lcdclk);
+		LCDCLK_SET(custom_lcdclk);
+	} else if (lcdclk_usr != 0) { 
+		pr_err("[MCDE] LCDCLK %dHz\n", lcdclk_prop[lcdclk_usr].clk);
+		LCDCLK_SET(lcdclk_prop[lcdclk_usr].clk);
+	}
+}
+static DECLARE_WORK(lcdclk_work, lcdclk_thread);
+
+#define ATTR_RO(_name)	\
+	static struct kobj_attribute _name##_interface = __ATTR(_name, 0444, _name##_show, NULL);
+
+#define ATTR_WO(_name)	\
+	static struct kobj_attribute _name##_interface = __ATTR(_name, 0220, NULL, _name##_store);
+
+#define ATTR_RW(_name)	\
+	static struct kobj_attribute _name##_interface = __ATTR(_name, 0644, _name##_show, _name##_store);
+
+static ssize_t lcd_clk_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+{	
+	int i;
+	for (i = 0; i < ARRAY_SIZE(lcdclk_prop); i++) {
+		sprintf(buf, "%s[%d][%s] %s\n", buf, i, i == lcdclk_usr ? "*" : " ", lcdclk_prop[i].name);
+}
+	sprintf(buf, "%sCurrent LCDCLK freq: %d\n", buf, (int) prcmu_clock_rate(PRCMU_LCDCLK));
+
+	return strlen(buf);
+}
+
+static ssize_t lcd_clk_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
+{
+	int ret, tmp;
+	
+	if (sscanf(buf, "lcdclk=%d", &tmp)) {
+		custom_lcdclk = tmp;
+		lcdclk_usr = 0;
+		goto out;
+	}
+
+	ret = sscanf(buf, "%d", &tmp);
+	if (!ret || (tmp < 0) || (tmp > 1)) {
+		  pr_err("[MCDE] Bad cmd\n");
+		  return -EINVAL;
+	}
+
+	lcdclk_usr = tmp;
+out:
+	schedule_work(&lcdclk_work);
+
+	return count;
+}
+ATTR_RW(lcd_clk);
+
+static struct attribute *mcde_attrs[] = {
+ 
+	&lcd_clk_interface.attr, 
+	NULL,
+};
+
+static struct attribute_group mcde_interface_group = {
+	 /* .name  = "governor", */ /* Not using subfolder now */
+	.attrs = mcde_attrs,
+};
+
+static struct kobject *mcde_kobject;
 
 static int update_channel_static_registers(struct mcde_chnl_state *chnl)
 {
@@ -1249,12 +1348,20 @@ static int update_channel_static_registers(struct mcde_chnl_state *chnl)
 	}
 
 	if (port->type == MCDE_PORTTYPE_DPI) {
+		if (lcdclk_usr != 0) {
+			pr_err("[MCDE] Rebasing LCDCLK...\n");
+			schedule_work(&lcdclk_work);
+		}
+		
 		if (port->phy.dpi.lcd_freq != clk_round_rate(chnl->clk_dpi,
-							port->phy.dpi.lcd_freq))
+						port->phy.dpi.lcd_freq))
 			dev_warn(&mcde_dev->dev, "Could not set lcd freq"
-					" to %d\n", port->phy.dpi.lcd_freq);
+				" to %d\n", port->phy.dpi.lcd_freq);
+					
 		WARN_ON_ONCE(clk_set_rate(chnl->clk_dpi,
-						port->phy.dpi.lcd_freq));
+					port->phy.dpi.lcd_freq));
+		pr_err("[MCDE] rebased LCDCLK to %d Hz\n", port->phy.dpi.lcd_freq);
+		
 		WARN_ON_ONCE(clk_enable(chnl->clk_dpi));
 	}
 
