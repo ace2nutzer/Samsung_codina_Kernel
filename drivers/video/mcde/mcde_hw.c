@@ -33,8 +33,6 @@
 #include <video/mcde.h>
 #include <video/nova_dsilink.h>
 
-#include "../b2r2/b2r2_core.h"
-
 #include "mcde_regs.h"
 #include "mcde_struct.h"
 #include "mcde_hw.h"
@@ -100,7 +98,6 @@ static void mcde_underflow_function(struct work_struct *ptr);
 #define MCDE_UNDERFLOW_WORKQUEUE "mcde_underflow_workqueue"
 static struct workqueue_struct *mcde_underflow_workqueue;
 static struct work_struct mcde_underflow_work;
-static bool regulator_disabled;
 
 struct mcde_rectangle {
 	int x;
@@ -109,10 +106,6 @@ struct mcde_rectangle {
 	int h;
 };
 #endif
-
-struct work_struct mcde_restart_work;
-atomic_t force_restart;
-static DECLARE_WAIT_QUEUE_HEAD(regulator_disable_waitq);
 
 u8 *mcdeio;
 u8 num_channels;
@@ -843,8 +836,8 @@ static void handle_dsi_irq(struct mcde_chnl_state *chnl)
 	if ((events & DSILINK_IRQ_MISSING_DATA) &&
 					chnl->state == CHNLSTATE_RUNNING) {
 		chnl->force_restart_frame_cnt = 0;
-		atomic_set(&force_restart, true);
-		queue_work(system_long_wq, &mcde_restart_work);
+		atomic_set(&chnl->force_restart, true);
+		queue_work(system_long_wq, &chnl->restart_work);
 		dev_warn(&mcde_dev->dev, "Force restart - missing DATA\n");
 	}
 }
@@ -897,21 +890,12 @@ static irqreturn_t mcde_irq_handler(int irq, void *dev)
 			trace_err(irq_status);
 #ifdef MCDE_DPI_UNDERFLOW
 		if (irq_status & MCDE_RISERR_FUARIS_MASK) {
-				dev_warn(&mcde_dev->dev, "FIFO A underflow interrupt detected!!\n");
-				if (MCDE_PORTTYPE_DPI == channels[MCDE_CHNL_A].port.type) {
-					mcde_wfld(MCDE_CRA0, FLOEN, false);
-					dev_warn(&mcde_dev->dev, "FIFO A underflow\n");
-					mcde_wfld(MCDE_IMSCERR, FUAIM, 0);
-					mcde_underflow_handler();
-				}
+				mcde_wfld(MCDE_CRA0, FLOEN, false);
+				dev_warn(&mcde_dev->dev, "FIFO A underflow\n");
+				mcde_wfld(MCDE_IMSCERR, FUAIM, 0);
+				mcde_underflow_handler();
 			}
 #endif
-			if (irq_status & MCDE_MISERR_SCHBLCKDMIS_MASK) {
-				atomic_set(&force_restart, true);
-				queue_work(system_long_wq, &mcde_restart_work);
-				dev_err(&mcde_dev->dev, "Scheduler blocked\n");
-				mcde_wfld(MCDE_IMSCERR, SCHBLCKDIM, false);
-			}
 			dev_err(&mcde_dev->dev, "error=%.8x\n", irq_status);
 			mcde_wreg(MCDE_RISERR, irq_status);
 		}
@@ -1174,106 +1158,6 @@ static int wait_for_vsync(struct mcde_chnl_state *chnl)
 	}
 }
 
-/* PRCMU LCDCLK
- * 60 Hz  	49920000  Default
- * 60+ Hz  	57051428  Boost
- */
-#include <linux/kobject.h>
-#include <linux/mfd/dbx500-prcmu.h>
-#include <linux/mfd/db8500-prcmu.h>
-
-#define LCDCLK_SET(clk) prcmu_set_clock_rate(PRCMU_LCDCLK, (unsigned long) clk);
-
-struct lcdclk_prop
-{
-	char *name;
-	unsigned int clk;
-};
-
-static struct lcdclk_prop lcdclk_prop[] = {
-  	[0] = {
-		.name = "60 Hz (Default)",
-		.clk = 49920000,
-	},
-  	[1] = {
-		.name = "60+ Hz (Boost)",
-		.clk = 57051428,
-	},
-};
-
-static int lcdclk_usr = 0; /* 60 Hz */
-static unsigned int custom_lcdclk = 49920000;
-
-static void lcdclk_thread(struct work_struct *ws2401_lcdclk_work)
-{
-	msleep(200);
-
-	if ((custom_lcdclk != 0) && (lcdclk_usr == 0)) {
-		pr_err("[MCDE] LCDCLK %dHz\n", custom_lcdclk);
-		LCDCLK_SET(custom_lcdclk);
-	} else if (lcdclk_usr != 0) { 
-		pr_err("[MCDE] LCDCLK %dHz\n", lcdclk_prop[lcdclk_usr].clk);
-		LCDCLK_SET(lcdclk_prop[lcdclk_usr].clk);
-	}
-}
-static DECLARE_WORK(lcdclk_work, lcdclk_thread);
-
-#define ATTR_RO(_name)	\
-	static struct kobj_attribute _name##_interface = __ATTR(_name, 0444, _name##_show, NULL);
-
-#define ATTR_WO(_name)	\
-	static struct kobj_attribute _name##_interface = __ATTR(_name, 0220, NULL, _name##_store);
-
-#define ATTR_RW(_name)	\
-	static struct kobj_attribute _name##_interface = __ATTR(_name, 0644, _name##_show, _name##_store);
-
-static ssize_t lcd_clk_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
-{	
-	int i;
-	for (i = 0; i < ARRAY_SIZE(lcdclk_prop); i++) {
-		sprintf(buf, "%s[%d][%s] %s\n", buf, i, i == lcdclk_usr ? "*" : " ", lcdclk_prop[i].name);
-}
-	sprintf(buf, "%sCurrent LCDCLK freq: %d\n", buf, (int) prcmu_clock_rate(PRCMU_LCDCLK));
-
-	return strlen(buf);
-}
-
-static ssize_t lcd_clk_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
-{
-	int ret, tmp;
-	
-	if (sscanf(buf, "lcdclk=%d", &tmp)) {
-		custom_lcdclk = tmp;
-		lcdclk_usr = 0;
-		goto out;
-	}
-
-	ret = sscanf(buf, "%d", &tmp);
-	if (!ret || (tmp < 0) || (tmp > 1)) {
-		  pr_err("[MCDE] Bad cmd\n");
-		  return -EINVAL;
-	}
-
-	lcdclk_usr = tmp;
-out:
-	schedule_work(&lcdclk_work);
-
-	return count;
-}
-ATTR_RW(lcd_clk);
-
-static struct attribute *mcde_attrs[] = {
- 
-	&lcd_clk_interface.attr, 
-	NULL,
-};
-
-static struct attribute_group mcde_interface_group = {
-	 /* .name  = "governor", */ /* Not using subfolder now */
-	.attrs = mcde_attrs,
-};
-
-static struct kobject *mcde_kobject;
 
 static int update_channel_static_registers(struct mcde_chnl_state *chnl)
 {
@@ -1365,20 +1249,12 @@ static int update_channel_static_registers(struct mcde_chnl_state *chnl)
 	}
 
 	if (port->type == MCDE_PORTTYPE_DPI) {
-		if (lcdclk_usr != -1) {
-			pr_err("[MCDE] Rebasing LCDCLK...\n");
-			schedule_work(&lcdclk_work);
-		}
-		
 		if (port->phy.dpi.lcd_freq != clk_round_rate(chnl->clk_dpi,
-						port->phy.dpi.lcd_freq))
+							port->phy.dpi.lcd_freq))
 			dev_warn(&mcde_dev->dev, "Could not set lcd freq"
-				" to %d\n", port->phy.dpi.lcd_freq);
-					
+					" to %d\n", port->phy.dpi.lcd_freq);
 		WARN_ON_ONCE(clk_set_rate(chnl->clk_dpi,
-					port->phy.dpi.lcd_freq));
-		pr_err("[MCDE] rebased LCDCLK to %d Hz\n", port->phy.dpi.lcd_freq);
-		
+						port->phy.dpi.lcd_freq));
 		WARN_ON_ONCE(clk_enable(chnl->clk_dpi));
 	}
 
@@ -3843,95 +3719,6 @@ void mcde_ovly_apply(struct mcde_ovly_state *ovly)
 						ovly->idx, ovly->chnl->id);
 }
 
-static int regulator_notify(struct notifier_block *self, unsigned long action,
-		void *dev);
-
-static struct notifier_block regulator_nb = {
-	 .notifier_call = regulator_notify,
-};
-
-static int regulator_notify(struct notifier_block *self, unsigned long action,
-		void *dev)
-{
-	switch (action) {
-	case REGULATOR_EVENT_FORCE_DISABLE: /* Intentional */
-	case REGULATOR_EVENT_DISABLE:
-		regulator_disabled = true;
-		wake_up_all(&regulator_disable_waitq);
-		break;
-	default:
-		break;
-	}
-	return NOTIFY_OK;
-}
-
-static void work_mcde_restart(struct work_struct *ptr)
-{
-	if (atomic_cmpxchg(&force_restart, true, false)) {
-		int i;
-		long rem_jiffies;
-		bool chnl_used[16] = {false};
-
-		dev_warn(&mcde_dev->dev, "%s. Restart MCDE + B2R2\n", __func__);
-		mcde_lock(__func__, __LINE__); /* Take the MCDE lock */
-
-		/*
-		 * Take a regulator reference to make sure the power is not
-		 * terminated to early.
-		 */
-		regulator_enable(regulator_mcde_epod);
-		regulator_disabled = false;
-
-		for (i = 0; i < num_channels; i++) {
-			struct mcde_chnl_state *chnl = &channels[i];
-
-			chnl_used[i] = chnl->state != CHNLSTATE_SUSPEND &&
-					chnl->state != CHNLSTATE_IDLE;
-		}
-		disable_mcde_hw(true, false); /* Stops all channels */
-		(void)b2r2_core_reset_hold();
-
-		/*
-		 * Disable own reference. Should be the last one and therefore
-		 * cut the power.
-		 */
-		regulator_disable(regulator_mcde_epod);
-
-		rem_jiffies = wait_event_timeout(regulator_disable_waitq,
-				regulator_disabled, msecs_to_jiffies(3000));
-
-		BUG_ON(!rem_jiffies);
-
-		usleep_range(1000, 1500);
-		/*
-		 * Turn on power again. Take a reference to avoid second
-		 * power down during re-start.
-		 */
-		regulator_enable(regulator_mcde_epod);
-
-		(void)b2r2_core_reset_release();
-		(void)enable_mcde_hw();
-
-		/* Restart the previously stopped channels */
-		for (i = 0; i < num_channels; i++) {
-			struct mcde_chnl_state *chnl = &channels[i];
-
-			if (chnl_used[i]) {
-				if (!chnl->formatter_updated)
-					update_channel_static_registers(chnl);
-				_mcde_chnl_update(chnl, false);
-			}
-		}
-		regulator_disable(regulator_mcde_epod);
-
-		/* Re-enable interrupt */
-		mcde_wfld(MCDE_IMSCERR, SCHBLCKDIM, true);
-
-		mcde_unlock(__func__, __LINE__);
-		dev_warn(&mcde_dev->dev, "%s. Restart done\n", __func__);
-	}
-}
-
 static void work_chnl_restart(struct work_struct *ptr)
 {
 	struct mcde_chnl_state *chnl =
@@ -3974,8 +3761,6 @@ static int init_clocks_and_power(struct platform_device *pdev)
 			regulator_mcde_epod = NULL;
 			return ret;
 		}
-		(void)regulator_register_notifier(regulator_mcde_epod,
-				&regulator_nb);
 	} else {
 		dev_warn(&pdev->dev, "%s: No mcde regulator id supplied\n",
 								__func__);
@@ -4042,7 +3827,6 @@ static void remove_clocks_and_power(struct platform_device *pdev)
 	if (regulator_vana)
 		regulator_put(regulator_vana);
 	regulator_put(regulator_mcde_epod);
-	(void)regulator_unregister_notifier(regulator_mcde_epod, &regulator_nb);
 	regulator_put(regulator_esram_epod);
 }
 
@@ -4314,7 +4098,7 @@ static int __devinit mcde_probe(struct platform_device *pdev)
 	}
 	INIT_WORK(&mcde_underflow_work, &mcde_underflow_function);
 #endif
-	INIT_WORK(&mcde_restart_work, work_mcde_restart);
+
 	ret = init_clocks_and_power(pdev);
 	if (ret < 0) {
 		dev_warn(&pdev->dev, "%s: init_clocks_and_power failed\n"
@@ -4432,28 +4216,12 @@ static struct platform_driver mcde_driver = {
 
 int __init mcde_init(void)
 {
-	int ret = 0;
-  
 	mutex_init(&mcde_hw_lock);
-	
-	mcde_kobject = kobject_create_and_add("mcde", kernel_kobj);
-	if (!mcde_kobject) {
-		pr_err("[MCDE] Failed to create kobject interface\n");
-		goto out;
-	}
-	
-	ret = sysfs_create_group(mcde_kobject, &mcde_interface_group);
-	if (ret) {
-		kobject_put(mcde_kobject);
-	}
-	
-out:
 	return platform_driver_register(&mcde_driver);
 }
 
 void mcde_exit(void)
 {
 	/* REVIEW: shutdown MCDE? */
-	kobject_put(mcde_kobject);
 	platform_driver_unregister(&mcde_driver);
 }
