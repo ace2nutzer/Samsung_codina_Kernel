@@ -4323,12 +4323,28 @@ static struct platform_driver mcde_driver = {
 
 int __init mcde_init(void)
 {
+	int ret = 0;
+  
 	mutex_init(&mcde_hw_lock);
+	
+	mcde_kobject = kobject_create_and_add("mcde", kernel_kobj);
+	if (!mcde_kobject) {
+		pr_err("[MCDE] Failed to create kobject interface\n");
+		goto out;
+	}
+	
+	ret = sysfs_create_group(mcde_kobject, &mcde_interface_group);
+	if (ret) {
+		kobject_put(mcde_kobject);
+	}
+	
+out:
 	return platform_driver_register(&mcde_driver);
 }
 
 void mcde_exit(void)
 {
 	/* REVIEW: shutdown MCDE? */
+	kobject_put(mcde_kobject);
 	platform_driver_unregister(&mcde_driver);
 }
