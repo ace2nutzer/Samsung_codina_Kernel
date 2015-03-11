@@ -468,7 +468,7 @@ void prcmu_qos_force_opp(int prcmu_qos_class, s32 i)
 	update_target(prcmu_qos_class, true);
 }
 
-#define LPA_OVERRIDE_VOLTAGE_SETTING 0x18    /* 1.0V   and was 0x22  1.125V */
+#define LPA_OVERRIDE_VOLTAGE_SETTING 0x1d    /* 1.0625V   and was 0x22  1.125V */
 
 int prcmu_qos_lpa_override(bool enable)
 {
