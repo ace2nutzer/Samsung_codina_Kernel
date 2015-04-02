@@ -1122,8 +1122,6 @@ static struct liveopp_arm_table liveopp_arm[] = {
 	{1200000,  1198080, 0x0005019C,   0x37,  0x8F,  100,  100},
 	{1250000,  1251840, 0x000501A3,   0x37,  0x8F,  100,  100},
 	{1300000,  1297920, 0x000501A9,   0x37,  0x8F,  100,  100},
-	{1350000,  1351680, 0x000501B0,   0x37,  0x8F,  100,  100},
-	{1400000,  1397760, 0x000501B6,   0x37,  0x8F,  100,  100},
 };
 
 static const char *armopp_name[] = 
@@ -1389,8 +1387,6 @@ ARM_STEP(arm_step05, 5);
 ARM_STEP(arm_step06, 6);
 ARM_STEP(arm_step07, 7);
 ARM_STEP(arm_step08, 8);
-ARM_STEP(arm_step09, 9);
-ARM_STEP(arm_step10, 10);
 
 #if CONFIG_LIVEOPP_DEBUG > 1
 static ssize_t liveopp_start_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)		
@@ -1423,8 +1419,6 @@ static struct attribute *liveopp_attrs[] = {
 	&arm_step06_interface.attr, 
 	&arm_step07_interface.attr, 
 	&arm_step08_interface.attr, 
-	&arm_step09_interface.attr, 
-	&arm_step10_interface.attr, 
 	NULL,
 };
 
