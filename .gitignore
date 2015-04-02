@@ -122,3 +122,4 @@ usr/gen_init_cpio
 usr/initramfs_data.cpio
 usr/u8500_initramfs_files/boot.cpio
 usr/u8500_initramfs_files/recovery.cpio
+scripts/kconfig/mconf
