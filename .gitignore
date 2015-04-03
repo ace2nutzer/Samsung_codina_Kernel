@@ -123,3 +123,16 @@ usr/initramfs_data.cpio
 usr/u8500_initramfs_files/boot.cpio
 usr/u8500_initramfs_files/recovery.cpio
 scripts/kconfig/mconf
+drivers/tty/vt/consolemap_deftbl.c
+drivers/tty/vt/defkeymap.c
+include/linux/version.h
+kernel/timeconst.h
+lib/crc32table.h
+scripts/genksyms/keywords.c
+scripts/genksyms/lex.c
+scripts/genksyms/parse.c
+scripts/genksyms/parse.h
+scripts/kconfig/lex.zconf.c
+scripts/kconfig/zconf.hash.c
+scripts/kconfig/zconf.tab.c
+scripts/mod/elfconfig.h
