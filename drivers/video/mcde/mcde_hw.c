@@ -1158,8 +1158,14 @@ static int wait_for_vsync(struct mcde_chnl_state *chnl)
 	}
 }
 /* PRCMU LCDCLK
- * 60 Hz  	49920000  Default
- * 60+ Hz  	57051428  Boost
+ * 35 Hz     30720000  stock for S6D27A1
+ * 40 Hz     33280000
+ * 45 Hz     36305454
+ * 50 Hz     39936000  kernel default for S6D27A1
+ * 60 Hz     49920000  stock for WS2401
+ * 60+ Hz    57051428  kernel default for WS2401
+ * 60++ Hz   66560000
+ * 60+++ Hz  79872000
  */
 #include <linux/kobject.h>
 #include <linux/mfd/dbx500-prcmu.h>
@@ -1175,29 +1181,52 @@ struct lcdclk_prop
 
 static struct lcdclk_prop lcdclk_prop[] = {
   	[0] = {
-		.name = "60 Hz (Default)",
-		.clk = 49920000,
+		.name = "kernel default",
+		.clk = 30720000,
 	},
   	[1] = {
-		.name = "60+ Hz (Boost)",
+		.name = "35 Hz [(31Mhz) stock refresh rate for S6D27A1]",
+		.clk = 30720000,
+	},
+  	[2] = {
+		.name = "40 Hz (33Mhz)",
+		.clk = 33280000,
+	},
+  	[3] = {
+		.name = "45 Hz (36Mhz)",
+		.clk = 36305454,
+	},
+  	[4] = {
+		.name = "50 Hz [(40Mhz) kernel default for S6D27A1]",
+		.clk = 39936000,
+	},
+  	[5] = {
+		.name = "60 Hz [(50Mhz) stock refresh rate for WS2401]",
+		.clk = 49920000,
+	},
+  	[6] = {
+		.name = "60+ Hz [(57Mhz) kernel default for WS2401]",
 		.clk = 57051428,
+	},
+  	[7] = {
+		.name = "60++ Hz (67Mhz)",
+		.clk = 66560000,
+	},
+  	[8] = {
+		.name = "60+++ Hz (80Mhz)",
+		.clk = 79872000,
 	},
 };
 
-static int lcdclk_usr = 0; /* 60 Hz */
-static unsigned int custom_lcdclk = 49920000;
+static int lcdclk_usr;
 
 static void lcdclk_thread(struct work_struct *ws2401_lcdclk_work)
 {
 	msleep(200);
 
-	if ((custom_lcdclk != 0) && (lcdclk_usr == 0)) {
-		pr_err("[MCDE] LCDCLK %dHz\n", custom_lcdclk);
-		LCDCLK_SET(custom_lcdclk);
-	} else if (lcdclk_usr != 0) { 
-		pr_err("[MCDE] LCDCLK %dHz\n", lcdclk_prop[lcdclk_usr].clk);
+		pr_err("[MCDE] LCDCLK %dHz\n",  lcdclk_prop[lcdclk_usr].clk);
+
 		LCDCLK_SET(lcdclk_prop[lcdclk_usr].clk);
-	}
 }
 static DECLARE_WORK(lcdclk_work, lcdclk_thread);
 
@@ -1226,13 +1255,12 @@ static ssize_t lcd_clk_store(struct kobject *kobj, struct kobj_attribute *attr, 
 	int ret, tmp;
 	
 	if (sscanf(buf, "lcdclk=%d", &tmp)) {
-		custom_lcdclk = tmp;
-		lcdclk_usr = 0;
+		lcdclk_usr = tmp;
 		goto out;
 	}
 
 	ret = sscanf(buf, "%d", &tmp);
-	if (!ret || (tmp < 0) || (tmp > 1)) {
+	if (!ret || (tmp < 0) || (tmp > 8)) {
 		  pr_err("[MCDE] Bad cmd\n");
 		  return -EINVAL;
 	}
