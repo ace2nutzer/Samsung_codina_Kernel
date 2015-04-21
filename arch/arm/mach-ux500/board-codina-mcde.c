@@ -38,7 +38,7 @@
 
 #ifdef CONFIG_FB_MCDE
 
-#define PRCMU_DPI_CLK_SHARP_FREQ	39936000 /* Stock: 30720000 */
+#define PRCMU_DPI_CLK_SHARP_FREQ	36305454 /* Stock: 30720000 */
 #define PRCMU_DPI_CLK_SMD_FREQ		57051428 /* Stock: 49920000 */
 
 enum {
@@ -135,8 +135,8 @@ struct ssg_dpi_display_platform_data codina_dpi_pri_display_info = {
 	.reset_gpio		= LCD_RESX_CODINA_R0_0,
 	.pwr_gpio		= LCD_PWR_EN_CODINA_R0_0,
 	.bl_ctrl		= false,
-	.power_on_delay		= 5,
-	.reset_delay		= 5,
+	.power_on_delay		= 10,
+	.reset_delay		= 10,
 	.sleep_out_delay	= 120, /* 50ms for WS2401, but 120ms for S6D27A1 */
 
 	.display_off_delay	= 25,
@@ -462,8 +462,8 @@ int __init init_codina_display_devices(void)
 	if (lcd_type == LCD_PANEL_TYPE_SMD){
 		generic_display0.name = LCD_DRIVER_NAME_WS2401;
 		codina_dpi_pri_display_info.video_mode.hsw = 10;
-		codina_dpi_pri_display_info.video_mode.hbp = 8;
-		codina_dpi_pri_display_info.video_mode.hfp = 8;
+		codina_dpi_pri_display_info.video_mode.hbp = 1;
+		codina_dpi_pri_display_info.video_mode.hfp = 1;
 		codina_dpi_pri_display_info.video_mode.vsw = 2;
 		codina_dpi_pri_display_info.video_mode.vbp = 8;
 		codina_dpi_pri_display_info.video_mode.vfp = 18;
@@ -471,8 +471,8 @@ int __init init_codina_display_devices(void)
 	} else {
 		generic_display0.name = LCD_DRIVER_NAME_S6D27A1;
 		codina_dpi_pri_display_info.video_mode.hsw = 2;
-		codina_dpi_pri_display_info.video_mode.hbp = 63;
-		codina_dpi_pri_display_info.video_mode.hfp = 63;
+		codina_dpi_pri_display_info.video_mode.hbp = 1;
+		codina_dpi_pri_display_info.video_mode.hfp = 1;
 		codina_dpi_pri_display_info.video_mode.vsw = 2;
 		codina_dpi_pri_display_info.video_mode.vbp = 11;
 		codina_dpi_pri_display_info.video_mode.vfp = 10;
