@@ -1182,7 +1182,7 @@ struct lcdclk_prop
 static struct lcdclk_prop lcdclk_prop[] = {
   	[0] = {
 		.name = "kernel default",
-		.clk = 30720000,
+		.clk = 36305454,
 	},
   	[1] = {
 		.name = "35 Hz [(31Mhz) stock refresh rate for S6D27A1]",
