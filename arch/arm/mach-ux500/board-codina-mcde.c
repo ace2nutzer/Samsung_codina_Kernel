@@ -462,8 +462,8 @@ int __init init_codina_display_devices(void)
 	if (lcd_type == LCD_PANEL_TYPE_SMD){
 		generic_display0.name = LCD_DRIVER_NAME_WS2401;
 		codina_dpi_pri_display_info.video_mode.hsw = 10;
-		codina_dpi_pri_display_info.video_mode.hbp = 1;
-		codina_dpi_pri_display_info.video_mode.hfp = 1;
+		codina_dpi_pri_display_info.video_mode.hbp = 2;
+		codina_dpi_pri_display_info.video_mode.hfp = 2;
 		codina_dpi_pri_display_info.video_mode.vsw = 2;
 		codina_dpi_pri_display_info.video_mode.vbp = 8;
 		codina_dpi_pri_display_info.video_mode.vfp = 18;
@@ -471,8 +471,8 @@ int __init init_codina_display_devices(void)
 	} else {
 		generic_display0.name = LCD_DRIVER_NAME_S6D27A1;
 		codina_dpi_pri_display_info.video_mode.hsw = 2;
-		codina_dpi_pri_display_info.video_mode.hbp = 1;
-		codina_dpi_pri_display_info.video_mode.hfp = 1;
+		codina_dpi_pri_display_info.video_mode.hbp = 2;
+		codina_dpi_pri_display_info.video_mode.hfp = 2;
 		codina_dpi_pri_display_info.video_mode.vsw = 2;
 		codina_dpi_pri_display_info.video_mode.vbp = 11;
 		codina_dpi_pri_display_info.video_mode.vfp = 10;
