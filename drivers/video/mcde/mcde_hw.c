@@ -1162,10 +1162,8 @@ static int wait_for_vsync(struct mcde_chnl_state *chnl)
  * 40 Hz     33280000
  * 45 Hz     36305454  kernel default for S6D27A1
  * 50 Hz     39936000
- * 60 Hz     49920000  stock for WS2401
- * 60+ Hz    57051428  kernel default for WS2401
- * 60++ Hz   66560000
- * 60+++ Hz  79872000
+ * 60 Hz     49920000  stock and kernel default for WS2401
+ * 60+ Hz    57051428
  */
 #include <linux/kobject.h>
 #include <linux/mfd/dbx500-prcmu.h>
@@ -1201,20 +1199,12 @@ static struct lcdclk_prop lcdclk_prop[] = {
 		.clk = 39936000,
 	},
   	[5] = {
-		.name = "60 Hz [(50Mhz) stock refresh rate for WS2401]",
+		.name = "60 Hz [(50Mhz) stock and kernel-default refresh rate for WS2401]",
 		.clk = 49920000,
 	},
   	[6] = {
-		.name = "60+ Hz [(57Mhz) kernel default for WS2401]",
+		.name = "60+ Hz (57Mhz)",
 		.clk = 57051428,
-	},
-  	[7] = {
-		.name = "60++ Hz (67Mhz)",
-		.clk = 66560000,
-	},
-  	[8] = {
-		.name = "60+++ Hz (80Mhz)",
-		.clk = 79872000,
 	},
 };
 
@@ -1260,7 +1250,7 @@ static ssize_t lcd_clk_store(struct kobject *kobj, struct kobj_attribute *attr, 
 	}
 
 	ret = sscanf(buf, "%d", &tmp);
-	if (!ret || (tmp < 0) || (tmp > 8)) {
+	if (!ret || (tmp < 0) || (tmp > 6)) {
 		  pr_err("[MCDE] Bad cmd\n");
 		  return -EINVAL;
 	}
