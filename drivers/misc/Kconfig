@@ -563,6 +563,13 @@ config HWMEM
 	  can be used by hardware. It also enables accessing hwmem allocated
 	  memory buffers through a secure id which can be shared across processes.
 
+config HWMEM_SIZE_MB
+	int "Size of HWMEM"
+	default 84
+	help
+		Set here the size of the HWMEM, should be between 1 and 127 MB.
+		Default Value is 84M.
+
 config DISPDEV
 	bool "Display overlay device"
 	depends on FB_MCDE
