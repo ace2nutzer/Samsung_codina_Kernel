@@ -480,7 +480,10 @@ CONFIG_ALIGNMENT_TRAP=y
 # CONFIG_USE_OF is not set
 CONFIG_ZBOOT_ROM_TEXT=0
 CONFIG_ZBOOT_ROM_BSS=0
-CONFIG_CMDLINE=""
+CONFIG_CMDLINE="cachepolicy=writealloc mpcore_wdt.mpcore_margin=359 root=/dev/ram0 rw rootwait crash_reboot=yes crash_dump=no  init=init console='null' mem=96M@0 mem_mtrace=15M@96M mem_mshared=1M@111M mem_modem=16M@112M mem=128M@128M hwmem=84M@256M mem=43M@340M mem_issw=1M@383M mem_ram_console=1M@384M mem=382M@385M vmalloc=264M jig_smd=0 lpm_boot=0 checksum_pass=1 checksum_done=1 sec_debug.enable=0 sec_debug.enable_user=0 androidboot.serialno=4730f09475819092 board_id=12 startup_graphics=1 logo. lcdtype=8 sbl_copy=1"
+# CONFIG_CMDLINE_FROM_BOOTLOADER is not set
+# CONFIG_CMDLINE_EXTEND is not set
+CONFIG_CMDLINE_FORCE=y
 # CONFIG_XIP_KERNEL is not set
 # CONFIG_KEXEC is not set
 # CONFIG_CRASH_DUMP is not set
