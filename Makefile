@@ -375,6 +375,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -mcpu=cortex-a9 \
 		   -mfpu=neon-fp16 \
 		   -funsafe-math-optimizations \
+		   -funsafe-loop-optimizations \
 		   -ftree-vectorize \
 		   -mfloat-abi=softfp \
 		   -pipe \
@@ -578,6 +579,8 @@ KBUILD_CFLAGS	+= -Os
 else
 KBUILD_CFLAGS	+= -Ofast
 endif
+
+LDFLAGS += -Ofast --as-needed --sort-common
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
