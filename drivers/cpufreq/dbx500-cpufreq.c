@@ -122,7 +122,7 @@ static int __cpuinit dbx500_cpufreq_init(struct cpufreq_policy *policy)
 	 *	   list.
 	 */
 
-	policy->cpuinfo.transition_latency = 5 * 1000; /* in ns */
+	policy->cpuinfo.transition_latency = 10 * 1000; /* in ns */
 
 	/* policy sharing between dual CPUs */
 	cpumask_copy(policy->cpus, &cpu_present_map);
