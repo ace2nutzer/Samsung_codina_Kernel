@@ -56,8 +56,8 @@
 #define AB8500_VAPE_MIN_UV		700000
 #define AB8500_VAPE_MAX_UV		1487500
 
-#define MALI_CLOCK_DEFLO		399360
-#define MALI_CLOCK_DEFHI			449280
+#define MALI_CLOCK_DEFLO		199680
+#define MALI_CLOCK_DEFHI		299520
 
 struct mali_dvfs_data
 {
@@ -67,18 +67,12 @@ struct mali_dvfs_data
 };
 
 static struct mali_dvfs_data mali_dvfs[] = {
-	{399360, 0x01050168, 0x1d},
-	{449280, 0x01050175, 0x22},
+	{199680, 0x01050134, 0x24},
+	{299520, 0x0105014E, 0x24},
+	{399360, 0x01050168, 0x24},
 	{499200, 0x01050182, 0x3F},
-	{549120, 0x0105018F, 0x3F},
 	{599040, 0x0105019C, 0x3F},
-	{648960, 0x010501A9, 0x3F},
-	{675840, 0x010501B0, 0x3F},
 	{691200, 0x010501B4, 0x3F},
-	{706560, 0x010501B8, 0x3F},
-	{721920, 0x010501BC, 0x3F},
-	{737280, 0x010501C0, 0x3F},
-	{752640, 0x010501C4, 0x3F},
 };
 
 int mali_utilization_high_to_low = MALI_HIGH_TO_LOW_LEVEL_UTILIZATION_LIMIT;
@@ -99,15 +93,15 @@ static struct workqueue_struct *mali_utilization_workqueue;
 static struct wake_lock wakelock;
 #endif
 
-static u32 boost_enable 	= 0;
+static u32 boost_enable 	= 1;
 static u32 boost_working 	= 0;
 static u32 boost_scheduled 	= 0;
 static u32 boost_required 	= 0;
-static u32 boost_delay 		= 200;
+static u32 boost_delay 		= 0;
 static u32 boost_low 		= 0;
 static u32 boost_high 		= 0;
-static u32 boost_upthreshold 	= 128;
-static u32 boost_downthreshold 	= 16;
+static u32 boost_upthreshold 	= 243;
+static u32 boost_downthreshold 	= 128;
 //mutex to protect above variables
 static DEFINE_MUTEX(mali_boost_lock);
 
