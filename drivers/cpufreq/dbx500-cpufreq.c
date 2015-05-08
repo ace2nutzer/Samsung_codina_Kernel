@@ -98,7 +98,7 @@ static int __cpuinit dbx500_cpufreq_init(struct cpufreq_policy *policy)
 	}
 
 	#ifdef CONFIG_DB8500_LIVEOPP
-	policy->min = 400  * 1000;
+	policy->min = 300  * 1000;
 	#ifdef CONFIG_MACH_CODINA
 	policy->max = 800  * 1000;
 	#else
@@ -122,11 +122,7 @@ static int __cpuinit dbx500_cpufreq_init(struct cpufreq_policy *policy)
 	 *	   list.
 	 */
 
-	#ifdef CONFIG_DB8500_LIVEOPP
-	policy->cpuinfo.transition_latency = 30 * 1000;
-	#else
-	policy->cpuinfo.transition_latency = 20 * 1000; /* in ns */
-	#endif
+	policy->cpuinfo.transition_latency = 5 * 1000; /* in ns */
 
 	/* policy sharing between dual CPUs */
 	cpumask_copy(policy->cpus, &cpu_present_map);
