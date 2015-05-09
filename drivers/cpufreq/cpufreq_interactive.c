@@ -67,7 +67,7 @@ static unsigned int hispeed_freq = 600000;
 static unsigned long go_hispeed_load = DEFAULT_GO_HISPEED_LOAD;
 
 /* Go to min speed when CPU load at or below this value. */
-#define DEFAULT_GO_MINSPEED_LOAD 5
+#define DEFAULT_GO_MINSPEED_LOAD 10
 static unsigned long go_minspeed_load = DEFAULT_GO_MINSPEED_LOAD;
 
 /* Sampling down factor to be applied to min_sample_time at max freq */
