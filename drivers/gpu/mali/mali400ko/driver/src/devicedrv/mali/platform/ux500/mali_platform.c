@@ -67,7 +67,6 @@ struct mali_dvfs_data
 };
 
 static struct mali_dvfs_data mali_dvfs[] = {
-	{199680, 0x01050134, 0x24},
 	{299520, 0x0105014E, 0x24},
 	{399360, 0x01050168, 0x24},
 	{499200, 0x01050182, 0x3F},
