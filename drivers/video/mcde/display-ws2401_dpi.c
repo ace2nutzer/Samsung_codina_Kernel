@@ -473,12 +473,14 @@ error:
 static void ws2401_request_opp(struct ws2401_dpi *lcd)
 {
 	if ((!lcd->opp_is_requested) && (lcd->pd->min_ddr_opp > 0)) {
+#if 0
 		if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
 						LCD_DRIVER_NAME_WS2401,
 						lcd->pd->min_ddr_opp)) {
 			dev_err(lcd->dev, "add DDR OPP %d failed\n",
 				lcd->pd->min_ddr_opp);
 		}
+#endif
 		dev_dbg(lcd->dev, "DDR OPP requested at %d%%\n",lcd->pd->min_ddr_opp);
 		lcd->opp_is_requested = true;
 	}
@@ -487,7 +489,9 @@ static void ws2401_request_opp(struct ws2401_dpi *lcd)
 static void ws2401_release_opp(struct ws2401_dpi *lcd)
 {
 	if (lcd->opp_is_requested) {
+#if 0
 		prcmu_qos_remove_requirement(PRCMU_QOS_DDR_OPP, LCD_DRIVER_NAME_WS2401);
+#endif
 		lcd->opp_is_requested = false;
 		dev_dbg(lcd->dev, "DDR OPP removed\n");
 	}
@@ -1179,11 +1183,15 @@ static int __devinit ws2401_dpi_mcde_probe(
 	lcd->earlysuspend.resume  = ws2401_dpi_mcde_late_resume;
 	register_early_suspend(&lcd->earlysuspend);
 #endif
-	//when screen is on, APE_OPP 25 sometimes messes it up
+	//when screen is on, DDR_OPP 25 sometimes messes it up
 	//TODO change these to add/update/remove
 	if (prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
-			"codina_lcd_dpi", 50)) {
+			"codina_lcd_dpi", 25)) {
 		pr_info("pcrm_qos_add APE failed\n");
+	}
+	if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
+			"codina_lcd_dpi", 50)) {
+		pr_info("pcrm_qos_add DDR failed\n");
 	}
 
 	dev_dbg(&ddev->dev, "DPI display probed\n");
@@ -1317,6 +1325,8 @@ static void ws2401_dpi_mcde_early_suspend(
 
 	prcmu_qos_remove_requirement(PRCMU_QOS_APE_OPP,
 			"codina_lcd_dpi");
+	prcmu_qos_remove_requirement(PRCMU_QOS_DDR_OPP,
+			"codina_lcd_dpi");
 }
 
 static void ws2401_dpi_mcde_late_resume(
@@ -1327,8 +1337,12 @@ static void ws2401_dpi_mcde_late_resume(
 						earlysuspend);
 
 	if (prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
-			"codina_lcd_dpi", 50)) {
+			"codina_lcd_dpi", 25)) {
 		pr_info("pcrm_qos_add APE failed\n");
+	}
+	if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
+			"codina_lcd_dpi", 50)) {
+		pr_info("pcrm_qos_add DDR failed\n");
 	}
 	
 	#ifdef ESD_OPERATION
