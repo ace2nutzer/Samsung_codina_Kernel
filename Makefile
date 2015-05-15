@@ -246,10 +246,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -pipe -fno-delete-null-pointer-checks -maccumulate-outgoing-args \
-		-minline-all-stringops -minline-stringops-dynamically
-HOSTCXXFLAGS = -O2 -fomit-frame-pointer -pipe -fno-delete-null-pointer-checks -maccumulate-outgoing-args -minline-all-stringops \
-		-minline-stringops-dynamically
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -pipe
+HOSTCXXFLAGS = -O2 -pipe
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
