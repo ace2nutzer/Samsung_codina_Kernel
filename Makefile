@@ -246,9 +246,9 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Ofast -fomit-frame-pointer -pipe -fno-delete-null-pointer-checks -mtls-dialect=gnu2 -maccumulate-outgoing-args \
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -pipe -fno-delete-null-pointer-checks -maccumulate-outgoing-args \
 		-minline-all-stringops -minline-stringops-dynamically
-HOSTCXXFLAGS = -Ofast -fomit-frame-pointer -pipe -fno-delete-null-pointer-checks -mtls-dialect=gnu2 -maccumulate-outgoing-args -minline-all-stringops \
+HOSTCXXFLAGS = -O2 -fomit-frame-pointer -pipe -fno-delete-null-pointer-checks -maccumulate-outgoing-args -minline-all-stringops \
 		-minline-stringops-dynamically
 
 # Decide whether to build built-in, modular, or both.
@@ -372,18 +372,16 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
-		   -mcpu=cortex-a9 \
-		   -mfpu=neon-fp16 \
-		   -funsafe-math-optimizations \
-		   -funsafe-loop-optimizations \
-		   -ftree-vectorize \
-		   -mfloat-abi=softfp \
-		   -pipe \
-		   -mthumb-interwork \
-		   -march=armv7 \
-		   -mtune=cortex-a9 \
 		   -marm \
-		   -mtls-dialect=gnu2
+		   -march=armv7 \
+		   -mcpu=cortex-a9 \
+		   -mtune=cortex-a9 \
+		   -mfpu=neon-fp16 \
+		   -mfloat-abi=softfp \
+		   -mthumb-interwork \
+		   -ftree-vectorize \
+		   -pipe \
+		   -funsafe-math-optimizations
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
@@ -577,10 +575,10 @@ all: vmlinux
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
 else
-KBUILD_CFLAGS	+= -Ofast
+KBUILD_CFLAGS	+= -O2
 endif
 
-LDFLAGS += -Ofast --as-needed --sort-common
+LDFLAGS += -O2 --as-needed --sort-common
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
