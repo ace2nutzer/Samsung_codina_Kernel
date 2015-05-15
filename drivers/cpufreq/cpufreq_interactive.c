@@ -67,7 +67,7 @@ static unsigned int hispeed_freq = 600000;
 static unsigned long go_hispeed_load = DEFAULT_GO_HISPEED_LOAD;
 
 /* Go to min speed when CPU load at or below this value. */
-#define DEFAULT_GO_MINSPEED_LOAD 10
+#define DEFAULT_GO_MINSPEED_LOAD 5
 static unsigned long go_minspeed_load = DEFAULT_GO_MINSPEED_LOAD;
 
 /* Sampling down factor to be applied to min_sample_time at max freq */
@@ -119,7 +119,7 @@ static spinlock_t timer_slack_lock;
 static int *timer_slack_vals = default_timer_slack_val;
 static int ntimer_slack_vals = ARRAY_SIZE(default_timer_slack_val);
 
-static bool io_is_busy = false;
+static bool io_is_busy = true;
 
 /*
  * If the max load among other CPUs is higher than up_threshold_any_cpu_load
