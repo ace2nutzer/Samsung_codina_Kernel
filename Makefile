@@ -246,8 +246,17 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -pipe
-HOSTCXXFLAGS = -O2 -pipe
+HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu99 \
+		-march=native \
+		-mtune=native \
+		-ftree-vectorize \
+		-pipe
+
+HOSTCXXFLAGS := -O2 -std=gnu99 \
+		 -march=native \
+		 -mtune=native \
+		 -ftree-vectorize \
+		 -pipe
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -348,12 +357,12 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-CFLAGS_MODULE   =
+CFLAGS_MODULE   = -O2 -pipe
 AFLAGS_MODULE   =
-LDFLAGS_MODULE  =
-CFLAGS_KERNEL	= -D__linux__
+LDFLAGS_MODULE  = -O2
+CFLAGS_KERNEL	= -O2
 AFLAGS_KERNEL	=
-CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
+CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage -O2 -pipe
 
 
 # Use LINUXINCLUDE when you must reference the include/ directory.
@@ -363,30 +372,63 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
                    $(if $(KBUILD_SRC), -I$(srctree)/include) \
                    -include include/generated/autoconf.h
 
-KBUILD_CPPFLAGS := -D__KERNEL__
+KBUILD_CPPFLAGS := -D__KERNEL__ -O2
 
-KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
-		   -fno-strict-aliasing -fno-common \
-		   -Werror-implicit-function-declaration \
-		   -Wno-format-security \
-		   -fno-delete-null-pointer-checks \
-		   -marm \
-		   -march=armv7 \
-		   -mcpu=cortex-a9 \
-		   -mtune=cortex-a9 \
-		   -mfpu=neon-fp16 \
-		   -mfloat-abi=softfp \
-		   -mthumb-interwork \
-		   -ftree-vectorize \
-		   -pipe \
-		   -funsafe-math-optimizations
+KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
+		  -fno-strict-aliasing -fno-common \
+		  -Werror-implicit-function-declaration \
+		  -Wno-format-security \
+		  -fno-delete-null-pointer-checks \
+		  -std=gnu89 \
+		  -marm \
+		  -march=armv7 \
+		  -mcpu=cortex-a9 \
+		  -mtune=cortex-a9 \
+		  -mfpu=neon-fp16 \
+		  -mfloat-abi=softfp \
+		  -mthumb-interwork \
+		  -ftree-vectorize \
+		  -pipe
+
+
+KBUILD_CFLAGS_KERNEL := -std=gnu89 -O2 \
+		  -marm \
+		  -march=armv7 \
+		  -mcpu=cortex-a9 \
+		  -mtune=cortex-a9 \
+		  -mfpu=neon-fp16 \
+		  -mfloat-abi=softfp \
+		  -mthumb-interwork \
+		  -ftree-vectorize
 
 KBUILD_AFLAGS_KERNEL :=
-KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
-KBUILD_AFLAGS_MODULE  := -DMODULE
-KBUILD_CFLAGS_MODULE  := -DMODULE
-KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
+
+KBUILD_CFLAGS_MODULE := -DMODULE -O2 \
+		  -std=gnu89 \
+		  -marm \
+		  -march=armv7 \
+		  -mcpu=cortex-a9 \
+		  -mtune=cortex-a9 \
+		  -mfpu=neon-fp16 \
+		  -mfloat-abi=softfp \
+		  -mthumb-interwork \
+		  -ftree-vectorize \
+		  -pipe
+
+KBUILD_AFLAGS_MODULE  := -DMODULE -O2 \
+                 -std=gnu99 \
+		  -marm \
+		  -march=armv7 \
+		  -mcpu=cortex-a9 \
+		  -mtune=cortex-a9 \
+		  -mfpu=neon-fp16 \
+		  -mfloat-abi=softfp \
+		  -mthumb-interwork \
+		  -ftree-vectorize \
+		  -pipe
+
+KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds -O2
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
 KERNELRELEASE = $(shell cat include/config/kernel.release 2> /dev/null)
