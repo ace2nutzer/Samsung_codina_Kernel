@@ -390,10 +390,10 @@ KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -ftree-vectorize \
 		  -pipe
 
+KBUILD_AFLAGS_KERNEL :=
 
 KBUILD_CFLAGS_KERNEL := -std=gnu89 -O2 \
 		  -marm \
-		  -march=armv7 \
 		  -mcpu=cortex-a9 \
 		  -mtune=cortex-a9 \
 		  -mfpu=neon-fp16 \
@@ -401,11 +401,10 @@ KBUILD_CFLAGS_KERNEL := -std=gnu89 -O2 \
 		  -mthumb-interwork \
 		  -ftree-vectorize
 
-KBUILD_AFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
 
-KBUILD_CFLAGS_MODULE := -DMODULE -O2 \
-		  -std=gnu89 \
+KBUILD_AFLAGS_MODULE  := -DMODULE -O2 \
+                 -std=gnu99 \
 		  -marm \
 		  -march=armv7 \
 		  -mcpu=cortex-a9 \
@@ -416,10 +415,9 @@ KBUILD_CFLAGS_MODULE := -DMODULE -O2 \
 		  -ftree-vectorize \
 		  -pipe
 
-KBUILD_AFLAGS_MODULE  := -DMODULE -O2 \
-                 -std=gnu99 \
+KBUILD_CFLAGS_MODULE := -DMODULE -O2 \
+		  -std=gnu89 \
 		  -marm \
-		  -march=armv7 \
 		  -mcpu=cortex-a9 \
 		  -mtune=cortex-a9 \
 		  -mfpu=neon-fp16 \
