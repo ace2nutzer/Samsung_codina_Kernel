@@ -246,17 +246,14 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu99 \
-		-march=native \
-		-mtune=native \
-		-ftree-vectorize \
-		-pipe
+HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu99 -pipe
 
-HOSTCXXFLAGS := -O2 -std=gnu99 \
-		 -march=native \
-		 -mtune=native \
-		 -ftree-vectorize \
-		 -pipe
+HOSTCXXFLAGS := -O2 -pipe
+
+ifeq ($(shell $(HOSTCC) -v 2>&1 | grep -c "clang version"), 1)
+HOSTCFLAGS  += -Wno-unused-value -Wno-unused-parameter \
+		-Wno-missing-field-initializers -fno-delete-null-pointer-checks
+endif
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -357,12 +354,12 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-CFLAGS_MODULE   = -O2 -pipe
+CFLAGS_MODULE   = -pipe
 AFLAGS_MODULE   =
-LDFLAGS_MODULE  = -O2
-CFLAGS_KERNEL	= -O2
+LDFLAGS_MODULE  =
+CFLAGS_KERNEL	=
 AFLAGS_KERNEL	=
-CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage -O2 -pipe
+CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage -pipe
 
 
 # Use LINUXINCLUDE when you must reference the include/ directory.
@@ -372,17 +369,15 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
                    $(if $(KBUILD_SRC), -I$(srctree)/include) \
                    -include include/generated/autoconf.h
 
-KBUILD_CPPFLAGS := -D__KERNEL__ -O2
+KBUILD_CPPFLAGS := -D__KERNEL__
 
 KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -fno-strict-aliasing -fno-common \
 		  -Werror-implicit-function-declaration \
 		  -Wno-format-security \
 		  -fno-delete-null-pointer-checks \
-		  -std=gnu89 \
 		  -marm \
 		  -march=armv7 \
-		  -mcpu=cortex-a9 \
 		  -mtune=cortex-a9 \
 		  -mfpu=neon-fp16 \
 		  -mfloat-abi=softfp \
@@ -391,42 +386,11 @@ KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -pipe
 
 KBUILD_AFLAGS_KERNEL :=
-
-KBUILD_CFLAGS_KERNEL := -std=gnu89 -O2 \
-		  -marm \
-		  -mcpu=cortex-a9 \
-		  -mtune=cortex-a9 \
-		  -mfpu=neon-fp16 \
-		  -mfloat-abi=softfp \
-		  -mthumb-interwork \
-		  -ftree-vectorize
-
+KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
-
-KBUILD_AFLAGS_MODULE  := -DMODULE -O2 \
-                 -std=gnu99 \
-		  -marm \
-		  -march=armv7 \
-		  -mcpu=cortex-a9 \
-		  -mtune=cortex-a9 \
-		  -mfpu=neon-fp16 \
-		  -mfloat-abi=softfp \
-		  -mthumb-interwork \
-		  -ftree-vectorize \
-		  -pipe
-
-KBUILD_CFLAGS_MODULE := -DMODULE -O2 \
-		  -std=gnu89 \
-		  -marm \
-		  -mcpu=cortex-a9 \
-		  -mtune=cortex-a9 \
-		  -mfpu=neon-fp16 \
-		  -mfloat-abi=softfp \
-		  -mthumb-interwork \
-		  -ftree-vectorize \
-		  -pipe
-
-KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds -O2
+KBUILD_AFLAGS_MODULE  := -DMODULE -pipe
+KBUILD_CFLAGS_MODULE := -DMODULE -pipe
+KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
 KERNELRELEASE = $(shell cat include/config/kernel.release 2> /dev/null)
