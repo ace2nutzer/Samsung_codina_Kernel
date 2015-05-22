@@ -244,11 +244,100 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 	  else if [ -x /bin/bash ]; then echo /bin/bash; \
 	  else echo sh; fi ; fi)
 
+CUSTOM_KBUILD_CFLAGS := "-ftree-vectorize \
+		  -funsafe-loop-optimizations \
+		  -fno-keep-static-consts \
+		  -fmerge-all-constants \
+		  -fmodulo-sched \
+		  -fmodulo-sched-allow-regmoves \
+		  -fgcse-sm \
+		  -fgcse-las \
+		  -fgcse-after-reload \
+		  -fdevirtualize-speculatively \
+		  -fira-region=all \
+		  -fsched-pressure \
+		  -fsched-spec-load \
+		  -fsched-spec-load-dangerous \
+		  -fselective-scheduling \
+		  -fsel-sched-pipelining \
+		  -fsel-sched-pipelining-outer-loops \
+		  -fipa-pta \
+		  -fisolate-erroneous-paths-attribute \
+		  -fno-check-data-deps \
+		  -ftree-loop-if-convert \
+		  -ftree-loop-distribution \
+		  -ftree-loop-im \
+		  -ftree-loop-ivcanon \
+		  -fivopts \
+		  -ftree-coalesce-inlined-vars \
+		  -fvect-cost-model=unlimited \
+		  -ftracer \
+		  -fprefetch-loop-arrays \
+		  -fweb \
+		  -fuse-linker-plugin \
+		  -ffat-lto-objects \
+		  -fprofile-correction \
+		  -frename-registers \
+		  -fsection-anchors \
+		  -funswitch-loops \
+		  -DNDEBUG \
+		  -frerun-cse-after-loop \
+		  -fomit-frame-pointer \
+		  -fpeel-loops \
+		  -fbtr-bb-exclusive \
+		  --param ggc-min-expand=70 \
+		  --param ggc-min-heapsize=262144 \
+		  --param max-reload-search-insns=200 \
+		  --param max-cselib-memory-locations=1000 \
+		  --param max-sched-ready-insns=200 \
+		  --param loop-invariant-max-bbs-in-loop=50000"
+
+CUSTOM_HOSTCFLAGS := "-ftree-vectorize \
+		  -funsafe-loop-optimizations \
+		  -fno-keep-static-consts \
+		  -fmerge-all-constants \
+		  -fmodulo-sched \
+		  -fmodulo-sched-allow-regmoves \
+		  -fgcse-sm \
+		  -fgcse-las \
+		  -fgcse-after-reload \
+		  -fira-region=all \
+		  -fsched-pressure \
+		  -fsched-spec-load \
+		  -fsched-spec-load-dangerous \
+		  -fselective-scheduling \
+		  -fsel-sched-pipelining \
+		  -fsel-sched-pipelining-outer-loops \
+		  -fipa-pta \
+		  -fno-check-data-deps \
+		  -ftree-loop-if-convert \
+		  -ftree-loop-distribution \
+		  -ftree-loop-im \
+		  -ftree-loop-ivcanon \
+		  -fivopts \
+		  -ftracer \
+		  -fweb \
+		  -flto \
+		  -flto-compression-level=0 \
+		  -fuse-linker-plugin \
+		  -fprofile-correction \
+		  -frename-registers \
+		  -funswitch-loops \
+		  -DNDEBUG \
+		  -frerun-cse-after-loop \
+		  -fpeel-loops \
+		  -fbtr-bb-exclusive \
+		  --param ggc-min-expand=70 \
+		  --param ggc-min-heapsize=262144 \
+		  --param max-reload-search-insns=200 \
+		  --param max-cselib-memory-locations=1000 \
+		  --param max-sched-ready-insns=200 \
+		  --param loop-invariant-max-bbs-in-loop=50000"
+
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu99 -pipe
-
-HOSTCXXFLAGS := -O2 -pipe
+HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fomit-frame-pointer -std=gnu99 -pipe "${CUSTOM_HOSTCFLAGS}"
+HOSTCXXFLAGS := -O3 -fomit-frame-pointer -pipe "${CUSTOM_HOSTCFLAGS}"
 
 ifeq ($(shell $(HOSTCC) -v 2>&1 | grep -c "clang version"), 1)
 HOSTCFLAGS  += -Wno-unused-value -Wno-unused-parameter \
@@ -375,15 +464,13 @@ KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -fno-strict-aliasing -fno-common \
 		  -Werror-implicit-function-declaration \
 		  -Wno-format-security \
-		  -fno-delete-null-pointer-checks \
 		  -marm \
 		  -march=armv7 \
 		  -mtune=cortex-a9 \
 		  -mfpu=neon-fp16 \
 		  -mfloat-abi=softfp \
 		  -mthumb-interwork \
-		  -ftree-vectorize \
-		  -pipe
+		  -pipe "${CUSTOM_KBUILD_CFLAGS}"
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
@@ -577,10 +664,10 @@ all: vmlinux
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
 else
-KBUILD_CFLAGS	+= -O2
+KBUILD_CFLAGS	+= -O3
 endif
 
-LDFLAGS += -O2 --as-needed --sort-common
+LDFLAGS += -O3 --as-needed --sort-common
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
