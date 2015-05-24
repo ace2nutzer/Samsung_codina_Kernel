@@ -469,11 +469,10 @@ KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -Werror-implicit-function-declaration \
 		  -Wno-format-security \
 		  -marm \
-		  -march=armv7 \
+		  -march=armv7-a \
 		  -mtune=cortex-a9 \
 		  -mfpu=neon-fp16 \
 		  -mfloat-abi=softfp \
-		  -mthumb-interwork \
 		  -pipe "${CUSTOM_KBUILD_CFLAGS}"
 
 KBUILD_AFLAGS_KERNEL :=
