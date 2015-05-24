@@ -285,6 +285,8 @@ CUSTOM_KBUILD_CFLAGS := "-ftree-vectorize \
 		  -fomit-frame-pointer \
 		  -fpeel-loops \
 		  -fbtr-bb-exclusive \
+		  -fcx-fortran-rules \
+		  -fstack-protector \
 		  --param ggc-min-expand=70 \
 		  --param ggc-min-heapsize=262144 \
 		  --param max-reload-search-insns=200 \
@@ -327,6 +329,8 @@ CUSTOM_HOSTCFLAGS := "-ftree-vectorize \
 		  -frerun-cse-after-loop \
 		  -fpeel-loops \
 		  -fbtr-bb-exclusive \
+		  -fcx-fortran-rules \
+		  -fstack-protector \
 		  --param ggc-min-expand=70 \
 		  --param ggc-min-heapsize=262144 \
 		  --param max-reload-search-insns=200 \
@@ -336,8 +340,8 @@ CUSTOM_HOSTCFLAGS := "-ftree-vectorize \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fomit-frame-pointer -std=gnu99 -pipe "${CUSTOM_HOSTCFLAGS}"
-HOSTCXXFLAGS := -O3 -fomit-frame-pointer -pipe "${CUSTOM_HOSTCFLAGS}"
+HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -Ofast -fomit-frame-pointer -std=gnu99 -pipe "${CUSTOM_HOSTCFLAGS}"
+HOSTCXXFLAGS := -Ofast -fomit-frame-pointer -pipe "${CUSTOM_HOSTCFLAGS}"
 
 ifeq ($(shell $(HOSTCC) -v 2>&1 | grep -c "clang version"), 1)
 HOSTCFLAGS  += -Wno-unused-value -Wno-unused-parameter \
@@ -664,10 +668,10 @@ all: vmlinux
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
 else
-KBUILD_CFLAGS	+= -O3
+KBUILD_CFLAGS	+= -Ofast
 endif
 
-LDFLAGS += -O3 --as-needed --sort-common
+LDFLAGS += -Ofast --as-needed --sort-common
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
