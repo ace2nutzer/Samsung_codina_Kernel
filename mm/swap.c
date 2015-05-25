@@ -787,11 +787,7 @@ void __init swap_setup(void)
 	bdi_init(swapper_space.backing_dev_info);
 #endif
 
-	/* Use a smaller cluster for small-memory machines */
-	if (megs < 16)
 		page_cluster = 0;
-	else
-		page_cluster = 1;
 	/*
 	 * Right now other parts of the system means that we
 	 * _really_ don't want to cluster much more
