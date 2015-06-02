@@ -1113,7 +1113,8 @@ static int liveopp_start = 0;
 
 static struct liveopp_arm_table liveopp_arm[] = {
 //	| SHOW     | CLK    | PLL        | VDD  | VBB  | DDR | APE
-	{ 300000,  299520,  0x00050127,   0x10,  0x00,   25,   25},
+	{ 200000,  199680,  0x0005011A,   0x0E,  0x00,   25,   25},
+	{ 400000,  399360,  0x00050134,   0x0E,  0xEA,   25,   25},
 	{ 600000,  599040,  0x0005014E,   0x1E,  0xDB,  100,  100},
 	{ 800000,  798720,  0x00050168,   0x25,  0xDB,  100,  100},
 	{1000000,  998400,  0x00050182,   0x32,  0xDB,  100,  100},
@@ -1381,6 +1382,7 @@ ARM_STEP(arm_step02, 2);
 ARM_STEP(arm_step03, 3);
 ARM_STEP(arm_step04, 4);
 ARM_STEP(arm_step05, 5);
+ARM_STEP(arm_step06, 6);
 
 #if CONFIG_LIVEOPP_DEBUG > 1
 static ssize_t liveopp_start_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)		
@@ -1398,18 +1400,19 @@ ATTR_RW(liveopp_start);
 
 static struct attribute *liveopp_attrs[] = {
 #if CONFIG_LIVEOPP_DEBUG > 1
-	&liveopp_start_interface.attr, 
+	&liveopp_start_interface.attr,
 #endif
-	&version_interface.attr, 
-	&arm_extclk_interface.attr, 
-	&arm_pllclk_interface.attr, 
+	&version_interface.attr,
+	&arm_extclk_interface.attr,
+	&arm_pllclk_interface.attr,
 	&arm_varm_interface.attr,
-	&arm_step00_interface.attr, 
-	&arm_step01_interface.attr, 
-	&arm_step02_interface.attr, 
-	&arm_step03_interface.attr, 
-	&arm_step04_interface.attr, 
-	&arm_step05_interface.attr, 
+	&arm_step00_interface.attr,
+	&arm_step01_interface.attr,
+	&arm_step02_interface.attr,
+	&arm_step03_interface.attr,
+	&arm_step04_interface.attr,
+	&arm_step05_interface.attr,
+	&arm_step06_interface.attr,
 	NULL,
 };
 
