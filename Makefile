@@ -246,8 +246,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS  := -std=gnu99 --param ggc-min-expand=70 --param ggc-min-heapsize=262144 -pipe
-HOSTCXXFLAGS := --param ggc-min-expand=70 --param ggc-min-heapsize=262144 -pipe
+HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -Ofast -fomit-frame-pointer -std=gnu99 --param ggc-min-expand=70 --param ggc-min-heapsize=262144 -pipe
+HOSTCXXFLAGS := -Ofast --param ggc-min-expand=70 --param ggc-min-heapsize=262144 -pipe
 
 ifeq ($(shell $(HOSTCC) -v 2>&1 | grep -c "clang version"), 1)
 HOSTCFLAGS  += -Wno-unused-value -Wno-unused-parameter \
@@ -377,7 +377,6 @@ KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -std=gnu89 \
 		  -march=armv7-a \
 		  -mtune=cortex-a9 \
-		  -marm \
 		  -mfpu=neon-fp16 \
 		  -mfloat-abi=softfp \
 		  --param ggc-min-expand=70 \
@@ -574,11 +573,11 @@ endif # $(dot-config)
 all: vmlinux
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS	+= -Os
+KBUILD_CFLAGS	+= -Os -mthumb
 LDFLAGS += -Os --as-needed --sort-common
 else
 LDFLAGS += -Ofast --as-needed --sort-common
-KBUILD_CFLAGS	+= -Ofast \
+KBUILD_CFLAGS	+= -Ofast -marm \
 		  -ftree-vectorize \
 		  -funsafe-loop-optimizations \
 		  -fno-keep-static-consts \
