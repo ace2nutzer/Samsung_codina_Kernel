@@ -56,7 +56,7 @@
 #define AB8500_VAPE_MIN_UV		700000
 #define AB8500_VAPE_MAX_UV		1487500
 
-#define MALI_CLOCK_DEFLO		199680
+#define MALI_CLOCK_DEFLO		299520
 #define MALI_CLOCK_DEFHI		399360
 
 struct mali_dvfs_data
@@ -67,7 +67,6 @@ struct mali_dvfs_data
 };
 
 static struct mali_dvfs_data mali_dvfs[] = {
-	{199680, 0x01050134, 0x24},
 	{299520, 0x0105014E, 0x24},
 	{399360, 0x01050168, 0x24},
 	{499200, 0x01050182, 0x3F},
@@ -100,8 +99,8 @@ static u32 boost_required 	= 0;
 static u32 boost_delay 		= 0;
 static u32 boost_low 		= 0;
 static u32 boost_high 		= 0;
-static u32 boost_upthreshold 	= 179;
-static u32 boost_downthreshold 	= 51;
+static u32 boost_upthreshold 	= 230; /* 90% */
+static u32 boost_downthreshold 	= 51; /* 20% */
 //mutex to protect above variables
 static DEFINE_MUTEX(mali_boost_lock);
 
