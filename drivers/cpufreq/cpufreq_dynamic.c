@@ -170,7 +170,7 @@ static struct dbs_tuners {
 
 	.suspend_sampling_rate = 5*HZ/100,
 	.suspend_sampling_up_factor = 5,
-	.suspend_max_freq = 400000,
+	.suspend_max_freq = 600000,
 };
 
 static struct workqueue_struct *dbs_wq;
