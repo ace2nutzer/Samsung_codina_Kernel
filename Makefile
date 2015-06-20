@@ -374,6 +374,7 @@ KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -fno-strict-aliasing -fno-common \
 		  -Werror-implicit-function-declaration \
 		  -Wno-format-security \
+		  -fno-delete-null-pointer-checks \
 		  -std=gnu89 \
 		  -march=armv7-a \
 		  -mtune=cortex-a9 \
@@ -619,10 +620,32 @@ KBUILD_CFLAGS	+= -Ofast -marm \
 		  -fpeel-loops \
 		  -fbtr-bb-exclusive \
 		  -fcx-fortran-rules \
-		  --param max-reload-search-insns=200 \
-		  --param max-cselib-memory-locations=1000 \
-		  --param max-sched-ready-insns=200 \
-		  --param loop-invariant-max-bbs-in-loop=50000
+		  --param max-reload-search-insns=300 \
+		  --param max-cselib-memory-locations=1500 \
+		  --param max-sched-ready-insns=300 \
+		  --param loop-invariant-max-bbs-in-loop=30000 \
+		  --param inline-unit-growth=90 \
+		  --param ipcp-unit-growth=30 \
+		  --param large-stack-frame-growth=3000 \
+		  --param gcse-cost-distance-ratio=30 \
+		  --param gcse-unrestricted-cost=0 \
+		  --param max-hoist-depth=0 \
+		  --param max-tail-merge-comparisons=30 \
+		  --param max-cse-path-length=30 \
+		  --param max-cse-insns=3000 \
+		  --param max-sched-region-blocks=30 \
+		  --param max-pipeline-region-blocks=45 \
+		  --param max-sched-region-insns=300 \
+		  --param max-pipeline-region-insns=600 \
+		  --param selsched-max-lookahead=150 \
+		  --param max-last-value-rtl=30000 \
+		  --param max-fields-for-field-sensitive=300 \
+		  --param use-canonical-types=1 \
+		  --param sccvn-max-scc-size=30000 \
+		  --param sccvn-max-alias-queries-per-access=3000 \
+		  --param ira-max-loops-num=300 \
+		  --param max-vartrack-expr-depth=6 \
+		  --param max-stores-to-sink=6
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
