@@ -150,7 +150,7 @@ static struct dbs_tuners {
 	.input_boost_freq = 800000,
 	.input_boost_us = 500*1000,
 	.power_optimal_freq = 0,
-	.high_freq_sampling_up_factor = 2,
+	.high_freq_sampling_up_factor = 0,
 
 	.up_threshold = DEF_FREQUENCY_UP_THRESHOLD,
 	.down_differential = DEF_DOWN_DIFFERENTIAL,
@@ -168,7 +168,7 @@ static struct dbs_tuners {
 	.standby_sampling_rate = 3*HZ/100,
 	.standby_sampling_up_factor = 5,
 
-	.suspend_sampling_rate = 5*HZ/100,
+	.suspend_sampling_rate = 4*HZ/100,
 	.suspend_sampling_up_factor = 5,
 	.suspend_max_freq = 800000,
 };
