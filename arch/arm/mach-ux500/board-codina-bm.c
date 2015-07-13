@@ -103,53 +103,41 @@ static struct v_to_cap cap_tbl_B[] = {
 /* Temporarily, we use this table */
 /* 1500 mAh battery table used in Janice (OCV from STE) */
 static struct v_to_cap cap_tbl[] = {
-	{4250,	100},
-	{4245,	99},
-	{4240,	98},
-	{4211,	95},
-	{4183,	90},
-	{4150,	87},
-	{4116,	84},
-	{4077,	80},
-	{4068,	79},
-	{4058,	77},
-	{4026,	75},
-	{3987,	72},
-	{3974,	69},
-	{3953,	66},
-	{3933,	63},
-	{3911,	60},
-	{3900,	58},
-	{3873,	55},
-	{3842,	52},
-	{3829,	50},
-	{3810,	45},
-	{3793,	40},
-	{3783,	35},
-	{3776,	30},
-	{3762,	25},
-	{3746,	20},
-	{3739,	18},
-	{3715,	15},
-	{3700,	12},
-	{3690,	10},
-	{3680,	9},
-	{3670,	7},
-	{3656,	5},
-	{3634,	4},
-	{3614,	3},
-	{3551,	2},
-	{3458,	1},
-	{3300,	0},
+	{4162, 100},
+	{4131, 99},
+	{4088, 95},
+	{4045, 90},
+	{4024, 87},
+	{3955, 80},
+	{3893, 70},
+	{3859, 65},
+	{3825, 60},
+	{3799, 55},
+	{3780, 50},
+	{3750, 40},
+	{3731, 30},
+	{3714, 25},
+	{3683, 20},
+	{3658, 17},
+	{3648, 14},
+	{3640, 12},
+	{3627, 10},
+	{3615, 9},
+	{3566, 7},
+	{3539, 6},
+	{3477, 4},
+	{3403, 2},
+	{3361, 1},
+	{3300, 0},
 };
 
 /* Temporarily, we use this table */
 /* 1500 mAh battery table used in Janice (OCV from STE) */
 static struct v_to_cap cap_tbl_5ma[] = {
-	{4250,	100},
-	{4245,	99},
-	{4240,	98},
-	{4211,	95},
+	{4328,	100},
+	{4299,	99},
+	{4281,	98},
+	{4241,	95},
 	{4183,	90},
 	{4150,	87},
 	{4116,	84},
@@ -315,13 +303,13 @@ static const struct battery_type bat_type[] = {
 		.line_impedance = 36,
 		.battery_resistance_for_charging = 200,
 #endif
-		.charge_full_design = 1500,
-		.nominal_voltage = 3820,
-		.termination_vol = 4340,
+		.charge_full_design = 1700,
+		.nominal_voltage = 3720,
+		.termination_vol = 4200,
 #ifdef CONFIG_SAMSUNG_CHARGER_SPEC
 		.termination_curr_1st = 200,
-		.termination_curr_2nd = 150,
-		.recharge_vol = 4211,
+		.termination_curr_2nd = 170,
+		.recharge_vol = 4100,
 #else
 		.termination_curr = 200,
 #endif
@@ -357,7 +345,7 @@ static const struct battery_type bat_type[] = {
 		.subsequent_timeout_time = HZ*60*90,
 			/* After an error stop charging for a minute. */
 		.error_charge_stoptime = HZ*60,
-		.over_voltage_threshold =  4400 ,
+		.over_voltage_threshold =  4500 ,
 #else
 		.n_batres_tbl_elements = ARRAY_SIZE(temp_to_batres_tbl),
 		.batres_tbl = temp_to_batres_tbl,
@@ -386,11 +374,11 @@ static const struct battery_type bat_type[] = {
 #endif
 		.charge_full_design = 1500,
 		.nominal_voltage = 3820,
-		.termination_vol =  4340,
+		.termination_vol =  4350,
 #ifdef CONFIG_SAMSUNG_CHARGER_SPEC
-		.termination_curr_1st = 200,	/* 100 */
+		.termination_curr_1st = 180,	/* 100 */
 		.termination_curr_2nd = 150,	/* 100 */
-		.recharge_vol = 4211,		/* 4130 */
+		.recharge_vol = 4240,		/* 4130 */
 #else
 		.termination_curr = 200,	/* 200 */
 #endif
@@ -426,7 +414,7 @@ static const struct battery_type bat_type[] = {
 		.subsequent_timeout_time = HZ*60*90,
 			/* After an error stop charging for a minute. */
 		.error_charge_stoptime = HZ*60,
-		.over_voltage_threshold =  4400 ,
+		.over_voltage_threshold =  4500 ,
 #else
 		.n_batres_tbl_elements = ARRAY_SIZE(temp_to_batres_tbl),
 		.batres_tbl = temp_to_batres_tbl,
@@ -540,10 +528,10 @@ struct ab8500_bm_data ab8500_bm_data = {
 #if defined( CONFIG_USB_SWITCHER ) || defined( CONFIG_INPUT_AB8505_MICRO_USB_DETECT )
 	.ta_chg_current		= 900,
 	.ta_chg_current_input	= 600,
-	.ta_chg_voltage		= 4340,
+	.ta_chg_voltage		= 4350,
 	.usb_chg_current	= 500,
 	.usb_chg_current_input	= 500,
-	.usb_chg_voltage	= 4340,
+	.usb_chg_voltage	= 4350,
 #endif
 	.main_safety_tmr_h	= 4,
 	.usb_safety_tmr_h	= 4,
