@@ -1162,8 +1162,8 @@ static int wait_for_vsync(struct mcde_chnl_state *chnl)
  * 40 Hz     33280000
  * 45 Hz     36305454  kernel default for S6D27A1
  * 50 Hz     39936000
- * 60 Hz     49920000  stock and kernel default for WS2401
- * 60+ Hz    57051428
+ * 60 Hz     49920000  stock for WS2401
+ * 60+ Hz    57051428  kernel default for WS2401
  */
 #include <linux/kobject.h>
 #include <linux/mfd/dbx500-prcmu.h>
@@ -1199,11 +1199,11 @@ static struct lcdclk_prop lcdclk_prop[] = {
 		.clk = 39936000,
 	},
   	[5] = {
-		.name = "60 Hz [(50Mhz) stock and kernel-default refresh rate for WS2401]",
+		.name = "60 Hz [(50Mhz) stock refresh rate for WS2401]",
 		.clk = 49920000,
 	},
   	[6] = {
-		.name = "60+ Hz (57Mhz)",
+		.name = "60+ Hz [(57Mhz) kernel default for WS2401]",
 		.clk = 57051428,
 	},
 };
