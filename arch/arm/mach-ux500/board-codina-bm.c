@@ -100,7 +100,6 @@ static struct v_to_cap cap_tbl_B[] = {
 };
 #endif
 
-/* 3.7V - 4.2V - 1700 mAh - UNKNOWN Battery */
 /* battery table used in codina (OCV from STE) */
 static struct v_to_cap cap_tbl[] = {
 	{4162, 100},
@@ -131,7 +130,7 @@ static struct v_to_cap cap_tbl[] = {
 	{3300, 0},
 };
 
-/* 3.8V - 4.35V - 1500 mAh - ORIGINAL Battery */
+/* We use this table */
 /* battery table used in codina (OCV from STE) */
 static struct v_to_cap cap_tbl_5ma[] = {
 	{4328,	100},
@@ -305,24 +304,24 @@ static const struct battery_type bat_type[] = {
 #endif
 		.charge_full_design = 1700,
 		.nominal_voltage = 3700,
-		.termination_vol = 4100,
+		.termination_vol = 4090,
 #ifdef CONFIG_SAMSUNG_CHARGER_SPEC
-		.termination_curr_1st = 170,
-		.termination_curr_2nd = 170,
-		.recharge_vol = 4100,
+		.termination_curr_1st = 60,
+		.termination_curr_2nd = 0,
+		.recharge_vol = 4050,
 #else
 		.termination_curr = 200,
 #endif
 		.normal_cur_lvl = 900,
-		.normal_vol_lvl = 4100,
+		.normal_vol_lvl = 4090,
 		.maint_a_cur_lvl = 600,
-		.maint_a_vol_lvl = 3900,
+		.maint_a_vol_lvl = 3890,
 		.maint_a_chg_timer_h = 60,
 		.maint_b_cur_lvl = 600,
-		.maint_b_vol_lvl = 3850,
+		.maint_b_vol_lvl = 3840,
 		.maint_b_chg_timer_h = 200,
 		.low_high_cur_lvl = 300,
-		.low_high_vol_lvl = 3750,
+		.low_high_vol_lvl = 3740,
 #ifdef CONFIG_MEASURE_TEMP_BY_ADC_TABLE
 		.n_temp_tbl_elements = ARRAY_SIZE(adc_temp_tbl),
 		.r_to_t_tbl = adc_temp_tbl,
@@ -345,7 +344,7 @@ static const struct battery_type bat_type[] = {
 		.subsequent_timeout_time = HZ*60*90,
 			/* After an error stop charging for a minute. */
 		.error_charge_stoptime = HZ*60,
-		.over_voltage_threshold =  4500 ,
+		.over_voltage_threshold =  4400,
 #else
 		.n_batres_tbl_elements = ARRAY_SIZE(temp_to_batres_tbl),
 		.batres_tbl = temp_to_batres_tbl,
@@ -373,25 +372,25 @@ static const struct battery_type bat_type[] = {
 		.battery_resistance_for_charging = 200,
 #endif
 		.charge_full_design = 1500,
-		.nominal_voltage = 3820,
-		.termination_vol =  4250,
+		.nominal_voltage = 3800,
+		.termination_vol =  4240,
 #ifdef CONFIG_SAMSUNG_CHARGER_SPEC
-		.termination_curr_1st = 150,	/* 100 */
-		.termination_curr_2nd = 150,	/* 100 */
-		.recharge_vol = 4250,		/* 4130 */
+		.termination_curr_1st = 60,	/* 100 */
+		.termination_curr_2nd = 0,	/* 100 */
+		.recharge_vol = 4200,		/* 4130 */
 #else
 		.termination_curr = 200,	/* 200 */
 #endif
 		.normal_cur_lvl = 900,		/* was 700 */
-		.normal_vol_lvl = 4250,		/* 4210 */
+		.normal_vol_lvl = 4240,		/* 4210 */
 		.maint_a_cur_lvl = 600,
-		.maint_a_vol_lvl = 4050,
+		.maint_a_vol_lvl = 4040,
 		.maint_a_chg_timer_h = 60,
 		.maint_b_cur_lvl = 600,
-		.maint_b_vol_lvl = 4000,
+		.maint_b_vol_lvl = 3990,
 		.maint_b_chg_timer_h = 200,
 		.low_high_cur_lvl = 300,
-		.low_high_vol_lvl = 3900,
+		.low_high_vol_lvl = 3890,
 #ifdef CONFIG_MEASURE_TEMP_BY_ADC_TABLE
 		.n_temp_tbl_elements = ARRAY_SIZE(adc_temp_tbl),
 		.r_to_t_tbl = adc_temp_tbl,
@@ -414,7 +413,7 @@ static const struct battery_type bat_type[] = {
 		.subsequent_timeout_time = HZ*60*90,
 			/* After an error stop charging for a minute. */
 		.error_charge_stoptime = HZ*60,
-		.over_voltage_threshold =  4500 ,
+		.over_voltage_threshold =  4500,
 #else
 		.n_batres_tbl_elements = ARRAY_SIZE(temp_to_batres_tbl),
 		.batres_tbl = temp_to_batres_tbl,
@@ -528,10 +527,10 @@ struct ab8500_bm_data ab8500_bm_data = {
 #if defined( CONFIG_USB_SWITCHER ) || defined( CONFIG_INPUT_AB8505_MICRO_USB_DETECT )
 	.ta_chg_current		= 900,
 	.ta_chg_current_input	= 600,
-	.ta_chg_voltage		= 4250,
+	.ta_chg_voltage		= 4240,
 	.usb_chg_current	= 500,
 	.usb_chg_current_input	= 500,
-	.usb_chg_voltage	= 4250,
+	.usb_chg_voltage	= 4240,
 #endif
 	.main_safety_tmr_h	= 4,
 	.usb_safety_tmr_h	= 4,

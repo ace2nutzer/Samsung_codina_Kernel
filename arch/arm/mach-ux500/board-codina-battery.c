@@ -339,7 +339,6 @@ static int polling_time_table[] = {
 	300,	/* SLEEP */
 };
 
-/* 3.7V - 4.2V - 1700 mAh - UNKNOWN Battery */
 /* battery table used in codina (OCV from STE) */
 static struct v_to_cap cap_tbl[] = {
 	{4162, 100},
@@ -370,7 +369,7 @@ static struct v_to_cap cap_tbl[] = {
 	{3300, 0},
 };
 
-/* 3.8V - 4.35V - 1500 mAh - ORIGINAL Battery */
+/* We use this table */
 /* battery table used in codina (OCV from STE) */
 static struct v_to_cap cap_tbl_5ma[] = {
 	{4328,	100},
@@ -504,7 +503,7 @@ static const struct chg_parameters chg = {
 
 static const struct battery_info battery_info = {
 	.charge_full_design = 1500,
-	.nominal_voltage = 3820,
+	.nominal_voltage = 3800,
 	.resis_high = 7990,
 	.resis_low = 0,
 	.battery_resistance = 100,
@@ -674,12 +673,12 @@ sec_battery_platform_data_t sec_battery_pdata = {
 		SEC_BATTERY_FULL_CONDITION_VCELL |
 		SEC_BATTERY_FULL_CONDITION_NOTIMEFULL,
 	.full_condition_soc = 100,
-	.full_condition_vcell = 4250,
+	.full_condition_vcell = 4240,
 
 	.recharge_condition_type =
 		SEC_BATTERY_RECHARGE_CONDITION_VCELL,
-	.recharge_condition_soc = 100,
-	.recharge_condition_vcell = 4250,
+	.recharge_condition_soc = 99,
+	.recharge_condition_vcell = 4200,
 	.recharge_check_count = 4,
 
 	.charging_total_time = 5 * 60 * 60,
@@ -706,7 +705,7 @@ sec_battery_platform_data_t sec_battery_pdata = {
 	.chg_polarity_status = 0,
 	.chg_irq = 0,
 	.chg_irq_attr = 0,
-	.chg_float_voltage = 4250,
+	.chg_float_voltage = 4240,
 
 };
 
