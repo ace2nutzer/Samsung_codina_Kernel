@@ -100,8 +100,8 @@ static struct v_to_cap cap_tbl_B[] = {
 };
 #endif
 
-/* Temporarily, we use this table */
-/* 1500 mAh battery table used in Janice (OCV from STE) */
+/* 3.7V - 4.2V - 1700 mAh - UNKNOWN Battery */
+/* battery table used in codina (OCV from STE) */
 static struct v_to_cap cap_tbl[] = {
 	{4162, 100},
 	{4131, 99},
@@ -131,8 +131,8 @@ static struct v_to_cap cap_tbl[] = {
 	{3300, 0},
 };
 
-/* Temporarily, we use this table */
-/* 1500 mAh battery table used in Janice (OCV from STE) */
+/* 3.8V - 4.35V - 1500 mAh - ORIGINAL Battery */
+/* battery table used in codina (OCV from STE) */
 static struct v_to_cap cap_tbl_5ma[] = {
 	{4328,	100},
 	{4299,	99},
@@ -304,25 +304,25 @@ static const struct battery_type bat_type[] = {
 		.battery_resistance_for_charging = 200,
 #endif
 		.charge_full_design = 1700,
-		.nominal_voltage = 3720,
-		.termination_vol = 4200,
+		.nominal_voltage = 3700,
+		.termination_vol = 4100,
 #ifdef CONFIG_SAMSUNG_CHARGER_SPEC
-		.termination_curr_1st = 200,
+		.termination_curr_1st = 170,
 		.termination_curr_2nd = 170,
 		.recharge_vol = 4100,
 #else
 		.termination_curr = 200,
 #endif
-		.normal_cur_lvl = 400,
-		.normal_vol_lvl = 4340,
-		.maint_a_cur_lvl = 400,
-		.maint_a_vol_lvl = 4050,
+		.normal_cur_lvl = 900,
+		.normal_vol_lvl = 4100,
+		.maint_a_cur_lvl = 600,
+		.maint_a_vol_lvl = 3900,
 		.maint_a_chg_timer_h = 60,
-		.maint_b_cur_lvl = 400,
-		.maint_b_vol_lvl = 4000,
+		.maint_b_cur_lvl = 600,
+		.maint_b_vol_lvl = 3850,
 		.maint_b_chg_timer_h = 200,
 		.low_high_cur_lvl = 300,
-		.low_high_vol_lvl = 4000,
+		.low_high_vol_lvl = 3750,
 #ifdef CONFIG_MEASURE_TEMP_BY_ADC_TABLE
 		.n_temp_tbl_elements = ARRAY_SIZE(adc_temp_tbl),
 		.r_to_t_tbl = adc_temp_tbl,
@@ -374,24 +374,24 @@ static const struct battery_type bat_type[] = {
 #endif
 		.charge_full_design = 1500,
 		.nominal_voltage = 3820,
-		.termination_vol =  4350,
+		.termination_vol =  4250,
 #ifdef CONFIG_SAMSUNG_CHARGER_SPEC
-		.termination_curr_1st = 180,	/* 100 */
+		.termination_curr_1st = 150,	/* 100 */
 		.termination_curr_2nd = 150,	/* 100 */
-		.recharge_vol = 4240,		/* 4130 */
+		.recharge_vol = 4250,		/* 4130 */
 #else
 		.termination_curr = 200,	/* 200 */
 #endif
 		.normal_cur_lvl = 900,		/* was 700 */
-		.normal_vol_lvl = 4340,		/* 4210 */
+		.normal_vol_lvl = 4250,		/* 4210 */
 		.maint_a_cur_lvl = 600,
-		.maint_a_vol_lvl = 4150,
+		.maint_a_vol_lvl = 4050,
 		.maint_a_chg_timer_h = 60,
 		.maint_b_cur_lvl = 600,
-		.maint_b_vol_lvl = 4100,
+		.maint_b_vol_lvl = 4000,
 		.maint_b_chg_timer_h = 200,
 		.low_high_cur_lvl = 300,
-		.low_high_vol_lvl = 4000,
+		.low_high_vol_lvl = 3900,
 #ifdef CONFIG_MEASURE_TEMP_BY_ADC_TABLE
 		.n_temp_tbl_elements = ARRAY_SIZE(adc_temp_tbl),
 		.r_to_t_tbl = adc_temp_tbl,
@@ -528,10 +528,10 @@ struct ab8500_bm_data ab8500_bm_data = {
 #if defined( CONFIG_USB_SWITCHER ) || defined( CONFIG_INPUT_AB8505_MICRO_USB_DETECT )
 	.ta_chg_current		= 900,
 	.ta_chg_current_input	= 600,
-	.ta_chg_voltage		= 4350,
+	.ta_chg_voltage		= 4250,
 	.usb_chg_current	= 500,
 	.usb_chg_current_input	= 500,
-	.usb_chg_voltage	= 4350,
+	.usb_chg_voltage	= 4250,
 #endif
 	.main_safety_tmr_h	= 4,
 	.usb_safety_tmr_h	= 4,
