@@ -100,7 +100,7 @@ static struct v_to_cap cap_tbl_B[] = {
 };
 #endif
 
-/* UNKNOWN Battery 3.6-3.7V -- 4.1-4.2V - xxxmA */
+/* UNKNOWN Battery 3.7V -- 4.2V -- 1700mA */
 /* battery table used in codina (OCV from STE) */
 static struct v_to_cap cap_tbl[] = {
 	{4000,	100},
