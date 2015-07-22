@@ -166,10 +166,10 @@ static unsigned int count_recharged = 0;
 static unsigned int threshold_reinit = 0;
 
 /* Threshold that recharging starts in % */ 
-static unsigned int threshold_rechar = 0;
+static unsigned int threshold_rechar = 50;
 
 /* Threshold that charging stops in % */
-static unsigned int threshold_dischar = 0;
+static unsigned int threshold_dischar = 50;
 
 /* This list came from ab8500_chargalg.c */
 static char *states[] = {
