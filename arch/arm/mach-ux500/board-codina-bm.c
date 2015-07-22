@@ -555,7 +555,7 @@ struct ab8500_bm_data ab8500_bm_data = {
 #else
 	.adc_therm		= ADC_THERM_BATTEMP,
 #endif
-	.chg_unknown_bat	= false,
+	.chg_unknown_bat	= true,
 	.enable_overshoot	= false,
 	/* Please find the real setting for fg_res
 	   in the ab8500_fg.c probe function  */
