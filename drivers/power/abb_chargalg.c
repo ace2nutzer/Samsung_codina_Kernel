@@ -1808,7 +1808,7 @@ static void ab8500_chargalg_algorithm(struct ab8500_chargalg *di)
 		 * if usb cable is attached, USB driver set the charger
 		 * input current as 500mA.
 		 * But USB driver sometimes doesn't do it.
-		 * So, we should set the charger input currnat for USB
+		 * So, we should set the charger input current for USB
 		 */
 		if (di->usb_chg && di->usb_chg->ops.update_input_curr &&
 		    di->chg_info.online_chg & USB_CHG)
