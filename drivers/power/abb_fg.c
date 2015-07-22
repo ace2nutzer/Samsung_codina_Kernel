@@ -84,7 +84,7 @@
 #define OFF_CAPACITY_MASK		0x7F
 #define OFF_VOLTAGE_MASK		0x1FFF
 
-#define LOWBAT_TOLERANCE		40
+#define LOWBAT_TOLERANCE		0
 #define LOWBAT_ZERO_VOLTAGE		3300
 
 #define MAIN_CH_NO_OVERSHOOT_ENA_N	0x02
@@ -103,7 +103,7 @@
 
 #define VALID_CAPACITY_SEC		(45 * 60) /* 45 minutes */
 
-#define VBAT_ADC_CAL			3700
+#define VBAT_ADC_CAL			3800
 
 #define CONFIG_BATT_CAPACITY_PARAM
 #define BATT_CAPACITY_PATH		"/efs/last_battery_capacity"
@@ -153,7 +153,7 @@ static unsigned int battlvl_real = 1;
 /* Cycle charging control toggle */
 static bool cycle_charging = false;
 
-/* Count that fg calirated */
+/* Count that fg calibrated */
 static unsigned int count_calibrated = 0;
 
 /* Count that battery discharged */
@@ -163,13 +163,13 @@ static unsigned int count_discharged = 0;
 static unsigned int count_recharged = 0;
 
 /* Threshold to trigger refreshing */
-static unsigned int threshold_reinit = 20;
+static unsigned int threshold_reinit = 0;
 
 /* Threshold that recharging starts in % */ 
-static unsigned int threshold_rechar = 30;
+static unsigned int threshold_rechar = 0;
 
 /* Threshold that charging stops in % */
-static unsigned int threshold_dischar = 45;
+static unsigned int threshold_dischar = 0;
 
 /* This list came from ab8500_chargalg.c */
 static char *states[] = {
@@ -3426,7 +3426,7 @@ static struct kobj_attribute abb_fg_cycle_charging_interface = __ATTR(fg_cyc, 06
 
 static ssize_t abb_fg_pwroff_threshold_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	sprintf(buf, "%dmV\n\n* HW will shutdown above 3000mV\n", pwroff_threshold);
+	sprintf(buf, "%dmV\n\n* HW will shutdown at 3300mV\n", pwroff_threshold);
 
 	return strlen(buf);
 }

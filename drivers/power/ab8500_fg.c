@@ -81,7 +81,7 @@
 #define OFF_CAPACITY_MASK		0x7F
 #define OFF_VOLTAGE_MASK		0x1FFF
 
-#define LOWBAT_TOLERANCE		40
+#define LOWBAT_TOLERANCE		0
 #define LOWBAT_ZERO_VOLTAGE		3300
 #define BAT_GOOD_VOLTAGE		3450
 
@@ -107,7 +107,7 @@
 #define VALID_CAPACITY_SEC		(45 * 60) /* 45 minutes */
 
 #if defined( CONFIG_SAMSUNG_CHARGER_SPEC )
-#define VBAT_ADC_CAL			3700
+#define VBAT_ADC_CAL			3800
 
 #define CONFIG_BATT_CAPACITY_PARAM
 #define BATT_CAPACITY_PATH		"/efs/last_battery_capacity"
