@@ -346,10 +346,12 @@ static void (*mxt224e_ts_vbus_state)(bool vbus_status);
 #endif
 
 /* ace2nutzer: ABB Charger Control based on cocafes mods */
-/* On codina board, the max current allowed is 900mA */
-/* Current limitation on AC/USB-Charger* is 900mA and on USB-Host (PC) is 500mA (but programmed 600mA to reach real 500mA) */
-/* Note: The org. AC Charger max. current output is 700mA ! But it can draw anyway real 800mA !! */
-/* 	*only with org. Samsung USB-Charger or Hacked USB-Charger */
+/* On codina board, the max current allowed is 1500mA */
+/* Current limitation on AC/USB*** is 1500mA and on USB-Host (PC) is 500mA */
+/* Note: The org. AC Charger max. output current is 700mA ! */
+/*   ***only with org. Samsung USB-Charger or Hacked USB-Charger */
+
+/* Recommended Charging Current: 0.5C = 750mA (700mA) for the 1500mA Battery */
 
 /* Current Control */
 static bool bCurrentControl = false;
@@ -357,9 +359,8 @@ static bool bCurrentControl = false;
 /* VBUS Drop Status - When VBUS droped, input current will be changed! */
 static bool bVBUSDropped = false;
 
-/* (codina) AC and USB-Charger use the same current */
-/* On USB-Host (PC) max is 500mA due to USB 1.x - 2.0 current limitation */
-static unsigned int vChargeCurrent = 600;
+/* (codina) Custom AC/USB current */
+static unsigned int vChargeCurrent = 700;
 
 static void ab8500_charger_set_usb_connected(struct ab8500_charger *di,
 	bool connected)
@@ -478,7 +479,7 @@ static void ab8500_charger_set_main_charger_usb_current_limiter(struct ab8500_ch
 	abx500_set_register_interruptible(di->dev, AB8500_CHARGER,
                        MAIN_CH_OUT_CUR_LIM,             
 			MAIN_CH_OUT_CUR_LIM_ENABLE|
-			(MAIN_CH_OUT_CUR_LIM_900_MA<< MAIN_CH_OUT_CUR_LIM_SHIFT));
+			(MAIN_CH_OUT_CUR_LIM_1500_MA<< MAIN_CH_OUT_CUR_LIM_SHIFT));
 
 }
 
@@ -1445,7 +1446,7 @@ static int ab8500_charger_ac_en(struct ux500_charger *charger,
 
 	if (!bCurrentControl) {
 
-		di->bat->ta_chg_current_input = 600;
+		di->bat->ta_chg_current_input = 700;
 		di->bat->usb_chg_current_input = 500;
 
 	} else {
@@ -3200,7 +3201,7 @@ static ssize_t abb_charger_current_store(struct kobject *kobj, struct kobj_attri
 
 		/* Restore Params */
 		di->bat->ta_chg_current = di->bat->chg_params->ac_curr_max;
-		di->bat->ta_chg_current_input = 600;
+		di->bat->ta_chg_current_input = 700;
 		di->bat->usb_chg_current = di->bat->chg_params->usb_curr_max;
 		di->bat->usb_chg_current_input = 500;
 
