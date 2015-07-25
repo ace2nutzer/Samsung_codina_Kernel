@@ -144,7 +144,7 @@ static bool use_lowbat_wakelock = 1;
 static unsigned int pwroff_threshold = 3300;
 
 /* Allow battery capacity goes up */
-static unsigned int battlvl_real = 1;
+static unsigned int battlvl_real = 0;
 
 /*
  * cocafe: Cycle Charging Control - Similar to Battery Life Extender by Ezekeel
@@ -163,7 +163,7 @@ static unsigned int count_discharged = 0;
 static unsigned int count_recharged = 0;
 
 /* Threshold to trigger refreshing */
-static unsigned int threshold_reinit = 5;
+static unsigned int threshold_reinit = 10;
 
 /* Threshold that recharging starts in % */ 
 static unsigned int threshold_rechar = 50;
