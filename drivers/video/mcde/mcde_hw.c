@@ -1158,12 +1158,12 @@ static int wait_for_vsync(struct mcde_chnl_state *chnl)
 	}
 }
 /* PRCMU LCDCLK
- * 35 Hz     30720000  stock for S6D27A1
+ * 35 Hz     30720000
  * 40 Hz     33280000
- * 45 Hz     36305454  kernel default for S6D27A1
+ * 45 Hz     36305454  default for S6D27A1
  * 50 Hz     39936000
- * 60 Hz     49920000  stock for WS2401
- * 60+ Hz    57051428  kernel default for WS2401
+ * 60 Hz     49920000
+ * 60+ Hz    57051428  default for WS2401
  */
 #include <linux/kobject.h>
 #include <linux/mfd/dbx500-prcmu.h>
@@ -1183,27 +1183,27 @@ static struct lcdclk_prop lcdclk_prop[] = {
 		.clk = 36305454,
 	},
   	[1] = {
-		.name = "35 Hz [(31Mhz) stock refresh rate for S6D27A1]",
+		.name = "30.72 Mhz (30720000)",
 		.clk = 30720000,
 	},
   	[2] = {
-		.name = "40 Hz (33Mhz)",
+		.name = "33.28 Mhz (33280000)",
 		.clk = 33280000,
 	},
   	[3] = {
-		.name = "45 Hz [(36Mhz) kernel default for S6D27A1]",
+		.name = "36.30 Mhz [(36305454) default for S6D27A1]",
 		.clk = 36305454,
 	},
   	[4] = {
-		.name = "50 Hz (40Mhz)",
+		.name = "39.93 Mhz (39936000)",
 		.clk = 39936000,
 	},
   	[5] = {
-		.name = "60 Hz [(50Mhz) stock refresh rate for WS2401]",
+		.name = "49.92 Mhz (49920000)",
 		.clk = 49920000,
 	},
   	[6] = {
-		.name = "60+ Hz [(57Mhz) kernel default for WS2401]",
+		.name = "57.05 Mhz [(57051428) default for WS2401]",
 		.clk = 57051428,
 	},
 };
@@ -1229,14 +1229,23 @@ static DECLARE_WORK(lcdclk_work, lcdclk_thread);
 #define ATTR_RW(_name)	\
 	static struct kobj_attribute _name##_interface = __ATTR(_name, 0644, _name##_show, _name##_store);
 
+
+extern bool is_s6d(void);
+
 static ssize_t lcd_clk_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
-{	
+{
 	int i;
+
+        if (is_s6d())
+                sprintf(buf, "%sLCD type: %s\n", buf,  "S6D27A1");
+        else
+                sprintf(buf, "%sLCD type: %s\n", buf,  "WS2401");
+
+	sprintf(buf, "%sCurrent LCDCLK freq: %d\n", buf, (int) prcmu_clock_rate(PRCMU_LCDCLK));
+
 	for (i = 0; i < ARRAY_SIZE(lcdclk_prop); i++) {
 		sprintf(buf, "%s[%d][%s] %s\n", buf, i, i == lcdclk_usr ? "*" : " ", lcdclk_prop[i].name);
 }
-	sprintf(buf, "%sCurrent LCDCLK freq: %d\n", buf, (int) prcmu_clock_rate(PRCMU_LCDCLK));
-
 	return strlen(buf);
 }
 
