@@ -86,13 +86,13 @@ static struct mcde_port port0 = {
 	.phy = {
 		.dpi = {
 			.tv_mode = false,
-			.clock_div = 2,
+			.clock_div = 1,
 			.polarity =
 				DPI_ACT_LOW_VSYNC |
 				DPI_ACT_LOW_HSYNC |
 				/* DPI_ACT_LOW_DATA_ENABLE | */
 				DPI_ACT_ON_FALLING_EDGE,
-			.lcd_freq = PRCMU_DPI_CLK_SMD_FREQ
+			.lcd_freq = PRCMU_DPI_CLK_SHARP_FREQ
 		},
 	},
 };
