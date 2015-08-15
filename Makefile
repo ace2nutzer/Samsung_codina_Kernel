@@ -246,8 +246,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -Ofast -fomit-frame-pointer -std=gnu99 --param ggc-min-expand=70 --param ggc-min-heapsize=262144 -pipe
-HOSTCXXFLAGS := -Ofast --param ggc-min-expand=70 --param ggc-min-heapsize=262144 -pipe
+HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fomit-frame-pointer -std=gnu99 --param ggc-min-expand=70 --param ggc-min-heapsize=262144 -pipe
+HOSTCXXFLAGS := -O3 --param ggc-min-expand=70 --param ggc-min-heapsize=262144 -pipe
 
 ifeq ($(shell $(HOSTCC) -v 2>&1 | grep -c "clang version"), 1)
 HOSTCFLAGS  += -Wno-unused-value -Wno-unused-parameter \
@@ -577,22 +577,18 @@ ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os -mthumb
 LDFLAGS += -Os --as-needed --sort-common
 else
-LDFLAGS += -Ofast --as-needed --sort-common
-KBUILD_CFLAGS	+= -Ofast -marm \
+LDFLAGS += -O3 --as-needed --sort-common
+KBUILD_CFLAGS	+= -O3 -marm \
 		  -ftree-vectorize \
-		  -funsafe-loop-optimizations \
 		  -fno-keep-static-consts \
 		  -fmerge-all-constants \
 		  -fmodulo-sched \
 		  -fmodulo-sched-allow-regmoves \
 		  -fgcse-sm \
 		  -fgcse-las \
-		  -fgcse-after-reload \
-		  -fdevirtualize-speculatively \
 		  -fira-region=all \
 		  -fsched-pressure \
 		  -fsched-spec-load \
-		  -fsched-spec-load-dangerous \
 		  -fselective-scheduling \
 		  -fsel-sched-pipelining \
 		  -fsel-sched-pipelining-outer-loops \
@@ -606,20 +602,14 @@ KBUILD_CFLAGS	+= -Ofast -marm \
 		  -fivopts \
 		  -ftree-coalesce-inlined-vars \
 		  -fvect-cost-model=unlimited \
-		  -ftracer \
 		  -fprefetch-loop-arrays \
 		  -fweb \
 		  -fuse-linker-plugin \
 		  -ffat-lto-objects \
 		  -fprofile-correction \
-		  -frename-registers \
-		  -fsection-anchors \
-		  -funswitch-loops \
 		  -DNDEBUG \
-		  -frerun-cse-after-loop \
-		  -fpeel-loops \
-		  -fbtr-bb-exclusive \
 		  -fcx-fortran-rules \
+		  -fno-unswitch-loops \
 		  --param max-reload-search-insns=300 \
 		  --param max-cselib-memory-locations=1500 \
 		  --param max-sched-ready-insns=300 \
