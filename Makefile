@@ -246,8 +246,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fomit-frame-pointer -std=gnu99 --param ggc-min-expand=70 --param ggc-min-heapsize=262144 -pipe
-HOSTCXXFLAGS := -O3 --param ggc-min-expand=70 --param ggc-min-heapsize=262144 -pipe
+HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu99 -pipe
+HOSTCXXFLAGS := -O2 -pipe
 
 ifeq ($(shell $(HOSTCC) -v 2>&1 | grep -c "clang version"), 1)
 HOSTCFLAGS  += -Wno-unused-value -Wno-unused-parameter \
@@ -380,8 +380,6 @@ KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -mtune=cortex-a9 \
 		  -mfpu=neon-fp16 \
 		  -mfloat-abi=softfp \
-		  --param ggc-min-expand=70 \
-		  --param ggc-min-heapsize=262144 \
 		  -pipe
 
 KBUILD_AFLAGS_KERNEL :=
@@ -577,65 +575,37 @@ ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os -mthumb
 LDFLAGS += -Os --as-needed --sort-common
 else
-LDFLAGS += -O3 --as-needed --sort-common
-KBUILD_CFLAGS	+= -O3 -marm \
+LDFLAGS += -O2 --as-needed --sort-common
+KBUILD_CFLAGS	+= -O2 -marm \
 		  -ftree-vectorize \
-		  -fno-keep-static-consts \
-		  -fmerge-all-constants \
 		  -fmodulo-sched \
 		  -fmodulo-sched-allow-regmoves \
 		  -fgcse-sm \
 		  -fgcse-las \
-		  -fira-region=all \
 		  -fsched-pressure \
 		  -fsched-spec-load \
+		  -fsched-spec-load-dangerous \
 		  -fselective-scheduling \
+		  -fselective-scheduling2 \
 		  -fsel-sched-pipelining \
 		  -fsel-sched-pipelining-outer-loops \
 		  -fipa-pta \
 		  -fisolate-erroneous-paths-attribute \
-		  -fno-check-data-deps \
 		  -ftree-loop-if-convert \
 		  -ftree-loop-distribution \
 		  -ftree-loop-im \
 		  -ftree-loop-ivcanon \
 		  -fivopts \
 		  -ftree-coalesce-inlined-vars \
-		  -fvect-cost-model=unlimited \
-		  -fprefetch-loop-arrays \
 		  -fweb \
 		  -fuse-linker-plugin \
-		  -ffat-lto-objects \
-		  -fprofile-correction \
 		  -DNDEBUG \
-		  -fcx-fortran-rules \
-		  -fno-unswitch-loops \
-		  --param max-reload-search-insns=300 \
-		  --param max-cselib-memory-locations=1500 \
-		  --param max-sched-ready-insns=300 \
-		  --param loop-invariant-max-bbs-in-loop=30000 \
-		  --param inline-unit-growth=90 \
-		  --param ipcp-unit-growth=30 \
-		  --param large-stack-frame-growth=3000 \
-		  --param gcse-cost-distance-ratio=30 \
-		  --param gcse-unrestricted-cost=0 \
-		  --param max-hoist-depth=0 \
-		  --param max-tail-merge-comparisons=30 \
-		  --param max-cse-path-length=30 \
-		  --param max-cse-insns=3000 \
-		  --param max-sched-region-blocks=30 \
-		  --param max-pipeline-region-blocks=45 \
-		  --param max-sched-region-insns=300 \
-		  --param max-pipeline-region-insns=600 \
-		  --param selsched-max-lookahead=150 \
-		  --param max-last-value-rtl=30000 \
-		  --param max-fields-for-field-sensitive=300 \
-		  --param use-canonical-types=1 \
-		  --param sccvn-max-scc-size=30000 \
-		  --param sccvn-max-alias-queries-per-access=3000 \
-		  --param ira-max-loops-num=300 \
-		  --param max-vartrack-expr-depth=6 \
-		  --param max-stores-to-sink=6
+		  -finline-functions \
+		  -fpredictive-commoning \
+		  -fgcse-after-reload \
+		  -fvect-cost-model=dynamic \
+		  -ftree-partial-pre \
+		  -fipa-cp-clone
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
