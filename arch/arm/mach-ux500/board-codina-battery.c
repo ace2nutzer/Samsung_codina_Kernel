@@ -718,7 +718,7 @@ sec_battery_platform_data_t sec_battery_pdata = {
 	.chg_polarity_status = 0,
 	.chg_irq = 0,
 	.chg_irq_attr = 0,
-	.chg_float_voltage = 4350,
+	.chg_float_voltage = 4340,
 
 };
 
