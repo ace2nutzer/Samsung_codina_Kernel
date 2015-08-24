@@ -166,10 +166,10 @@ static struct dbs_tuners {
 	.oc_freq_boost_ms = 0,
 
 	.standby_sampling_rate = 3*HZ/100,
-	.standby_sampling_up_factor = 5,
+	.standby_sampling_up_factor = 3,
 
 	.suspend_sampling_rate = 4*HZ/100,
-	.suspend_sampling_up_factor = 5,
+	.suspend_sampling_up_factor = 4,
 	.suspend_max_freq = 800000,
 };
 
