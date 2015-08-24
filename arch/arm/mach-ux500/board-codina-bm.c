@@ -506,7 +506,7 @@ static const struct ab8500_maxim_parameters maxi_params = {
 	.ena_maxi = true,
 	.chg_curr = 1500,
 	.wait_cycles = 10,
-	.charger_curr_step = 100,
+	.charger_curr_step = 50,
 };
 
 static const struct ab8500_bm_charger_parameters chg = {
@@ -539,7 +539,7 @@ struct ab8500_bm_data ab8500_bm_data = {
 	.temp_interval_nochg	= 120,
 #if defined( CONFIG_USB_SWITCHER ) || defined( CONFIG_INPUT_AB8505_MICRO_USB_DETECT )
 	.ta_chg_current		= 1500,
-	.ta_chg_current_input	= 700,
+	.ta_chg_current_input	= 750,
 	.ta_chg_voltage		= 4350,
 	.usb_chg_current	= 1500,
 	.usb_chg_current_input	= 500,
