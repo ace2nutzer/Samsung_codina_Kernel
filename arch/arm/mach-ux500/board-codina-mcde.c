@@ -38,8 +38,8 @@
 
 #ifdef CONFIG_FB_MCDE
 
-#define PRCMU_DPI_CLK_SHARP_FREQ	36305454 /* Stock: 30720000 */
-#define PRCMU_DPI_CLK_SMD_FREQ		57051428 /* Stock: 49920000 */
+#define PRCMU_DPI_CLK_SHARP_FREQ	30720000
+#define PRCMU_DPI_CLK_SMD_FREQ		49920000
 
 enum {
 	PRIMARY_DISPLAY_ID,
@@ -471,8 +471,8 @@ int __init init_codina_display_devices(void)
 	} else {
 		generic_display0.name = LCD_DRIVER_NAME_S6D27A1;
 		codina_dpi_pri_display_info.video_mode.hsw = 2;
-		codina_dpi_pri_display_info.video_mode.hbp = 5;
-		codina_dpi_pri_display_info.video_mode.hfp = 5;
+		codina_dpi_pri_display_info.video_mode.hbp = 63;
+		codina_dpi_pri_display_info.video_mode.hfp = 63;
 		codina_dpi_pri_display_info.video_mode.vsw = 2;
 		codina_dpi_pri_display_info.video_mode.vbp = 11;
 		codina_dpi_pri_display_info.video_mode.vfp = 10;
