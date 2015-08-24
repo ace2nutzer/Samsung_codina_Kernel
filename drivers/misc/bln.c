@@ -45,7 +45,7 @@ static bool buttons_led_enabled = false;
 
 #define BACKLIGHTNOTIFICATION_VERSION 9
 
-static int gen_all_leds_mask(void)
+int gen_all_leds_mask(void)
 {
 	int i = 0;
 	int mask = 0x0;
@@ -56,7 +56,7 @@ static int gen_all_leds_mask(void)
 	return mask;
 }
 
-static int get_led_mask(void) {
+int get_led_mask(void) {
 	return (notification_led_mask != 0) ? notification_led_mask : gen_all_leds_mask();
 }
 
@@ -66,13 +66,13 @@ static void reset_bln_states(void)
 	bln_ongoing = false;
 }
 
-static void bln_enable_backlights(int mask)
+void bln_enable_backlights(int mask)
 {
 	if (likely(bln_imp && bln_imp->enable))
 		bln_imp->enable(mask);
 }
 
-static void bln_disable_backlights(int mask)
+void bln_disable_backlights(int mask)
 {
 	if (likely(bln_imp && bln_imp->disable))
 		bln_imp->disable(mask);

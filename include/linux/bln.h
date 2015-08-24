@@ -34,4 +34,8 @@ struct bln_implementation {
 
 void register_bln_implementation(struct bln_implementation *imp);
 bool bln_is_ongoing(void);
+void bln_enable_backlights(int mask);
+void bln_disable_backlights(int mask);
+int get_led_mask(void);
+int gen_all_leds_mask(void);
 #endif
