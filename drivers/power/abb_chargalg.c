@@ -59,7 +59,6 @@ static struct early_suspend ab8500_chargalg_earlysuspend;
 
 static int charging_stats = CHARGING_STOPPED;
 
-static bool eoc_noticed = 0;
 static bool eoc_first = 0;
 static bool eoc_real = 0;
 static bool is_suspend = 0;
@@ -67,24 +66,16 @@ static bool is_suspend = 0;
 static void ab8500_chargalg_early_suspend(struct early_suspend *h)
 {
 	is_suspend = 1;
+
+	bln_disable_backlights(gen_all_leds_mask());
 }
 
 static void ab8500_chargalg_late_resume(struct early_suspend *h)
 {
 	is_suspend = 0;
+
+	bln_disable_backlights(gen_all_leds_mask());
 }
-
-static void eoc_wakeup_thread(struct work_struct *eoc_wakeup_work)
-{
-	pr_err("[abb-chargalg] [fn] EOC wakeup\n");
-
-	ab8500_ponkey_emulator(1);
-	msleep(100);
-	ab8500_ponkey_emulator(0);
-
-	eoc_noticed = 1;
-}
-static DECLARE_WORK(eoc_wakeup_work, eoc_wakeup_thread);
 
 enum ab8500_chargers {
 	NO_CHG,
