@@ -1022,7 +1022,6 @@ for the %d time, out of %d before EOC\n",  di->eoc_cnt_1st, EOC_COND_CNT_1ST);
 				power_supply_changed(&di->chargalg_psy);
 				dev_dbg(di->dev, "Charging is end\n");
 				eoc_real = 1;
-
 			} else {
 				dev_dbg(di->dev,
 				" real EOC limit reached for the %d"
