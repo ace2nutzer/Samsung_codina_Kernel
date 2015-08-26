@@ -1158,12 +1158,15 @@ static int wait_for_vsync(struct mcde_chnl_state *chnl)
 	}
 }
 /* PRCMU LCDCLK
- * 35 Hz     30720000
- * 40 Hz     33280000
- * 45 Hz     36305454
- * 50 Hz     39936000	[S6D27A1]
- * 60 Hz     49920000	[WS2401]
- * 60+ Hz    57051428
+ * 30720000
+ * 33280000
+ * 36305454
+ * 39936000	[S6D27A1]
+ * 44373333
+ * 49920000	[WS2401]
+ * 57051428
+ * 66560000
+ * 79872000
  */
 #include <linux/kobject.h>
 #include <linux/mfd/dbx500-prcmu.h>
@@ -1180,7 +1183,7 @@ struct lcdclk_prop
 static struct lcdclk_prop lcdclk_prop[] = {
   	[0] = {
 		.name = "kernel default",
-		.clk = 30720000,
+		.clk = 39936000,
 	},
   	[1] = {
 		.name = "30.72 Mhz (30720000)",
@@ -1199,12 +1202,24 @@ static struct lcdclk_prop lcdclk_prop[] = {
 		.clk = 39936000,
 	},
   	[5] = {
+		.name = "44.37 Mhz (44373333)",
+		.clk = 44373333,
+	},
+  	[6] = {
 		.name = "49.92 Mhz [(49920000) WS2401]",
 		.clk = 49920000,
 	},
-  	[6] = {
+  	[7] = {
 		.name = "57.05 Mhz (57051428)",
 		.clk = 57051428,
+	},
+  	[8] = {
+		.name = "66.56 Mhz (66560000)",
+		.clk = 66560000,
+	},
+  	[9] = {
+		.name = "79.87 Mhz (79872000)",
+		.clk = 79872000,
 	},
 };
 
@@ -1259,7 +1274,7 @@ static ssize_t lcd_clk_store(struct kobject *kobj, struct kobj_attribute *attr, 
 	}
 
 	ret = sscanf(buf, "%d", &tmp);
-	if (!ret || (tmp < 0) || (tmp > 6)) {
+	if (!ret || (tmp < 0) || (tmp > 9)) {
 		  pr_err("[MCDE] Bad cmd\n");
 		  return -EINVAL;
 	}
