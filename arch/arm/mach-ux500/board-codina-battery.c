@@ -685,7 +685,7 @@ sec_battery_platform_data_t sec_battery_pdata = {
 		SEC_BATTERY_FULL_CONDITION_SOC |
 		SEC_BATTERY_FULL_CONDITION_VCELL |
 		SEC_BATTERY_FULL_CONDITION_NOTIMEFULL,
-	.full_condition_soc = 100,
+	.full_condition_soc = 99,
 	.full_condition_vcell = 4250,
 
 	.recharge_condition_type =
