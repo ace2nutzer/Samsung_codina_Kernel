@@ -1158,11 +1158,11 @@ static int wait_for_vsync(struct mcde_chnl_state *chnl)
 	}
 }
 /* PRCMU LCDCLK
- * 35 Hz     30720000  default for S6D27A1
+ * 35 Hz     30720000
  * 40 Hz     33280000
  * 45 Hz     36305454
- * 50 Hz     39936000
- * 60 Hz     49920000  default for WS2401
+ * 50 Hz     39936000	[S6D27A1]
+ * 60 Hz     49920000	[WS2401]
  * 60+ Hz    57051428
  */
 #include <linux/kobject.h>
@@ -1183,7 +1183,7 @@ static struct lcdclk_prop lcdclk_prop[] = {
 		.clk = 30720000,
 	},
   	[1] = {
-		.name = "30.72 Mhz [(30720000) default for S6D27A1]",
+		.name = "30.72 Mhz (30720000)",
 		.clk = 30720000,
 	},
   	[2] = {
@@ -1195,11 +1195,11 @@ static struct lcdclk_prop lcdclk_prop[] = {
 		.clk = 36305454,
 	},
   	[4] = {
-		.name = "39.93 Mhz (39936000)",
+		.name = "39.93 Mhz [(39936000) S6D27A1]",
 		.clk = 39936000,
 	},
   	[5] = {
-		.name = "49.92 Mhz [(49920000) default for WS2401]",
+		.name = "49.92 Mhz [(49920000) WS2401]",
 		.clk = 49920000,
 	},
   	[6] = {
