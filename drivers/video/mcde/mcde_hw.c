@@ -1160,8 +1160,8 @@ static int wait_for_vsync(struct mcde_chnl_state *chnl)
 /* PRCMU LCDCLK
  * 30720000
  * 33280000
- * 36305454
- * 39936000	[S6D27A1]
+ * 36305454	[S6D27A1]
+ * 39936000
  * 44373333
  * 49920000	[WS2401]
  * 57051428
@@ -1183,7 +1183,7 @@ struct lcdclk_prop
 static struct lcdclk_prop lcdclk_prop[] = {
   	[0] = {
 		.name = "kernel default",
-		.clk = 39936000,
+		.clk = 36305454,
 	},
   	[1] = {
 		.name = "30.72 Mhz (30720000)",
@@ -1194,11 +1194,11 @@ static struct lcdclk_prop lcdclk_prop[] = {
 		.clk = 33280000,
 	},
   	[3] = {
-		.name = "36.30 Mhz (36305454)",
+		.name = "36.30 Mhz [(36305454) S6D27A1]",
 		.clk = 36305454,
 	},
   	[4] = {
-		.name = "39.93 Mhz [(39936000) S6D27A1]",
+		.name = "39.93 Mhz (39936000)",
 		.clk = 39936000,
 	},
   	[5] = {
