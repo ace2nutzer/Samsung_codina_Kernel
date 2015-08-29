@@ -592,7 +592,6 @@ KBUILD_CFLAGS	+= -O2 -marm \
 		  -fivopts \
 		  -ftree-coalesce-inlined-vars \
 		  -fweb \
-		  -fuse-linker-plugin \
 		  -DNDEBUG \
 		  -finline-functions \
 		  -fpredictive-commoning \
