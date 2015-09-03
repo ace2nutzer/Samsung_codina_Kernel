@@ -246,8 +246,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu99 -pipe
-HOSTCXXFLAGS := -O2 -pipe
+HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-unswitch-loops -fomit-frame-pointer -std=gnu99 -pipe
+HOSTCXXFLAGS := -O3 -fno-unswitch-loops -pipe
 
 ifeq ($(shell $(HOSTCC) -v 2>&1 | grep -c "clang version"), 1)
 HOSTCFLAGS  += -Wno-unused-value -Wno-unused-parameter \
@@ -576,7 +576,7 @@ KBUILD_CFLAGS	+= -Os -mthumb
 LDFLAGS += -Os --as-needed --sort-common
 else
 LDFLAGS += -O2 --as-needed --sort-common
-KBUILD_CFLAGS	+= -O2 -marm \
+KBUILD_CFLAGS	+= -O3 -fno-unswitch-loops -marm \
 		  -ftree-vectorize \
 		  -fmodulo-sched \
 		  -fmodulo-sched-allow-regmoves \
@@ -592,17 +592,7 @@ KBUILD_CFLAGS	+= -O2 -marm \
 		  -fivopts \
 		  -ftree-coalesce-inlined-vars \
 		  -fweb \
-		  -DNDEBUG \
-		  -finline-functions \
-		  -fpredictive-commoning \
-		  -fgcse-after-reload \
-		  -fvect-cost-model=dynamic \
-		  -ftree-partial-pre \
-		  -fipa-cp-clone \
-		  -fno-align-functions \
-		  -fno-align-loops \
-		  -fno-align-jumps \
-		  -fno-align-labels
+		  -DNDEBUG
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
