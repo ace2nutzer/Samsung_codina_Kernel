@@ -353,7 +353,7 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-CFLAGS_MODULE   = -pipe
+CFLAGS_MODULE   = -fno-lto -fno-fat-lto-objects -pipe
 AFLAGS_MODULE   =
 LDFLAGS_MODULE  =
 CFLAGS_KERNEL	=
@@ -378,8 +378,9 @@ KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -std=gnu89 \
 		  -march=armv7-a \
 		  -mtune=cortex-a9 \
-		  -mfpu=neon-fp16 \
+		  -mfpu=vfpv3 \
 		  -mfloat-abi=softfp \
+		  -mtls-dialect=gnu2 \
 		  -pipe
 
 KBUILD_AFLAGS_KERNEL :=
@@ -592,6 +593,8 @@ KBUILD_CFLAGS	+= -O3 -fno-unswitch-loops -marm \
 		  -fivopts \
 		  -ftree-coalesce-inlined-vars \
 		  -fweb \
+		  -flto \
+		  -ffat-lto-objects \
 		  -DNDEBUG \
 		  -fdevirtualize-speculatively \
 		  -fdevirtualize-at-ltrans
