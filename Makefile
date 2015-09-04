@@ -592,7 +592,9 @@ KBUILD_CFLAGS	+= -O3 -fno-unswitch-loops -marm \
 		  -fivopts \
 		  -ftree-coalesce-inlined-vars \
 		  -fweb \
-		  -DNDEBUG
+		  -DNDEBUG \
+		  -fdevirtualize-speculatively \
+		  -fdevirtualize-at-ltrans
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
