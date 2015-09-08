@@ -38,8 +38,8 @@
 
 #ifdef CONFIG_FB_MCDE
 
-#define PRCMU_DPI_CLK_SHARP_FREQ	36305454	/* 30720000 */
-#define PRCMU_DPI_CLK_SMD_FREQ		49920000
+#define PRCMU_DPI_CLK_SHARP_FREQ	49920000	/* 30720000 */
+#define PRCMU_DPI_CLK_SMD_FREQ		79872000	/* 49920000 */
 
 enum {
 	PRIMARY_DISPLAY_ID,
@@ -86,13 +86,13 @@ static struct mcde_port port0 = {
 	.phy = {
 		.dpi = {
 			.tv_mode = false,
-			.clock_div = 1,
+			.clock_div = 2,
 			.polarity =
 				DPI_ACT_LOW_VSYNC |
 				DPI_ACT_LOW_HSYNC |
 				/* DPI_ACT_LOW_DATA_ENABLE | */
 				DPI_ACT_ON_FALLING_EDGE,
-			.lcd_freq = PRCMU_DPI_CLK_SHARP_FREQ
+			.lcd_freq = PRCMU_DPI_CLK_SMD_FREQ
 		},
 	},
 };
@@ -152,7 +152,7 @@ struct ssg_dpi_display_platform_data codina_dpi_pri_display_info = {
 	 * setup elsewhere. But the pixclock value is visible in user
 	 * space.
 	 */
-	.video_mode.pixclock = (int)(1e+12 * (1.0 / PRCMU_DPI_CLK_SHARP_FREQ)),
+	.video_mode.pixclock = (int)(1e+12 * (1.0 / PRCMU_DPI_CLK_SMD_FREQ)),
 
 	.reset		= pri_display_reset,
 	.lcd_pwr_setup = pri_lcd_pwr_setup,	
@@ -461,12 +461,12 @@ int __init init_codina_display_devices(void)
 
 	if (lcd_type == LCD_PANEL_TYPE_SMD){
 		generic_display0.name = LCD_DRIVER_NAME_WS2401;
-		codina_dpi_pri_display_info.video_mode.hsw = 10;
+		codina_dpi_pri_display_info.video_mode.hsw = 8;		/* 10 */
 		codina_dpi_pri_display_info.video_mode.hbp = 8;
 		codina_dpi_pri_display_info.video_mode.hfp = 8;
-		codina_dpi_pri_display_info.video_mode.vsw = 2;
+		codina_dpi_pri_display_info.video_mode.vsw = 8;		/* 2 */
 		codina_dpi_pri_display_info.video_mode.vbp = 8;
-		codina_dpi_pri_display_info.video_mode.vfp = 18;
+		codina_dpi_pri_display_info.video_mode.vfp = 8;		/* 18 */
 		codina_dpi_pri_display_info.sleep_out_delay = 50;
 	} else {
 		generic_display0.name = LCD_DRIVER_NAME_S6D27A1;
