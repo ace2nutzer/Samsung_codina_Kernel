@@ -957,7 +957,7 @@ static ssize_t lcd_type_show(struct device *dev,
 				struct device_attribute *attr,
 				char *buf)
 {
-		return sprintf(buf, "SMD_LMS380KF01\n");
+		return sprintf(buf, "SMD_WS2401\n");
 }
 static DEVICE_ATTR(lcd_type, 0444, lcd_type_show, NULL);
 
