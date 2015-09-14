@@ -317,6 +317,7 @@ static int __sec_common_reboot_call(struct notifier_block *this,
 		{"arm11_fota", REBOOT_MODE_ARM11_FOTA},
 		{"arm9_fota", REBOOT_MODE_ARM9_FOTA},
 		{"recovery", REBOOT_MODE_RECOVERY},
+		{"lpm", REBOOT_MODE_CHARGING},
 		{"cp_crash", REBOOT_MODE_CP_CRASH},
 		{"download", REBOOT_MODE_DOWNLOAD},
 		{"prerecovery_done", REBOOT_MODE_RECOVERY},
@@ -862,6 +863,8 @@ static __inline char __sec_common_convert_reboot_mode(char mode,
 		{"recovery", 'r'},
 		{"download", 'd'},
 		{"cp_crash", 'C'},
+		{"bootloader", 'd'},
+		{"lpm", 't'},
 		{"Checkin scheduled forced", 'c'} /* Note - c means REBOOTMODE_NORMAL */
 	};
 	size_t i, n;
