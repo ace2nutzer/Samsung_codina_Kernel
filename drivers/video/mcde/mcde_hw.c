@@ -1177,9 +1177,9 @@ static int wait_for_vsync(struct mcde_chnl_state *chnl)
  * 30720000
  * 33280000
  * 36305454
- * 39936000
+ * 39936000	[S6D27A1]
  * 44373333
- * 49920000	[S6D27A1]
+ * 49920000
  * 57051428
  * 66560000
  * 79872000	[WS2401]
@@ -1210,7 +1210,7 @@ static struct lcdclk_prop lcdclk_prop[] = {
 		.clk = 36305454,
 	},
   	[4] = {
-		.name = "39.93 Mhz (39936000)",
+		.name = "39.93 Mhz [(39936000) S6D27A1]",
 		.clk = 39936000,
 	},
   	[5] = {
@@ -1218,7 +1218,7 @@ static struct lcdclk_prop lcdclk_prop[] = {
 		.clk = 44373333,
 	},
   	[6] = {
-		.name = "49.92 Mhz [(49920000) S6D27A1]",
+		.name = "49.92 Mhz (49920000)",
 		.clk = 49920000,
 	},
   	[7] = {
