@@ -38,7 +38,7 @@
 
 #ifdef CONFIG_FB_MCDE
 
-#define PRCMU_DPI_CLK_SHARP_FREQ	39936000	/* 30720000 */
+#define PRCMU_DPI_CLK_SHARP_FREQ	36305454	/* 30720000 */
 #define PRCMU_DPI_CLK_SMD_FREQ		79872000	/* 49920000 */
 
 enum {
@@ -135,12 +135,12 @@ struct ssg_dpi_display_platform_data codina_dpi_pri_display_info = {
 	.reset_gpio		= LCD_RESX_CODINA_R0_0,
 	.pwr_gpio		= LCD_PWR_EN_CODINA_R0_0,
 	.bl_ctrl		= false,
-	.power_on_delay		= 50,	/* 10 */
-	.reset_delay		= 50,	/* 10 */
-	.sleep_out_delay	= 50,	/* 120 */
+	.power_on_delay		= 40,	/* 10 */
+	.reset_delay		= 40,	/* 10 */
+	.sleep_out_delay	= 40,	/* 120 */
 
-	.display_off_delay	= 50,	/* 25 */
-	.sleep_in_delay		= 50,	/* 120 */
+	.display_off_delay	= 40,	/* 25 */
+	.sleep_in_delay		= 40,	/* 120 */
 	.min_ddr_opp		= 50,
 
 	.video_mode.xres	= 480,
@@ -467,7 +467,7 @@ int __init init_codina_display_devices(void)
 		codina_dpi_pri_display_info.video_mode.vsw = 8;		/* 2 */
 		codina_dpi_pri_display_info.video_mode.vbp = 8;
 		codina_dpi_pri_display_info.video_mode.vfp = 8;		/* 18 */
-		codina_dpi_pri_display_info.sleep_out_delay = 50;
+		codina_dpi_pri_display_info.sleep_out_delay = 40;	/* 50 */
 	} else {
 		generic_display0.name = LCD_DRIVER_NAME_S6D27A1;
 		codina_dpi_pri_display_info.video_mode.hsw = 6;		/* 2 */
@@ -476,7 +476,7 @@ int __init init_codina_display_devices(void)
 		codina_dpi_pri_display_info.video_mode.vsw = 6;		/* 2 */
 		codina_dpi_pri_display_info.video_mode.vbp = 6;		/* 11 */
 		codina_dpi_pri_display_info.video_mode.vfp = 6;		/* 10 */
-		codina_dpi_pri_display_info.sleep_out_delay = 50;	/* 120 */
+		codina_dpi_pri_display_info.sleep_out_delay = 40;	/* 120 */
 	}
 	
 	ret = mcde_display_device_register(&generic_display0);
