@@ -934,14 +934,12 @@ static ssize_t ws2401_sysfs_show_mcde_chnl(struct device *dev,
 	struct ws2401_dpi *lcd = dev_get_drvdata(dev);
 
 	sprintf(buf,   "[ws2401 MCDE Channel]\n");
-	sprintf(buf, "%spixclock: %d\n", buf, lcd->mdd->video_mode.pixclock);
 	sprintf(buf, "%shbp: %d\n", buf, lcd->mdd->video_mode.hbp);
 	sprintf(buf, "%shfp: %d\n", buf, lcd->mdd->video_mode.hfp);
 	sprintf(buf, "%shsw: %d\n", buf, lcd->mdd->video_mode.hsw);
 	sprintf(buf, "%svbp: %d\n", buf, lcd->mdd->video_mode.vbp);
 	sprintf(buf, "%svfp: %d\n", buf, lcd->mdd->video_mode.vfp);
 	sprintf(buf, "%svsw: %d\n", buf, lcd->mdd->video_mode.vsw);
-	sprintf(buf, "%sinterlaced: %d\n", buf, lcd->mdd->video_mode.interlaced);
 
 	return strlen(buf);
 }
@@ -952,14 +950,12 @@ static ssize_t ws2401_sysfs_store_mcde_chnl(struct device *dev,
 {
 	struct ws2401_dpi *lcd = dev_get_drvdata(dev);
 	int ret;
-	u32 pclk;	/* pixel clock in ps (pico seconds) */
 	u32 hbp;	/* horizontal back porch: left margin (excl. hsync) */
 	u32 hfp;	/* horizontal front porch: right margin (excl. hsync) */
 	u32 hsw;	/* horizontal sync width */
 	u32 vbp;	/* vertical back porch: upper margin (excl. vsync) */
 	u32 vfp;	/* vertical front porch: lower margin (excl. vsync) */
 	u32 vsw;	/* vertical sync width */
-	u32 interlaced;
 	u32 enable;
 
 	if (!strncmp(buf, "set_vmode", 8))
@@ -1006,21 +1002,6 @@ static ssize_t ws2401_sysfs_store_mcde_chnl(struct device *dev,
 		else
 			mcde_chnl_enable(lcd->mdd->chnl_state);
 		
-		return len;
-	}
-	
-	if (!strncmp(&buf[0], "pclk=", 5))
-	{
-		ret = sscanf(&buf[5], "%d", &pclk);
-		if (!ret) {
-			pr_err("[ws2401] Invaild param\n");
-	
-			return -EINVAL;
-		}
-
-		pr_err("[ws2401] pclk: %d\n", pclk);
-		lcd->mdd->video_mode.pixclock = pclk;
-
 		return len;
 	}
 
@@ -1110,21 +1091,6 @@ static ssize_t ws2401_sysfs_store_mcde_chnl(struct device *dev,
 
 		pr_err("[ws2401] vsw: %d\n", vsw);
 		lcd->mdd->video_mode.vsw = vsw;
-
-		return len;
-	}
-
-	if (!strncmp(&buf[0], "interlaced=", 11))
-	{
-		ret = sscanf(&buf[11], "%d", &interlaced);
-		if (!ret) {
-			pr_err("[ws2401] Invaild param\n");
-	
-			return -EINVAL;
-		}
-
-		pr_err("[ws2401] interlaced: %d\n", interlaced);
-		lcd->mdd->video_mode.interlaced = interlaced;
 
 		return len;
 	}
