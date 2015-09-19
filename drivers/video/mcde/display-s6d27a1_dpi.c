@@ -934,7 +934,7 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 		return len;
 	}
 
-	if (!strncmp(buf, "update", 8)) 
+	if (!strncmp(buf, "update", 6)) 
 	{
 		pr_err("[s6d27a1] Update MCDE chnl!\n");
 		mcde_chnl_set_video_mode(lcd->mdd->chnl_state, &lcd->mdd->video_mode);
