@@ -20,7 +20,6 @@
 #define TSP_FACTORY
 
 /* #define TOUCH_BOOSTER */
-#define TOUCH_S2W
 #define TOUCH_DT2W
 #define DISABLE_TOUCHSCREEN_SPAM
 
@@ -55,9 +54,7 @@
 #if defined(TOUCH_BOOSTER)
 #include <linux/mfd/dbx500-prcmu.h>
 #endif
-#if defined(TOUCH_S2W) || defined(TOUCH_DT2W)
 #include <linux/ab8500-ponkey.h>
-#endif /* TOUCH_S2W or TOUCH_DT2W */
 #include <linux/input/bt404_ts.h>
 #include "zinitix_touch_bt4x3_firmware.h"
 
@@ -401,11 +398,7 @@ struct tsp_cmd {
 	void			(*cmd_func)(void *device_data);
 };
 
-#if defined(TOUCH_DT2W) || defined(TOUCH_S2W)
-#if CONFIG_HAS_WAKELOCK
-#include <linux/wakelock.h>
-static struct wake_lock t2w_wakelock;
-#endif /* WAKELOCK */
+#if defined(TOUCH_DT2W)
 
 static bool is_suspend = false;
 static bool waking_up = false;
@@ -416,28 +409,14 @@ static void bt404_ponkey_thread(struct work_struct *bt404_ponkey_work)
 
 	ab8500_ponkey_emulator(1);	/* press */
 
-	msleep(100);
+	msleep(200);
 
 	ab8500_ponkey_emulator(0);	/* release */
 	
 	waking_up = false;
 }
 static DECLARE_WORK(bt404_ponkey_work, bt404_ponkey_thread);
-#endif /* TOUCH_DT2W or TOUCH_S2W */
-
-#ifdef TOUCH_S2W
-/* cocafe: SweepToWake with wakelock implementation */
-#define ABS_THRESHOLD_X			250
-#define ABS_THRESHOLD_Y			350
-
-static unsigned int x_press, x_release;
-static unsigned int y_press, y_release;
-
-static unsigned int x_threshold = ABS_THRESHOLD_X;
-static unsigned int y_threshold = ABS_THRESHOLD_Y;
-
-static bool sweep2wake = false;
-#endif /* TOUCH_S2W */
+#endif /* TOUCH_DT2W */
 
 #ifdef TOUCH_DT2W
 #define DEFAULT_PRESS_TIMEOUT 250
@@ -1588,23 +1567,6 @@ static void bt404_ts_report_touch_data(struct bt404_ts_data *data,
 #endif
 #endif
 
-#ifdef TOUCH_S2W
-			/* Release */
-			if (is_suspend) {
-				if (sweep2wake) {
-					if (cur_up) {
-						x_release = cur->coord[0].x;
-						y_release = cur->coord[0].y;
-						if ((abs(x_release - x_press) >= x_threshold) ||
-							(abs(y_release - y_press) >= y_threshold)) {
-								if (!waking_up)
-									schedule_work(&bt404_ponkey_work);
-						}
-					}
-				}
-			}
-#endif
-
 #ifdef TOUCH_DT2W
 			if (is_suspend) {
 				if (doubletap2wake) {
@@ -1672,16 +1634,6 @@ static void bt404_ts_report_touch_data(struct bt404_ts_data *data,
 				}
 
 				data->finger_cnt++;
-#endif
-
-#ifdef TOUCH_S2W
-				/* Press */
-				if (is_suspend) {
-					if (sweep2wake) {
-						x_press = cur->coord[0].x;
-						y_press = cur->coord[0].y;
-					}
-				}
 #endif
 
 #ifdef TOUCH_DT2W
@@ -3907,9 +3859,6 @@ static ssize_t bt404_doubletap2wake_show(struct kobject *kobj, struct kobj_attri
 {
 	sprintf(buf, "status: %s\n", doubletap2wake ? "on" : "off");
 	sprintf(buf, "%stimeout: %d\n", buf, press_timeout);
-	#if CONFIG_HAS_WAKELOCK
-	sprintf(buf, "%swakelock_ena: %d\n", buf, wake_lock_active(&t2w_wakelock));
-	#endif
 
 	return strlen(buf);
 }
@@ -3922,10 +3871,6 @@ static ssize_t bt404_doubletap2wake_store(struct kobject *kobj, struct kobj_attr
 	if (!strncmp(buf, "on", 2)) {
 		doubletap2wake = true;
 
-		#if CONFIG_HAS_WAKELOCK
-		wake_lock(&t2w_wakelock);
-		#endif
-
 		pr_err("[TSP] DoubleTap2Wake On\n");
 
 		return count;
@@ -3933,10 +3878,6 @@ static ssize_t bt404_doubletap2wake_store(struct kobject *kobj, struct kobj_attr
 
 	if (!strncmp(buf, "off", 3)) {
 		doubletap2wake = false;
-
-		#if CONFIG_HAS_WAKELOCK
-		wake_unlock(&t2w_wakelock);
-		#endif
 
 		pr_err("[TSP] DoubleTap2Wake Off\n");
 
@@ -3955,20 +3896,6 @@ static ssize_t bt404_doubletap2wake_store(struct kobject *kobj, struct kobj_attr
 
 		return count;
 	}
-
-	#if CONFIG_HAS_WAKELOCK
-	/* For development activity */
-	if (!strncmp(&buf[0], "wakelock=", 9)) {
-		sscanf(&buf[9], "%d", &ret);
-
-		if (!ret)
-			wake_unlock(&t2w_wakelock);
-		else
-			wake_lock(&t2w_wakelock);
-		
-		return count;
-	}
-	#endif
 		
 	return count;
 }
@@ -3976,98 +3903,7 @@ static ssize_t bt404_doubletap2wake_store(struct kobject *kobj, struct kobj_attr
 static struct kobj_attribute bt404_doubletap2wake_interface = __ATTR(doubletap2wake, 0644, bt404_doubletap2wake_show, bt404_doubletap2wake_store);
 #endif /* TOUCH_DT2W */
 
-#ifdef TOUCH_S2W
-static ssize_t bt404_sweep2wake_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
-{
-	sprintf(buf, "status: %s\n", sweep2wake ? "on" : "off");
-	sprintf(buf, "%sthreshold_x: %d\n", buf, x_threshold);
-	sprintf(buf, "%sthreshold_y: %d\n", buf, y_threshold);
-	#if CONFIG_HAS_WAKELOCK
-	sprintf(buf, "%swakelock_ena: %d\n", buf, wake_lock_active(&t2w_wakelock));
-	#endif
-
-	return strlen(buf);
-}
-
-static ssize_t bt404_sweep2wake_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
-{
-	int ret;
-	int threshold_tmp;
-
-	if (!strncmp(buf, "on", 2)) {
-		sweep2wake = true;
-
-		#if CONFIG_HAS_WAKELOCK
-		wake_lock(&t2w_wakelock);
-		#endif
-
-		pr_err("[TSP] Sweep2Wake On\n");
-
-		return count;
-	}
-
-	if (!strncmp(buf, "off", 3)) {
-		sweep2wake = false;
-
-		#if CONFIG_HAS_WAKELOCK
-		wake_unlock(&t2w_wakelock);
-		#endif
-
-		pr_err("[TSP] Sweep2Wake Off\n");
-
-		return count;
-	}
-
-	if (!strncmp(&buf[0], "threshold_x=", 12)) {
-		ret = sscanf(&buf[12], "%d", &threshold_tmp);
-
-		if ((!ret) || (threshold_tmp > 480)) {
-			pr_err("[TSP] invalid input\n");
-			return -EINVAL;
-		}
-
-		x_threshold = threshold_tmp;
-
-		return count;
-	}
-
-	if (!strncmp(&buf[0], "threshold_y=", 12)) {
-		ret = sscanf(&buf[12], "%d", &threshold_tmp);
-
-		if ((!ret) || (threshold_tmp > 800)) {
-			pr_err("[TSP] invalid input\n");
-			return -EINVAL;
-		}
-
-		y_threshold = threshold_tmp;
-
-		return count;
-	}
-
-	#if CONFIG_HAS_WAKELOCK
-	/* For development activity */
-	if (!strncmp(&buf[0], "wakelock=", 9)) {
-		sscanf(&buf[9], "%d", &ret);
-
-		if (!ret)
-			wake_unlock(&t2w_wakelock);
-		else
-			wake_lock(&t2w_wakelock);
-
-		return count;
-	}
-	#endif
-
-	return count;
-}
-
-static struct kobj_attribute bt404_sweep2wake_interface = __ATTR(sweep2wake, 0644, bt404_sweep2wake_show, bt404_sweep2wake_store);
-#endif /* TOUCH_S2W */
-
 static struct attribute *bt404_attrs[] = {
-#ifdef TOUCH_S2W
-	&bt404_sweep2wake_interface.attr, 
-#endif
 #ifdef TOUCH_DT2W
 	&bt404_doubletap2wake_interface.attr,
 #endif
@@ -4338,10 +4174,6 @@ static int bt404_ts_probe(struct i2c_client *client,
 	if (ret) {
 		kobject_put(bt404_kobject);
 	}
-
-#if defined(TOUCH_S2W) || defined(TOUCH_DT2W)
-	wake_lock_init(&t2w_wakelock, WAKE_LOCK_SUSPEND, "t2w_wakelock");
-#endif
 
 	data->irq = client->irq;
 
@@ -4634,11 +4466,6 @@ static int bt404_ts_suspend(struct device *dev)
 		goto out;
 	}
 
-#ifdef TOUCH_S2W
-	if (sweep2wake)
-		goto out;
-#endif
-
 #ifdef TOUCH_DT2W
 	if (doubletap2wake)
 		goto out;
@@ -4689,11 +4516,6 @@ static int bt404_ts_resume(struct device *dev)
 		goto out;
 	}
 
-#ifdef TOUCH_S2W
-	if (sweep2wake)
-		goto out;
-#endif
-
 #ifdef TOUCH_DT2W
 	if (doubletap2wake)
 		goto out;
@@ -4732,7 +4554,7 @@ static void bt404_ts_late_resume(struct early_suspend *h)
 {
 	struct bt404_ts_data *data =
 			container_of(h, struct bt404_ts_data, early_suspend);
-#if defined(TOUCH_S2W) || defined(TOUCH_DT2W)
+#if defined(TOUCH_DT2W)
 	is_suspend = false;
 #endif
 
@@ -4743,7 +4565,7 @@ static void bt404_ts_early_suspend(struct early_suspend *h)
 {
 	struct bt404_ts_data *data =
 			container_of(h, struct bt404_ts_data, early_suspend);
-#if defined(TOUCH_S2W) || defined(TOUCH_DT2W)
+#if defined(TOUCH_DT2W)
 	is_suspend = true;
 #endif
 	bt404_ts_suspend(&data->client->dev);
