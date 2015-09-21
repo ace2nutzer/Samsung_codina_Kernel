@@ -39,7 +39,7 @@
 #ifdef CONFIG_FB_MCDE
 
 #define PRCMU_DPI_CLK_SHARP_FREQ	44373333	/* 30720000 */
-#define PRCMU_DPI_CLK_SMD_FREQ		49920000	/* 49920000 */
+#define PRCMU_DPI_CLK_SMD_FREQ		79872000	/* 49920000 */
 
 enum {
 	PRIMARY_DISPLAY_ID,
@@ -461,12 +461,12 @@ int __init init_codina_display_devices(void)
 
 	if (lcd_type == LCD_PANEL_TYPE_SMD){
 		generic_display0.name = LCD_DRIVER_NAME_WS2401;
-		codina_dpi_pri_display_info.video_mode.hsw = 8;		/* 10 */
-		codina_dpi_pri_display_info.video_mode.hbp = 8;
-		codina_dpi_pri_display_info.video_mode.hfp = 8;
-		codina_dpi_pri_display_info.video_mode.vsw = 8;		/* 2 */
+		codina_dpi_pri_display_info.video_mode.hsw = 10;
+		codina_dpi_pri_display_info.video_mode.hbp = 4;		/* 8 */
+		codina_dpi_pri_display_info.video_mode.hfp = 4;		/* 8 */
+		codina_dpi_pri_display_info.video_mode.vsw = 2;
 		codina_dpi_pri_display_info.video_mode.vbp = 8;
-		codina_dpi_pri_display_info.video_mode.vfp = 8;		/* 18 */
+		codina_dpi_pri_display_info.video_mode.vfp = 18;
 		codina_dpi_pri_display_info.sleep_out_delay = 30;	/* 50 */
 	} else {
 		generic_display0.name = LCD_DRIVER_NAME_S6D27A1;
