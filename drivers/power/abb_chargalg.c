@@ -73,8 +73,6 @@ static void ab8500_chargalg_early_suspend(struct early_suspend *h)
 static void ab8500_chargalg_late_resume(struct early_suspend *h)
 {
 	is_suspend = 0;
-
-	bln_disable_backlights(gen_all_leds_mask());
 }
 
 enum ab8500_chargers {
