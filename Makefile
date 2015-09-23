@@ -374,7 +374,6 @@ KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -fno-strict-aliasing -fno-common \
 		  -Werror-implicit-function-declaration \
 		  -Wno-format-security \
-		  -fno-delete-null-pointer-checks \
 		  -std=gnu89 \
 		  -march=armv7-a \
 		  -mcpu=cortex-a9 \
@@ -573,12 +572,21 @@ endif # $(dot-config)
 # Defaults to vmlinux, but the arch makefile usually adds further targets
 all: vmlinux
 
+# The arch Makefile can set ARCH_{CPP,A,C}FLAGS to override the default
+# values of the respective KBUILD_* variables
+ARCH_CPPFLAGS :=
+ARCH_AFLAGS :=
+ARCH_CFLAGS :=
+include arch/$(SRCARCH)/Makefile
+
+KBUILD_CFLAGS	+= $(call cc-option,-fno-delete-null-pointer-checks,)
+
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS	+= -Os -mthumb
+KBUILD_CFLAGS	+= -Os -mthumb $(call cc-disable-warning,maybe-uninitialized,)
 LDFLAGS += -Os --as-needed --sort-common
 else
 LDFLAGS += -O2 --as-needed --sort-common
-KBUILD_CFLAGS	+= -O3 -fno-unswitch-loops -marm \
+KBUILD_CFLAGS	+= -O3 -fno-unswitch-loops -marm $(call cc-disable-warning,maybe-uninitialized,) \
 		  -ftree-vectorize \
 		  -fmodulo-sched \
 		  -fmodulo-sched-allow-regmoves \
