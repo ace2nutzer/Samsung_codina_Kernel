@@ -402,6 +402,8 @@ struct tsp_cmd {
 
 static bool is_suspend = false;
 static bool waking_up = false;
+static unsigned int is_lpm = 0;
+module_param_named(is_lpm, is_lpm, uint, 0644);
 
 static void bt404_ponkey_thread(struct work_struct *bt404_ponkey_work)
 {
@@ -1568,7 +1570,7 @@ static void bt404_ts_report_touch_data(struct bt404_ts_data *data,
 #endif
 
 #ifdef TOUCH_DT2W
-			if (is_suspend) {
+			if (is_suspend || is_lpm) {
 				if (doubletap2wake) {
 					if (cur_up) {
 						if (press_count == 2) {
@@ -1637,7 +1639,7 @@ static void bt404_ts_report_touch_data(struct bt404_ts_data *data,
 #endif
 
 #ifdef TOUCH_DT2W
-				if (is_suspend) {
+				if (is_suspend || is_lpm) {
 					if (doubletap2wake) {
 						if (!press_count || press_time + press_timeout >= ktime_to_ms(ktime_get())) {
 							pr_info("[DT2W] ++Press Count\n");
