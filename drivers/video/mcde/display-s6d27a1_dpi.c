@@ -59,7 +59,7 @@
 
 #define MIN_BRIGHTNESS			0
 #define MAX_BRIGHTNESS			255
-#define DEFAULT_BRIGHTNESS		120
+#define DEFAULT_BRIGHTNESS		90
 
 #define DCS_CMD_S6D27A1_RESCTL		0xB3	/* Resolution Select Control */
 #define DCS_CMD_S6D27A1_PANELCTL2	0xB4	/* ASG Signal Control */
