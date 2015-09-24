@@ -811,5 +811,14 @@ config TOUCHSCREEN_TMA140
 	help
 	  This enables support for TMA140 driver over I2C based touchscreens.
 
+config TOUCHSCREEN_DOUBLETAP2WAKE
+        tristate "DoubleTap2Wake for touchscreens"
+        default n
+
+config TOUCHSCREEN_DOUBLETAP2WAKE_WAKELOCK
+	depends on TOUCHSCREEN_DOUBLETAP2WAKE
+        bool "DoubleTap2Wake use Wakelock"
+        default n
+
 endif
 

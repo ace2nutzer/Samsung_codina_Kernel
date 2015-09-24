@@ -20,7 +20,6 @@
 #define TSP_FACTORY
 
 /* #define TOUCH_BOOSTER */
-#define TOUCH_DT2W
 #define DISABLE_TOUCHSCREEN_SPAM
 
 #include <linux/kernel.h>
@@ -48,13 +47,16 @@
 #include <linux/uaccess.h>
 #include <linux/input/mt.h>
 #include <linux/regulator/consumer.h>
+#include <linux/wakelock.h>
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+#include <linux/input/doubletap2wake.h>
+extern bool dt2w_use_wakelock;
+#endif
 #ifdef TSP_FACTORY
 #include <linux/list.h>
 #endif
-#if defined(TOUCH_BOOSTER)
+
 #include <linux/mfd/dbx500-prcmu.h>
-#endif
-#include <linux/ab8500-ponkey.h>
 #include <linux/input/bt404_ts.h>
 #include "zinitix_touch_bt4x3_firmware.h"
 
@@ -397,38 +399,6 @@ struct tsp_cmd {
 	const char		*cmd_name;
 	void			(*cmd_func)(void *device_data);
 };
-
-#if defined(TOUCH_DT2W)
-
-static bool is_suspend = false;
-static bool waking_up = false;
-static unsigned int is_lpm = 0;
-module_param_named(is_lpm, is_lpm, uint, 0644);
-
-static void bt404_ponkey_thread(struct work_struct *bt404_ponkey_work)
-{
-	waking_up = true;
-
-	ab8500_ponkey_emulator(1);	/* press */
-
-	msleep(200);
-
-	ab8500_ponkey_emulator(0);	/* release */
-	
-	waking_up = false;
-}
-static DECLARE_WORK(bt404_ponkey_work, bt404_ponkey_thread);
-#endif /* TOUCH_DT2W */
-
-#ifdef TOUCH_DT2W
-#define DEFAULT_PRESS_TIMEOUT 250
-static unsigned long press_time = 0;
-static unsigned int press_count = 0;
-
-static unsigned int press_timeout = DEFAULT_PRESS_TIMEOUT; /* press_timeout in msecs */
-
-static bool doubletap2wake = false;
-#endif /* TOUCH_DT2W */
 
 static void fw_update(void *device_data);
 static void get_fw_ver_bin(void *device_data);
@@ -1568,25 +1538,10 @@ static void bt404_ts_report_touch_data(struct bt404_ts_data *data,
 					cur->coord[i].x, cur->coord[i].width);
 #endif
 #endif
-
-#ifdef TOUCH_DT2W
-			if (is_suspend || is_lpm) {
-				if (doubletap2wake) {
-					if (cur_up) {
-						if (press_count == 2) {
-							pr_info("[DT2W] Press Count == 2\n");
-							if (!waking_up)
-								schedule_work(&bt404_ponkey_work);
-							press_count = 0;
-							press_time = 0;
-						}
-					}
-				}
-			}
-#endif
-
 			prev->coord[i].sub_status &= ~(0x01);
-
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+			detect_doubletap2wake(cur->coord[i].x, cur->coord[i].y, false);
+#endif
 			input_mt_slot(data->input_dev_ts, i);
 			input_mt_report_slot_state(data->input_dev_ts,
 						   MT_TOOL_FINGER, false);
@@ -1638,24 +1593,6 @@ static void bt404_ts_report_touch_data(struct bt404_ts_data *data,
 				data->finger_cnt++;
 #endif
 
-#ifdef TOUCH_DT2W
-				if (is_suspend || is_lpm) {
-					if (doubletap2wake) {
-						if (!press_count || press_time + press_timeout >= ktime_to_ms(ktime_get())) {
-							pr_info("[DT2W] ++Press Count\n");
-							++press_count;
-							press_time = ktime_to_ms(ktime_get());
-							pr_info("[DT2W] Press Count : %d\n", press_count);
-							pr_info("[DT2W] Press Time : %ld\n", press_time);
-						} else {
-							pr_info("[DT2W] PRESS RESET\n");
-							press_count = 0;
-							press_time = 0;
-						}
-					}
-				}
-#endif
-
 #if !defined(CONFIG_SAMSUNG_PRODUCT_SHIP)
 #ifndef DISABLE_TOUCHSCREEN_SPAM
 				dev_info(&client->dev,
@@ -1678,6 +1615,9 @@ static void bt404_ts_report_touch_data(struct bt404_ts_data *data,
 							cur->coord[i].width);
 			input_report_abs(data->input_dev_ts, ABS_MT_PRESSURE,
 							cur->coord[i].width);
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+			detect_doubletap2wake(cur->coord[i].x, cur->coord[i].y, true);
+#endif
 		}
 	}
 	input_sync(data->input_dev_ts);
@@ -3856,68 +3796,6 @@ static struct attribute_group touchscreen_temp_attr_group = {
 	.attrs = touchscreen_temp_attributes,
 };
 
-#ifdef TOUCH_DT2W
-static ssize_t bt404_doubletap2wake_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
-{
-	sprintf(buf, "status: %s\n", doubletap2wake ? "on" : "off");
-	sprintf(buf, "%stimeout: %d\n", buf, press_timeout);
-
-	return strlen(buf);
-}
-
-static ssize_t bt404_doubletap2wake_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
-{
-	int ret;
-	int press_timeout_tmp;
-
-	if (!strncmp(buf, "on", 2)) {
-		doubletap2wake = true;
-
-		pr_err("[TSP] DoubleTap2Wake On\n");
-
-		return count;
-	}
-
-	if (!strncmp(buf, "off", 3)) {
-		doubletap2wake = false;
-
-		pr_err("[TSP] DoubleTap2Wake Off\n");
-
-		return count;
-	}
-
-	if (!strncmp(&buf[0], "timeout=", 8)) {
-		ret = sscanf(&buf[8], "%d", &press_timeout_tmp);
-
-		if (!ret) {
-			pr_err("[TSP] invalid input\n");
-			return -EINVAL;
-		}
-
-		press_timeout = press_timeout_tmp;
-
-		return count;
-	}
-		
-	return count;
-}
-
-static struct kobj_attribute bt404_doubletap2wake_interface = __ATTR(doubletap2wake, 0644, bt404_doubletap2wake_show, bt404_doubletap2wake_store);
-#endif /* TOUCH_DT2W */
-
-static struct attribute *bt404_attrs[] = {
-#ifdef TOUCH_DT2W
-	&bt404_doubletap2wake_interface.attr,
-#endif
-	NULL,
-};
-
-static struct attribute_group bt404_interface_group = {
-	.attrs = bt404_attrs,
-};
-
-static struct kobject *bt404_kobject;
-
 static int bt404_ts_probe(struct i2c_client *client,
 					const struct i2c_device_id *i2c_id)
 {
@@ -4165,18 +4043,6 @@ static int bt404_ts_probe(struct i2c_client *client,
 	dev_info(&client->dev, "add_prcmu_qos is added\n");
 #endif
 
-	bt404_kobject = kobject_create_and_add("bt404", kernel_kobj);
-
-	if (!bt404_kobject) {
-		return -ENOMEM;
-	}
-
-	ret = sysfs_create_group(bt404_kobject, &bt404_interface_group);
-
-	if (ret) {
-		kobject_put(bt404_kobject);
-	}
-
 	data->irq = client->irq;
 
 	if (data->irq) {
@@ -4255,8 +4121,8 @@ static int bt404_ts_probe(struct i2c_client *client,
 				&touchscreen_temp_attr_group);
 	if (ret)
 		dev_err(&client->dev,
-			"Failed to create sysfs (touchscreen_temp_attr_group)."
-									"\n");
+			"Failed to create sysfs (touchscreen_temp_attr_group).");
+	
 	dev_info(&client->dev, "successfully probed.\n");
 	return 0;
 
@@ -4458,6 +4324,13 @@ err_i2c:
 #if defined(CONFIG_PM) || defined(CONFIG_HAS_EARLYSUSPEND)
 static int bt404_ts_suspend(struct device *dev)
 {
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+	if(dt2w_switch) {
+		if (is_any_user_wakelock_active())
+			return 0;
+	}
+#endif
+
 	struct i2c_client *client = to_i2c_client(dev);
 	struct bt404_ts_data *data = i2c_get_clientdata(client);
 	int ret;
@@ -4468,10 +4341,6 @@ static int bt404_ts_suspend(struct device *dev)
 		goto out;
 	}
 
-#ifdef TOUCH_DT2W
-	if (doubletap2wake)
-		goto out;
-#endif
 	disable_irq(data->irq);
 	data->enabled = false;
 
@@ -4508,6 +4377,12 @@ out:
 
 static int bt404_ts_resume(struct device *dev)
 {
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+        if(dt2w_switch) {
+                if (is_any_user_wakelock_active())
+                        return 0;
+        }
+#endif
 	struct i2c_client *client = to_i2c_client(dev);
 	struct bt404_ts_data *data = i2c_get_clientdata(client);
 	int ret;
@@ -4517,11 +4392,6 @@ static int bt404_ts_resume(struct device *dev)
 		ret = -1;
 		goto out;
 	}
-
-#ifdef TOUCH_DT2W
-	if (doubletap2wake)
-		goto out;
-#endif
 
 	data->pdata->int_set_pull(true);
 	data->enabled = true;
@@ -4551,25 +4421,37 @@ out:
 }
 #endif
 
+
 #ifdef CONFIG_HAS_EARLYSUSPEND
 static void bt404_ts_late_resume(struct early_suspend *h)
 {
-	struct bt404_ts_data *data =
-			container_of(h, struct bt404_ts_data, early_suspend);
-#if defined(TOUCH_DT2W)
-	is_suspend = false;
+	struct bt404_ts_data *data;
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+	if(dt2w_switch) {
+		dt2w_set_scr_suspended(false);
+                if (is_any_user_wakelock_active()) {
+				return;
+		}
+	}
 #endif
+       data = container_of(h, struct bt404_ts_data, early_suspend);
+       bt404_ts_resume(&data->client->dev);
 
-	bt404_ts_resume(&data->client->dev);
 }
 
 static void bt404_ts_early_suspend(struct early_suspend *h)
 {
-	struct bt404_ts_data *data =
-			container_of(h, struct bt404_ts_data, early_suspend);
-#if defined(TOUCH_DT2W)
-	is_suspend = true;
+	struct bt404_ts_data *data;
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
+        if(dt2w_switch) {
+                dt2w_set_scr_suspended(true);
+                if (is_any_user_wakelock_active()) {
+                                return;
+                }
+	}
 #endif
+
+	data = container_of(h, struct bt404_ts_data, early_suspend);
 	bt404_ts_suspend(&data->client->dev);
 }
 
