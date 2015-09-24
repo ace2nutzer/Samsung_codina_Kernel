@@ -616,4 +616,11 @@ static int __init bln_control_init(void)
 	return 0;
 }
 
+/* Check if bln_wake_lock is active 
+* we need this for doubletap2wake
+*/
+bool bln_wakelock_is_active(void) {
+           wake_lock_active(&bln_wake_lock);
+}
+
 device_initcall(bln_control_init);

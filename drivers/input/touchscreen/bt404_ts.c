@@ -51,6 +51,7 @@
 #ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
 #include <linux/input/doubletap2wake.h>
 extern bool dt2w_use_wakelock;
+extern bool bln_wakelock_is_active(void);
 #endif
 #ifdef TSP_FACTORY
 #include <linux/list.h>
@@ -4326,7 +4327,7 @@ static int bt404_ts_suspend(struct device *dev)
 {
 #ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
 	if(dt2w_switch) {
-		if (is_any_user_wakelock_active())
+		if (bln_wakelock_is_active())
 			return 0;
 	}
 #endif
@@ -4379,7 +4380,7 @@ static int bt404_ts_resume(struct device *dev)
 {
 #ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
         if(dt2w_switch) {
-                if (is_any_user_wakelock_active())
+                if (bln_wakelock_is_active())
                         return 0;
         }
 #endif
@@ -4429,7 +4430,7 @@ static void bt404_ts_late_resume(struct early_suspend *h)
 #ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
 	if(dt2w_switch) {
 		dt2w_set_scr_suspended(false);
-                if (is_any_user_wakelock_active()) {
+                if (bln_wakelock_is_active()) {
 				return;
 		}
 	}
@@ -4445,7 +4446,7 @@ static void bt404_ts_early_suspend(struct early_suspend *h)
 #ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
         if(dt2w_switch) {
                 dt2w_set_scr_suspended(true);
-                if (is_any_user_wakelock_active()) {
+                if (bln_wakelock_is_active()) {
                                 return;
                 }
 	}
