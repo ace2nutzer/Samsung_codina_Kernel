@@ -51,7 +51,6 @@
 #ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
 #include <linux/input/doubletap2wake.h>
 extern bool dt2w_use_wakelock;
-extern bool bln_wakelock_is_active(void);
 #endif
 #ifdef TSP_FACTORY
 #include <linux/list.h>
@@ -4326,10 +4325,8 @@ err_i2c:
 static int bt404_ts_suspend(struct device *dev)
 {
 #ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
-	if(dt2w_switch) {
-		if (bln_wakelock_is_active())
+	if(dt2w_switch)
 			return 0;
-	}
 #endif
 
 	struct i2c_client *client = to_i2c_client(dev);
@@ -4379,10 +4376,8 @@ out:
 static int bt404_ts_resume(struct device *dev)
 {
 #ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
-        if(dt2w_switch) {
-                if (bln_wakelock_is_active())
+        if(dt2w_switch)
                         return 0;
-        }
 #endif
 	struct i2c_client *client = to_i2c_client(dev);
 	struct bt404_ts_data *data = i2c_get_clientdata(client);
@@ -4430,9 +4425,7 @@ static void bt404_ts_late_resume(struct early_suspend *h)
 #ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
 	if(dt2w_switch) {
 		dt2w_set_scr_suspended(false);
-                if (bln_wakelock_is_active()) {
 				return;
-		}
 	}
 #endif
        data = container_of(h, struct bt404_ts_data, early_suspend);
@@ -4446,9 +4439,7 @@ static void bt404_ts_early_suspend(struct early_suspend *h)
 #ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
         if(dt2w_switch) {
                 dt2w_set_scr_suspended(true);
-                if (bln_wakelock_is_active()) {
                                 return;
-                }
 	}
 #endif
 
