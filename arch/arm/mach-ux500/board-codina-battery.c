@@ -497,8 +497,8 @@ static const struct fg_parameters fg = {
 	.accu_high_curr = 20,
 	.high_curr_threshold = 50,
 	.lowbat_threshold = 3300,
-	.battok_raising_th_sel0 = 2860,
-	.battok_falling_th_sel1 = 2710,
+	.battok_raising_th_sel0 = 2500,
+	.battok_falling_th_sel1 = 2500,
 	.user_cap_limit = 15,
 	.maint_thres = 97,
 #ifdef CONFIG_AB8505_SMPL
@@ -685,7 +685,7 @@ sec_battery_platform_data_t sec_battery_pdata = {
 		SEC_BATTERY_FULL_CONDITION_SOC |
 		SEC_BATTERY_FULL_CONDITION_VCELL |
 		SEC_BATTERY_FULL_CONDITION_NOTIMEFULL,
-	.full_condition_soc = 99,
+	.full_condition_soc = 100,
 	.full_condition_vcell = 4250,
 
 	.recharge_condition_type =
