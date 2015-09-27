@@ -4329,6 +4329,9 @@ err_i2c:
 static int last_suspend_skipped = 0, last_resume_skipped = 0;
 bool break_suspend_early(bool);
 
+static unsigned int delayed_late_resume_delay;
+static struct delayed_work delayed_late_resume_work;
+
 #if defined(CONFIG_PM) || defined(CONFIG_HAS_EARLYSUSPEND)
 static int bt404_ts_suspend(struct device *dev)
 {
@@ -4342,12 +4345,23 @@ static int bt404_ts_suspend(struct device *dev)
 		goto out;
 	}
 
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
         if (dt2w_switch) {
                  if (break_suspend_early(true)) {
                         pr_err("%s: skipped\n", __func__);
                         goto out;
                 }
         }
+        /*
+         * Chrono: schedule late resume before go to suspend.
+         * On suspend this thread will be frozen and continued if any wakelock wake up the phone.
+         * Note that delayed_late_resume_delay should be big enough so that
+         * a phone goes to suspend before thread delayed_late_resume_fn will be launched.
+         */
+	 pr_err("%s: scheduling delayed late resume before going to suspend\n");
+         schedule_delayed_work(&delayed_late_resume_work,
+                            msecs_to_jiffies(delayed_late_resume_delay));
+#endif
 
 	disable_irq(data->irq);
 	data->enabled = false;
@@ -4432,7 +4446,9 @@ out:
 }
 #endif
 
+#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
 extern bool is_bln_wakelock_active(void);
+extern bool is_dt2w_wakelock_active(void);
 extern unsigned int is_charger_present;
 
 static bool is_suspend = false;
@@ -4441,13 +4457,15 @@ static bool should_break_suspend_early = false; // flag, that determines whether
 static bool is_awaken = false; // two flags, that protects suspend/resume
 static bool is_sleep = false; // against race conditions
 static int should_break_suspend_early_check_delay = 10000;// check state of should_break_suspend_early
-			                                    // each 10 seconds
+                                                          // each 10 seconds
+module_param_named(should_break_suspend_early_check_delay, should_break_suspend_early_check_delay, uint, 0644);
 inline bool break_suspend_early(bool suspend)
 {
 	 bool ret;
 
-	 ret = prcmu_qos_requirement_is_active(PRCMU_QOS_APE_OPP, "sia") ||
-		 is_bln_wakelock_active() ||
+	 ret = prcmu_qos_requirement_is_active(PRCMU_QOS_APE_OPP, "sia")||
+		is_bln_wakelock_active() 				||
+		is_dt2w_wakelock_active()				||
 		is_charger_present;
 
 	 if (suspend) {
@@ -4479,16 +4497,26 @@ static inline bool early_suspend_(void)
 	return !is_sleep;
 }
 
-static inline void late_resume_(void)
+static unsigned int delayed_late_resume_delay = 5000;
+module_param_named(delayed_late_resume_delay, delayed_late_resume_delay, uint, 0644);
+
+static inline bool late_resume_(void)
 {
 	 if (!is_awaken) {
-		 bt404_ts_resume(&data_->client->dev);
-		 is_sleep = false;
-		 is_awaken = true;
-	 }
+                 bt404_ts_resume(&data_->client->dev);
+                 is_sleep = false;
+                 is_awaken = true;
+         }
 
-	return !is_awaken;
+        return !is_awaken;
+
 }
+
+static void delayed_late_resume_fn(struct work_struct *work)
+{
+	 late_resume_();
+}
+static DECLARE_DELAYED_WORK(delayed_late_resume_work, delayed_late_resume_fn);
 
 static unsigned int debug = 0;
 module_param_named(debug, debug, uint, 0644);
@@ -4498,9 +4526,11 @@ DECLARE_DELAYED_WORK(should_break_suspend_early_check_work, should_break_suspend
 void should_break_suspend_early_check_fn(struct work_struct *work)
 {
 	should_break_suspend_early = 
-		prcmu_qos_requirement_is_active(PRCMU_QOS_APE_OPP, "sia") ||
-		is_charger_present ||
-		is_bln_wakelock_active();
+		prcmu_qos_requirement_is_active(PRCMU_QOS_APE_OPP, "sia")||
+                is_bln_wakelock_active()                                 ||
+                is_dt2w_wakelock_active()                                ||
+                is_charger_present;
+
 
 	if (dt2w_switch) {
 		// we're in suspend, and we skipped it,
@@ -4524,6 +4554,7 @@ void should_break_suspend_check_init_work(void) {
 	pr_err("%s: started\n", __func__);
 	schedule_delayed_work(&should_break_suspend_early_check_work, 0);
 }
+#endif
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
 static void bt404_ts_late_resume(struct early_suspend *h)
