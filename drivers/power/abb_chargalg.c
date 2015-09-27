@@ -1148,6 +1148,9 @@ static void handle_maxim_chg_curr(struct ab8500_chargalg *di)
 	}
 }
 
+unsigned int is_charger_present = false;
+module_param_named(is_charger_present, is_charger_present, uint, 0644);
+
 static int ab8500_chargalg_get_ext_psy_data(struct device *dev, void *data)
 {
 	struct power_supply *psy;
@@ -1156,6 +1159,7 @@ static int ab8500_chargalg_get_ext_psy_data(struct device *dev, void *data)
 	union power_supply_propval ret;
 	int i, j;
 	bool psy_found = false;
+	bool is_charger = false;
 
 	psy = (struct power_supply *)data;
 	ext = dev_get_drvdata(dev);
@@ -1211,11 +1215,15 @@ static int ab8500_chargalg_get_ext_psy_data(struct device *dev, void *data)
 			break ;
 
 		case POWER_SUPPLY_PROP_PRESENT:
-if (!ret.intval && (ext->type == POWER_SUPPLY_TYPE_MAINS || 
-				ext->type == POWER_SUPPLY_TYPE_USB) && 
-				(di->chg_info.conn_chg & AC_CHG || di->chg_info.conn_chg & USB_CHG)) {
+			is_charger = (ext->type == POWER_SUPPLY_TYPE_MAINS ||
+                                ext->type == POWER_SUPPLY_TYPE_USB) &&
+                                (di->chg_info.conn_chg & AC_CHG || di->chg_info.conn_chg & USB_CHG);
+			if (!ret.intval && is_charger) {
 				bln_disable_backlights(gen_all_leds_mask());
-	}
+				is_charger_present = false;
+			} else if (ret.intval && is_charger) {
+				is_charger_present = true;
+			}
 			switch (ext->type) {
 			case POWER_SUPPLY_TYPE_BATTERY:
 				/* Battery present */
