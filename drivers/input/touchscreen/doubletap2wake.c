@@ -214,7 +214,7 @@ static int set_enable(const char *val, struct kernel_param *kp)
 	return 0;
 }
 
-module_param_call(enable, set_enable, param_get_int, &dt2w_switch, 0664);
+module_param_call(enable, set_enable, param_get_int, &dt2w_switch, 0644);
 
 #ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE_WAKELOCK
 
@@ -241,7 +241,7 @@ static int set_dt2w_use_wakelock(const char *val, struct kernel_param *kp){
 
 }
 
-module_param_call(dt2w_use_wakelock, set_dt2w_use_wakelock, param_get_bool, &dt2w_use_wakelock, 0664);
+module_param_call(dt2w_use_wakelock, set_dt2w_use_wakelock, param_get_bool, &dt2w_use_wakelock, 0644);
 #endif
 
 static int __init doubletap2wake_init(void)
