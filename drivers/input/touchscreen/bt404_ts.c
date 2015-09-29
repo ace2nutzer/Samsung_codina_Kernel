@@ -4447,9 +4447,10 @@ inline bool break_suspend_early(bool suspend)
 {
 	 bool ret;
 
-	 ret = prcmu_qos_requirement_is_active(PRCMU_QOS_APE_OPP, "sia")||
-		is_bln_wakelock_active() 				||
-		is_dt2w_wakelock_active()				||
+	 ret = prcmu_qos_requirement_is_active(PRCMU_QOS_APE_OPP, "sia")	||
+		prcmu_qos_requirement_is_active(PRCMU_QOS_APE_OPP, "sva")	||
+		is_bln_wakelock_active()	 	||
+		is_dt2w_wakelock_active()		||
 		is_charger_present;
 
 	 if (suspend) {
@@ -4500,9 +4501,10 @@ DECLARE_DELAYED_WORK(should_break_suspend_early_check_work, should_break_suspend
 void should_break_suspend_early_check_fn(struct work_struct *work)
 {
 	should_break_suspend_early = 
-		prcmu_qos_requirement_is_active(PRCMU_QOS_APE_OPP, "sia")||
-                is_bln_wakelock_active()                                 ||
-                is_dt2w_wakelock_active()                                ||
+		prcmu_qos_requirement_is_active(PRCMU_QOS_APE_OPP, "sia")	||
+		prcmu_qos_requirement_is_active(PRCMU_QOS_APE_OPP, "sva")	||
+                is_bln_wakelock_active()		||
+                is_dt2w_wakelock_active()		||
                 is_charger_present;
 
 
