@@ -135,7 +135,6 @@ struct ssg_dpi_display_platform_data codina_dpi_pri_display_info = {
 	.reset_gpio		= LCD_RESX_CODINA_R0_0,
 	.pwr_gpio		= LCD_PWR_EN_CODINA_R0_0,
 	.bl_ctrl		= false,
-
 	.min_ddr_opp		= 50,
 
 	.video_mode.xres	= 480,
@@ -403,6 +402,8 @@ if ((reqs->num_rot_channels && reqs->num_overlays > 1) ||
 	
 }
 
+extern unsigned int is_lpm;
+
 int __init init_codina_display_devices(void)
 {
 	int ret;
@@ -480,12 +481,20 @@ int __init init_codina_display_devices(void)
 		codina_dpi_pri_display_info.video_mode.vbp = 6;		/* 11 */
 		codina_dpi_pri_display_info.video_mode.vfp = 40;	/* 10 */
 		/* delays */
+	if (is_lpm) {
+		codina_dpi_pri_display_info.sleep_out_delay = 5;	/* 120 */
+		codina_dpi_pri_display_info.power_on_delay = 5;	/* 10 */
+		codina_dpi_pri_display_info.reset_delay = 5;		/* 10 */
+		codina_dpi_pri_display_info.display_off_delay = 5;	/* 25 */
+		codina_dpi_pri_display_info.sleep_in_delay = 5;	/* 120 */
+	} else {
 		codina_dpi_pri_display_info.sleep_out_delay = 30;	/* 120 */
 		codina_dpi_pri_display_info.power_on_delay = 30;	/* 10 */
 		codina_dpi_pri_display_info.reset_delay = 30;		/* 10 */
 		codina_dpi_pri_display_info.display_off_delay = 30;	/* 25 */
 		codina_dpi_pri_display_info.sleep_in_delay = 30;	/* 120 */
 	}
+}
 	
 	ret = mcde_display_device_register(&generic_display0);
 	if (ret)

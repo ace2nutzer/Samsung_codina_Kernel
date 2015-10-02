@@ -50,6 +50,9 @@
 #include <asm/traps.h>
 #include <asm/unwind.h>
 
+int is_lpm = 0;
+module_param_named(is_lpm, is_lpm, uint, 0444);
+
 #if defined(CONFIG_DEPRECATED_PARAM_STRUCT)
 #include "compat.h"
 #endif
@@ -671,6 +674,11 @@ static int __init parse_tag_cmdline(const struct tag *tag)
 #else
 	strlcpy(default_command_line, tag->u.cmdline.cmdline,
 		COMMAND_LINE_SIZE);
+
+if (!is_lpm && (strstr(default_command_line, "lpm_boot=1") != NULL)) {
+    is_lpm=1;
+}
+
 #endif
 	return 0;
 }
