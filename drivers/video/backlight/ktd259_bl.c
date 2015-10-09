@@ -87,21 +87,6 @@ static int ktd259_set_brightness(struct backlight_device *bd)
 		reqBrightness = pd->max_brightness;
 	}
 
-	/* set minimum brightness to custom brightness */
-	if (reqBrightness != KTD259_BACKLIGHT_OFF && reqBrightness <= 10) {
-		if (unlikely(min_brightness < 1)) {
-			min_brightness = 1;
-			pr_err("[ktd259_bl] invalid input - setting bl to 1\n");
-		}
-/*
-		if (unlikely(min_brightness > 10)) {
-			min_brightness = 10;
-			pr_err("[ktd259_bl] invalid input - setting bl to 10\n");
-		}
-*/
-		reqBrightness = min_brightness;
-	}
-
 	for (newCurrentRatio = KTD259_MAX_CURRENT_RATIO; newCurrentRatio > KTD259_BACKLIGHT_OFF; newCurrentRatio--) {
 		if (reqBrightness > pd->brightness_to_current_ratio[newCurrentRatio - 1])
 			break;
