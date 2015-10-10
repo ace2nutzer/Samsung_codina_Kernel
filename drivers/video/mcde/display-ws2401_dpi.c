@@ -56,7 +56,7 @@
 #define VMODE_YRES		800
 #define POWER_IS_ON(pwr)	((pwr) <= FB_BLANK_NORMAL)
 
-#define MIN_BRIGHTNESS		1
+#define MIN_BRIGHTNESS		10
 #define MAX_BRIGHTNESS		255
 #define DEFAULT_BRIGHTNESS	90
 

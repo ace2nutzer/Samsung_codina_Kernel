@@ -57,7 +57,7 @@
 #define VMODE_YRES			800
 #define POWER_IS_ON(pwr)		((pwr) <= FB_BLANK_NORMAL)
 
-#define MIN_BRIGHTNESS			1
+#define MIN_BRIGHTNESS			10
 #define MAX_BRIGHTNESS			255
 #define DEFAULT_BRIGHTNESS		90
 
@@ -74,7 +74,7 @@
 #define DCS_CMD_S6D27A1_MANPWR		0xF3	/* Manual Control */
 #define DCS_CMD_S6D27A1_PWRCTL1		0xF4	/* Power Control */
 #define DCS_CMD_S6D27A1_SRCCTL		0xF6	/* Source Control */
-#define DCS_CMD_S6D27A1_PANELCTL 	0xF7	/* Panel Control*/
+#define DCS_CMD_S6D27A1_PANELCTL 	0xF7	/* Panel Control */
 #define DCS_CMD_S6D27A1_PGAMMACTL	0xFA	/* Positive Gamma Control */
 #define DCS_CMD_S6D27A1_NGAMMACTL	0xFB	/* Negative Gamma Control */
 
