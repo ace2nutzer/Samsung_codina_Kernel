@@ -1181,8 +1181,8 @@ static int wait_for_vsync(struct mcde_chnl_state *chnl)
  * 44373333	[S6D27A1]
  * 49920000
  * 57051428
- * 66560000
- * 79872000	[WS2401]
+ * 66560000	[WS2401]
+ * 79872000
  */
 #include <linux/kobject.h>
 #include <linux/mfd/dbx500-prcmu.h>
@@ -1226,11 +1226,11 @@ static struct lcdclk_prop lcdclk_prop[] = {
 		.clk = 57051428,
 	},
   	[8] = {
-		.name = "66.56 Mhz (66560000)",
+		.name = "66.56 Mhz (66560000) [WS2401]",
 		.clk = 66560000,
 	},
   	[9] = {
-		.name = "79.87 Mhz (79872000) [WS2401]",
+		.name = "79.87 Mhz (79872000)",
 		.clk = 79872000,
 	},
 };
