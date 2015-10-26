@@ -459,12 +459,12 @@ int __init init_codina_display_devices(void)
 	if (lcd_type == LCD_PANEL_TYPE_SMD) {
 		generic_display0.name = LCD_DRIVER_NAME_WS2401;
 		/* video modes */
-		codina_dpi_pri_display_info.video_mode.hsw = 8;		/* 10 */
+		codina_dpi_pri_display_info.video_mode.hsw = 4;		/* 10 */
 		codina_dpi_pri_display_info.video_mode.hbp = 8;		/* 8 */
 		codina_dpi_pri_display_info.video_mode.hfp = 8;		/* 8 */
 		codina_dpi_pri_display_info.video_mode.vsw = 8;		/* 2 */
 		codina_dpi_pri_display_info.video_mode.vbp = 8;		/* 8 */
-		codina_dpi_pri_display_info.video_mode.vfp = 8;		/* 18 */
+		codina_dpi_pri_display_info.video_mode.vfp = 4;		/* 18 */
 		/* delays */
 	if (is_lpm) {
 		codina_dpi_pri_display_info.sleep_out_delay = 25;	/* 50 */
