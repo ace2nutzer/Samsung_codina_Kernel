@@ -378,7 +378,7 @@ KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -march=armv7-a \
 		  -mcpu=cortex-a9 \
 		  -mtune=cortex-a9 \
-		  -mfpu=neon \
+		  -mfpu=vfpv3-fp16 \
 		  -mfloat-abi=hard \
 		  -mhard-float \
 		  -mtls-dialect=gnu2 \
@@ -610,8 +610,7 @@ KBUILD_CFLAGS	+= -O3 -fno-unswitch-loops -marm $(call cc-disable-warning,maybe-u
 		  -floop-parallelize-all \
 		  -ftree-parallelize-loops=2 \
 		  -fcx-limited-range \
-		  -fno-signed-zeros \
-		  -funsafe-loop-optimizations
+		  -fno-signed-zeros
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
