@@ -378,8 +378,9 @@ KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -march=armv7-a \
 		  -mcpu=cortex-a9 \
 		  -mtune=cortex-a9 \
-		  -mfpu=neon-fp16 \
-		  -mfloat-abi=softfp \
+		  -mfpu=neon \
+		  -mfloat-abi=hard \
+		  -mhard-float \
 		  -mtls-dialect=gnu2 \
 		  -pipe
 
@@ -608,9 +609,8 @@ KBUILD_CFLAGS	+= -O3 -fno-unswitch-loops -marm $(call cc-disable-warning,maybe-u
 		  -floop-interchange \
 		  -floop-parallelize-all \
 		  -ftree-parallelize-loops=2 \
-		  -fno-math-errno \
+		  -fcx-limited-range \
 		  -fno-signed-zeros \
-		  -freciprocal-math \
 		  -funsafe-loop-optimizations
 endif
 
