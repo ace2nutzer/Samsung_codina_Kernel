@@ -460,8 +460,8 @@ int __init init_codina_display_devices(void)
 		generic_display0.name = LCD_DRIVER_NAME_WS2401;
 		/* video modes */
 		codina_dpi_pri_display_info.video_mode.hsw = 4;		/* 10 */
-		codina_dpi_pri_display_info.video_mode.hbp = 8;		/* 8 */
-		codina_dpi_pri_display_info.video_mode.hfp = 8;		/* 8 */
+		codina_dpi_pri_display_info.video_mode.hbp = 4;		/* 8 */
+		codina_dpi_pri_display_info.video_mode.hfp = 4;		/* 8 */
 		codina_dpi_pri_display_info.video_mode.vsw = 8;		/* 2 */
 		codina_dpi_pri_display_info.video_mode.vbp = 8;		/* 8 */
 		codina_dpi_pri_display_info.video_mode.vfp = 4;		/* 18 */
