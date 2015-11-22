@@ -246,7 +246,7 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-unswitch-loops -fomit-frame-pointer -std=gnu89 -pipe
+HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-unswitch-loops -fomit-frame-pointer -std=gnu11 -pipe
 HOSTCXXFLAGS := -O3 -fno-unswitch-loops -pipe
 
 ifeq ($(shell $(HOSTCC) -v 2>&1 | grep -c "clang version"), 1)
@@ -374,7 +374,7 @@ KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -fno-strict-aliasing -fno-common \
 		  -Werror-implicit-function-declaration \
 		  -Wno-format-security \
-		  -std=gnu89 \
+		  -std=gnu11 \
 		  -march=armv7-a \
 		  -mcpu=cortex-a9 \
 		  -mtune=cortex-a9 \
