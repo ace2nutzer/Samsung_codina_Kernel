@@ -109,7 +109,6 @@ arch/arm/boot/compressed/vmlinux
 arch/arm/boot/compressed/vmlinux.lds
 arch/arm/boot/zImage
 arch/arm/kernel/vmlinux.lds
-drivers/gpu/mali/mali400ko/driver/src/devicedrv/mali/arch
 lib/gen_crc32table
 scripts/basic/fixdep
 scripts/conmakehash
