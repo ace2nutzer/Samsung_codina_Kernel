@@ -17,11 +17,11 @@
 /**
  * Size of the Mali L2 cache registers in bytes
  */
-#define MALI400_L2_CACHE_REGISTERS_SIZE 0x30
+#define MALI400_L2_CACHE_REGISTERS_SIZE 0x20 /* 0x30 */
 
 int mali_l2_registers_size = MALI400_L2_CACHE_REGISTERS_SIZE;
 
-#define MALI_MAX_NUMBER_OF_L2_CACHE_CORES  3
+#define MALI_MAX_NUMBER_OF_L2_CACHE_CORES  1 /* 3 */
 
 /**
  * Mali L2 cache register numbers
