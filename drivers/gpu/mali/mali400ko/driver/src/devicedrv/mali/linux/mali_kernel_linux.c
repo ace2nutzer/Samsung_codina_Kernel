@@ -52,7 +52,7 @@ module_param(mali_mem, charp, S_IRUSR | S_IWUSR | S_IWGRP | S_IROTH); /* rw-r--r
 MODULE_PARM_DESC(mali_mem, "Override mali memory configuration. e.g. 32M@224M or 64M@OS_MEMORY");
 
 /* Module parameter to control log level */
-int mali_debug_level = 2;
+int mali_debug_level = 0;
 module_param(mali_debug_level, int, S_IRUSR | S_IWUSR | S_IWGRP | S_IRGRP | S_IROTH); /* rw-rw-r-- */
 MODULE_PARM_DESC(mali_debug_level, "Higher number, more dmesg output");
 
