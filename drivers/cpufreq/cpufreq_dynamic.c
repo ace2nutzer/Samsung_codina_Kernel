@@ -32,7 +32,7 @@
  * It helps to keep variable names smaller, simpler
  */
 
-#define DEF_FREQUENCY_UP_THRESHOLD		(80)
+#define DEF_FREQUENCY_UP_THRESHOLD		(40)
 #define DEF_DOWN_DIFFERENTIAL		(20)
 
 /*
@@ -54,10 +54,10 @@ static unsigned int min_sampling_rate;
 #define MIN_LATENCY_MULTIPLIER			(100)
 #define MICRO_FREQUENCY_MIN_SAMPLE_RATE		(10000)
 #define MICRO_FREQUENCY_UP_THRESHOLD		(40)
-#define MICRO_FREQUENCY_DOWN_DIFFERENTIAL		(10)
-#define DEF_SAMPLING_DOWN_FACTOR		(1)
+#define MICRO_FREQUENCY_DOWN_DIFFERENTIAL		(20)
+#define DEF_SAMPLING_DOWN_FACTOR		(5)
 #define MAX_SAMPLING_DOWN_FACTOR		(10)
-#define DEF_SAMPLING_UP_FACTOR		(6)
+#define DEF_SAMPLING_UP_FACTOR		(1)
 #define MAX_SAMPLING_UP_FACTOR		(20)
 #define TRANSITION_LATENCY_LIMIT		(10 * 1000 * 1000)
 
@@ -150,17 +150,17 @@ static struct dbs_tuners {
 	.input_boost_freq = 800000,
 	.input_boost_us = 500*1000,
 	.power_optimal_freq = 0,
-	.high_freq_sampling_up_factor = 0,
+	.high_freq_sampling_up_factor = 1,
 
 	.up_threshold = DEF_FREQUENCY_UP_THRESHOLD,
 	.down_differential = DEF_DOWN_DIFFERENTIAL,
 	.ignore_nice = 0,
-	.io_is_busy = 20*128/100,
-	.standby_delay_factor = 1,
-	.standby_threshold_freq = 0,
+	.io_is_busy = 40*128/100,
+	.standby_delay_factor = 3,
+	.standby_threshold_freq = 200000,
 
 	.sampling_rate = 2*HZ/100,
-	.sampling_down_factor = 2,
+	.sampling_down_factor = 5,
 	.sampling_down_factor_relax_khz = 400000,
 	.max_non_oc_freq = 0,
 	.oc_freq_boost_ms = 0,
@@ -169,7 +169,7 @@ static struct dbs_tuners {
 	.standby_sampling_up_factor = 3,
 
 	.suspend_sampling_rate = 4*HZ/100,
-	.suspend_sampling_up_factor = 4,
+	.suspend_sampling_up_factor = 5,
 	.suspend_max_freq = 800000,
 };
 
