@@ -246,8 +246,10 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-unswitch-loops -fomit-frame-pointer -std=gnu89 -pipe
-HOSTCXXFLAGS := -O3 -fno-unswitch-loops -pipe
+HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-unswitch-loops -fno-strict-aliasing -fno-common -fomit-frame-pointer -fno-signed-zeros -std=gnu89 -pipe \
+					-mtls-dialect=gnu2 -DNDEBUG
+HOSTCXXFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-unswitch-loops -fno-strict-aliasing -fno-common -fomit-frame-pointer -fno-signed-zeros -pipe \
+					-mtls-dialect=gnu2 -DNDEBUG
 
 ifeq ($(shell $(HOSTCC) -v 2>&1 | grep -c "clang version"), 1)
 HOSTCFLAGS  += -Wno-unused-value -Wno-unused-parameter \
@@ -368,12 +370,11 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
                    $(if $(KBUILD_SRC), -I$(srctree)/include) \
                    -include include/generated/autoconf.h
 
-KBUILD_CPPFLAGS := -D__KERNEL__
-
-KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
+KBUILD_FLAGS_1 := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -fno-strict-aliasing -fno-common \
 		  -Werror-implicit-function-declaration \
 		  -Wno-format-security \
+		  $(call cc-disable-warning,maybe-uninitialized,) \
 		  -std=gnu89 \
 		  -march=armv7-a \
 		  -mcpu=cortex-a9 \
@@ -383,6 +384,53 @@ KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -mhard-float \
 		  -mtls-dialect=gnu2 \
 		  -pipe
+
+KBUILD_FLAGS_2 := -O3 -fno-unswitch-loops \
+		  -marm \
+		  -ftree-vectorize \
+		  -fmodulo-sched \
+		  -fmodulo-sched-allow-regmoves \
+		  -fgcse-sm \
+		  -fgcse-las \
+		  -fsched-pressure \
+		  -fipa-pta \
+		  -fisolate-erroneous-paths-attribute \
+		  -ftree-loop-if-convert \
+		  -ftree-loop-distribution \
+		  -ftree-loop-im \
+		  -ftree-loop-ivcanon \
+		  -fivopts \
+		  -ftree-coalesce-inlined-vars \
+		  -fweb \
+		  -flto \
+		  -ffat-lto-objects \
+		  -DNDEBUG \
+		  -fdevirtualize-speculatively \
+		  -fdevirtualize-at-ltrans \
+		  -fgraphite \
+		  -floop-strip-mine \
+		  -floop-block \
+		  -fgraphite-identity \
+		  -ftree-loop-linear \
+		  -floop-interchange \
+		  -floop-parallelize-all \
+		  -ftree-parallelize-loops=2 \
+		  -fcx-limited-range \
+		  -fno-signed-zeros
+
+KBUILD_CFLAGS := $(KBUILD_FLAGS_1)
+
+KBUILD_CPPFLAGS := -D__KERNEL__ $(KBUILD_FLAGS_1)
+
+ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
+KBUILD_CFLAGS	+= -Os -mthumb
+KBUILD_CPPFLAGS	+= -Os -mthumb
+LDFLAGS += -Os --as-needed --sort-common
+else
+KBUILD_CFLAGS	+= $(KBUILD_FLAGS_2)
+KBUILD_CPPFLAGS	+= $(KBUILD_FLAGS_2)
+LDFLAGS += -O2 --as-needed --sort-common
+endif
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
@@ -574,44 +622,6 @@ endif # $(dot-config)
 all: vmlinux
 
 KBUILD_CFLAGS	+= $(call cc-option,-fno-delete-null-pointer-checks,)
-
-ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS	+= -Os -mthumb $(call cc-disable-warning,maybe-uninitialized,)
-LDFLAGS += -Os --as-needed --sort-common
-else
-LDFLAGS += -O2 --as-needed --sort-common
-KBUILD_CFLAGS	+= -O3 -fno-unswitch-loops -marm $(call cc-disable-warning,maybe-uninitialized,) \
-		  -ftree-vectorize \
-		  -fmodulo-sched \
-		  -fmodulo-sched-allow-regmoves \
-		  -fgcse-sm \
-		  -fgcse-las \
-		  -fsched-pressure \
-		  -fipa-pta \
-		  -fisolate-erroneous-paths-attribute \
-		  -ftree-loop-if-convert \
-		  -ftree-loop-distribution \
-		  -ftree-loop-im \
-		  -ftree-loop-ivcanon \
-		  -fivopts \
-		  -ftree-coalesce-inlined-vars \
-		  -fweb \
-		  -flto \
-		  -ffat-lto-objects \
-		  -DNDEBUG \
-		  -fdevirtualize-speculatively \
-		  -fdevirtualize-at-ltrans \
-		  -fgraphite \
-		  -floop-strip-mine \
-		  -floop-block \
-		  -fgraphite-identity \
-		  -ftree-loop-linear \
-		  -floop-interchange \
-		  -floop-parallelize-all \
-		  -ftree-parallelize-loops=2 \
-		  -fcx-limited-range \
-		  -fno-signed-zeros
-endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
