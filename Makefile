@@ -375,6 +375,8 @@ KBUILD_FLAGS_1 := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -Werror-implicit-function-declaration \
 		  -Wno-format-security \
 		  $(call cc-disable-warning,maybe-uninitialized,) \
+		  -DNDEBUG \
+		  -D_FORTIFY_SOURCE=1 \
 		  -std=gnu89 \
 		  -march=armv7-a \
 		  -mcpu=cortex-a9 \
@@ -404,7 +406,6 @@ KBUILD_FLAGS_2 := -O3 -fno-unswitch-loops \
 		  -fweb \
 		  -flto \
 		  -ffat-lto-objects \
-		  -DNDEBUG \
 		  -fdevirtualize-speculatively \
 		  -fdevirtualize-at-ltrans \
 		  -fgraphite \
