@@ -248,7 +248,7 @@ HOSTCC       = gcc
 HOSTCXX      = g++
 HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-unswitch-loops -fno-strict-aliasing -fno-common -fomit-frame-pointer -fno-signed-zeros -std=gnu89 -pipe \
 					-mtls-dialect=gnu2 -DNDEBUG
-HOSTCXXFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-unswitch-loops -fno-strict-aliasing -fno-common -fomit-frame-pointer -fno-signed-zeros -pipe \
+HOSTCXXFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-unswitch-loops -fno-strict-aliasing -fno-common -fomit-frame-pointer -fno-signed-zeros -std=c++98 -pipe \
 					-mtls-dialect=gnu2 -DNDEBUG
 
 ifeq ($(shell $(HOSTCC) -v 2>&1 | grep -c "clang version"), 1)
@@ -356,11 +356,13 @@ CHECK		= sparse
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
 CFLAGS_MODULE   = -fno-lto -fno-fat-lto-objects -pipe
+CPPFLAGS_MODULE   = -fno-lto -fno-fat-lto-objects -pipe
 AFLAGS_MODULE   =
 LDFLAGS_MODULE  =
 CFLAGS_KERNEL	=
 AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage -pipe
+CPPFLAGS_GCOV	= -fprofile-arcs -ftest-coverage -pipe
 
 
 # Use LINUXINCLUDE when you must reference the include/ directory.
@@ -377,7 +379,6 @@ KBUILD_FLAGS_1 := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  $(call cc-disable-warning,maybe-uninitialized,) \
 		  -DNDEBUG \
 		  -D_FORTIFY_SOURCE=1 \
-		  -std=gnu89 \
 		  -march=armv7-a \
 		  -mcpu=cortex-a9 \
 		  -mtune=cortex-a9 \
@@ -419,17 +420,17 @@ KBUILD_FLAGS_2 := -O3 -fno-unswitch-loops \
 		  -fcx-limited-range \
 		  -fno-signed-zeros
 
-KBUILD_CFLAGS := $(KBUILD_FLAGS_1)
+KBUILD_CFLAGS := $(KBUILD_FLAGS_1) -std=gnu89
 
 KBUILD_CPPFLAGS := -D__KERNEL__ $(KBUILD_FLAGS_1)
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS	+= -Os -mthumb
-KBUILD_CPPFLAGS	+= -Os -mthumb
+KBUILD_CFLAGS += -Os -mthumb
+KBUILD_CPPFLAGS += -Os -mthumb
 LDFLAGS += -Os --as-needed --sort-common
 else
-KBUILD_CFLAGS	+= $(KBUILD_FLAGS_2)
-KBUILD_CPPFLAGS	+= $(KBUILD_FLAGS_2)
+KBUILD_CFLAGS += $(KBUILD_FLAGS_2)
+KBUILD_CPPFLAGS += $(KBUILD_FLAGS_2)
 LDFLAGS += -O2 --as-needed --sort-common
 endif
 
@@ -438,6 +439,7 @@ KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
 KBUILD_AFLAGS_MODULE  := -DMODULE -pipe
 KBUILD_CFLAGS_MODULE := -DMODULE -pipe
+KBUILD_CPPFLAGS_MODULE := -DMODULE -pipe
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
