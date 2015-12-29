@@ -246,10 +246,12 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-unswitch-loops -fno-strict-aliasing -fno-common -fomit-frame-pointer -fno-signed-zeros -std=gnu89 -pipe \
-					-mtls-dialect=gnu2 -DNDEBUG
-HOSTCXXFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-unswitch-loops -fno-strict-aliasing -fno-common -fomit-frame-pointer -fno-signed-zeros -std=c++98 -pipe \
-					-mtls-dialect=gnu2 -DNDEBUG
+HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-unswitch-loops -fno-strict-aliasing -fno-common -fomit-frame-pointer \
+					-fno-signed-zeros -fno-pic -mtls-dialect=gnu2 -DNDEBUG -std=gnu89 -pipe
+
+HOSTCXXFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-unswitch-loops -fno-strict-aliasing -fno-common -fomit-frame-pointer \
+						-fno-signed-zeros -fno-pic -mtls-dialect=gnu2 -DNDEBUG -std=c++98 -pipe
+
 
 ifeq ($(shell $(HOSTCC) -v 2>&1 | grep -c "clang version"), 1)
 HOSTCFLAGS  += -Wno-unused-value -Wno-unused-parameter \
@@ -386,6 +388,7 @@ KBUILD_FLAGS_1 := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -mfloat-abi=hard \
 		  -mhard-float \
 		  -mtls-dialect=gnu2 \
+		  -fno-pic \
 		  -pipe
 
 KBUILD_FLAGS_2 := -O3 -fno-unswitch-loops \
