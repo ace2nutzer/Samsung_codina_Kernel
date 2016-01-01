@@ -409,6 +409,7 @@ KBUILD_FLAGS_2 := -O3 -fno-unswitch-loops \
 		  -ftree-coalesce-inlined-vars \
 		  -fweb \
 		  -flto \
+		  -fuse-linker-plugin \
 		  -ffat-lto-objects \
 		  -fdevirtualize-speculatively \
 		  -fdevirtualize-at-ltrans \
