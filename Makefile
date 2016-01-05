@@ -247,10 +247,10 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 HOSTCC       = gcc
 HOSTCXX      = g++
 HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-unswitch-loops -fno-strict-aliasing -fno-common -fomit-frame-pointer \
-					-fno-signed-zeros -fno-pic -mtls-dialect=gnu2 -DNDEBUG -std=gnu89 -pipe
+					-fno-signed-zeros -fno-pic -mtls-dialect=gnu2 -DNDEBUG -std=gnu89 -fno-builtin-sin -fno-strict-volatile-bitfields -fno-align-jumps -fno-short-enums -pipe
 
 HOSTCXXFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-unswitch-loops -fno-strict-aliasing -fno-common -fomit-frame-pointer \
-						-fno-signed-zeros -fno-pic -mtls-dialect=gnu2 -DNDEBUG -std=c++98 -pipe
+						-fno-signed-zeros -fno-pic -mtls-dialect=gnu2 -DNDEBUG -std=c++98 -fno-builtin-sin -fno-strict-volatile-bitfields -fno-align-jumps -fno-short-enums -pipe
 
 
 ifeq ($(shell $(HOSTCC) -v 2>&1 | grep -c "clang version"), 1)
@@ -418,17 +418,22 @@ KBUILD_FLAGS_2 := -O3 -fno-unswitch-loops \
 		  -floop-parallelize-all \
 		  -ftree-parallelize-loops=2 \
 		  -fcx-limited-range \
-		  -fno-signed-zeros
+		  -fno-signed-zeros \
+		  -fomit-frame-pointer \
+		  -fno-builtin-sin \
+		  -fno-strict-volatile-bitfields \
+		  -fno-align-jumps \
+		  -fno-short-enums
 
 KBUILD_CFLAGS := $(KBUILD_FLAGS_1)
 KBUILD_CPPFLAGS := -D__KERNEL__
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS += -Os -mthumb
-LDFLAGS += -Os --as-needed --sort-common
+LDFLAGS += --as-needed --sort-common
 else
 KBUILD_CFLAGS += $(KBUILD_FLAGS_2)
-LDFLAGS += -O2 --as-needed --sort-common
+LDFLAGS += --as-needed --sort-common
 endif
 
 KBUILD_AFLAGS_KERNEL :=
