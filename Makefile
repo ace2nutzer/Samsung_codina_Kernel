@@ -357,14 +357,12 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-CFLAGS_MODULE   = -fno-lto -fno-fat-lto-objects -pipe
-CPPFLAGS_MODULE   = -fno-lto -fno-fat-lto-objects -pipe
+CFLAGS_MODULE   = -pipe
 AFLAGS_MODULE   =
 LDFLAGS_MODULE  =
 CFLAGS_KERNEL	=
 AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage -pipe
-CPPFLAGS_GCOV	= -fprofile-arcs -ftest-coverage -pipe
 
 
 # Use LINUXINCLUDE when you must reference the include/ directory.
@@ -379,6 +377,7 @@ KBUILD_FLAGS_1 := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -Werror-implicit-function-declaration \
 		  -Wno-format-security \
 		  $(call cc-disable-warning,maybe-uninitialized,) \
+		  -std=gnu89 \
 		  -DNDEBUG \
 		  -D_FORTIFY_SOURCE=1 \
 		  -march=armv7-a \
@@ -407,9 +406,7 @@ KBUILD_FLAGS_2 := -O3 -fno-unswitch-loops \
 		  -fivopts \
 		  -ftree-coalesce-inlined-vars \
 		  -fweb \
-		  -flto \
 		  -fuse-linker-plugin \
-		  -ffat-lto-objects \
 		  -fdevirtualize-speculatively \
 		  -fdevirtualize-at-ltrans \
 		  -fgraphite \
@@ -423,17 +420,14 @@ KBUILD_FLAGS_2 := -O3 -fno-unswitch-loops \
 		  -fcx-limited-range \
 		  -fno-signed-zeros
 
-KBUILD_CFLAGS := $(KBUILD_FLAGS_1) -std=gnu89
-
-KBUILD_CPPFLAGS := -D__KERNEL__ $(KBUILD_FLAGS_1)
+KBUILD_CFLAGS := $(KBUILD_FLAGS_1)
+KBUILD_CPPFLAGS := -D__KERNEL__
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS += -Os -mthumb
-KBUILD_CPPFLAGS += -Os -mthumb
 LDFLAGS += -Os --as-needed --sort-common
 else
 KBUILD_CFLAGS += $(KBUILD_FLAGS_2)
-KBUILD_CPPFLAGS += $(KBUILD_FLAGS_2)
 LDFLAGS += -O2 --as-needed --sort-common
 endif
 
@@ -442,7 +436,6 @@ KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
 KBUILD_AFLAGS_MODULE  := -DMODULE -pipe
 KBUILD_CFLAGS_MODULE := -DMODULE -pipe
-KBUILD_CPPFLAGS_MODULE := -DMODULE -pipe
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
