@@ -428,12 +428,12 @@ KBUILD_FLAGS_2 := -O3 -fno-unswitch-loops \
 KBUILD_CFLAGS := $(KBUILD_FLAGS_1)
 KBUILD_CPPFLAGS := -D__KERNEL__
 
+LDFLAGS += --as-needed --sort-common
+
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS += -Os -mthumb
-LDFLAGS += --as-needed --sort-common
 else
 KBUILD_CFLAGS += $(KBUILD_FLAGS_2)
-LDFLAGS += --as-needed --sort-common
 endif
 
 KBUILD_AFLAGS_KERNEL :=
