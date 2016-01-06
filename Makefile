@@ -247,10 +247,10 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 HOSTCC       = gcc
 HOSTCXX      = g++
 HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-unswitch-loops -fno-strict-aliasing -fno-common -fomit-frame-pointer \
-					-fno-signed-zeros -fno-pic -mtls-dialect=gnu2 -DNDEBUG -std=gnu89 -fno-builtin-sin -fno-strict-volatile-bitfields -fno-align-jumps -fno-short-enums -pipe
+					-fno-signed-zeros -mtls-dialect=gnu2 -DNDEBUG -std=gnu89 -fno-builtin-sin -fno-strict-volatile-bitfields -fno-align-jumps -fno-short-enums -pipe
 
 HOSTCXXFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-unswitch-loops -fno-strict-aliasing -fno-common -fomit-frame-pointer \
-						-fno-signed-zeros -fno-pic -mtls-dialect=gnu2 -DNDEBUG -std=c++98 -fno-builtin-sin -fno-strict-volatile-bitfields -fno-align-jumps -fno-short-enums -pipe
+						-fno-signed-zeros -mtls-dialect=gnu2 -DNDEBUG -std=c++98 -fno-builtin-sin -fno-strict-volatile-bitfields -fno-align-jumps -fno-short-enums -pipe
 
 
 ifeq ($(shell $(HOSTCC) -v 2>&1 | grep -c "clang version"), 1)
@@ -386,7 +386,7 @@ KBUILD_FLAGS_1 := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -mfpu=neon \
 		  -mfloat-abi=softfp \
 		  -mtls-dialect=gnu2 \
-		  -fno-pic \
+		  -fpic -fPIC \
 		  -pipe
 
 KBUILD_FLAGS_2 := -O3 -fno-unswitch-loops \
