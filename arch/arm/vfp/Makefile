@@ -7,7 +7,7 @@
 # ccflags-y := -DNDEBUG -D_FORTIFY_SOURCE=1
 # asflags-y := -DNDEBUG
 
-KBUILD_AFLAGS	:= $(KBUILD_AFLAGS: -mfpu=neon -mfloat-abi=softfp)
+KBUILD_AFLAGS	:= $(KBUILD_AFLAGS: -mhard-float=-Wa, -mfpu=neon -mfloat-abi=hard)
 LDFLAGS		+= --no-warn-mismatch
 
 obj-y			+= vfp.o
