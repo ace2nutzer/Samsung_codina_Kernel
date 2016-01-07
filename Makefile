@@ -386,7 +386,6 @@ KBUILD_FLAGS_1 := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -mfpu=neon \
 		  -mfloat-abi=softfp \
 		  -mtls-dialect=gnu2 \
-		  -fpic -fPIC \
 		  -pipe
 
 KBUILD_FLAGS_2 := -O3 -fno-unswitch-loops \
