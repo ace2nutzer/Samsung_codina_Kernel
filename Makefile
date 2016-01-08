@@ -246,11 +246,9 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-unswitch-loops -fno-strict-aliasing -fno-common -fomit-frame-pointer \
-					-fno-signed-zeros -mtls-dialect=gnu2 -DNDEBUG -std=gnu89 -fno-builtin-sin -fno-strict-volatile-bitfields -fno-align-jumps -fno-short-enums -pipe
+HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-strict-aliasing -fno-common -fomit-frame-pointer -mtls-dialect=gnu2 -DNDEBUG -std=gnu89 -pipe
 
-HOSTCXXFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-unswitch-loops -fno-strict-aliasing -fno-common -fomit-frame-pointer \
-						-fno-signed-zeros -mtls-dialect=gnu2 -DNDEBUG -std=c++98 -fno-builtin-sin -fno-strict-volatile-bitfields -fno-align-jumps -fno-short-enums -pipe
+HOSTCXXFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-strict-aliasing -fno-common -fomit-frame-pointer -mtls-dialect=gnu2 -DNDEBUG -std=c++98 -pipe
 
 
 ifeq ($(shell $(HOSTCC) -v 2>&1 | grep -c "clang version"), 1)
@@ -378,7 +376,6 @@ KBUILD_FLAGS_1 := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -Wno-format-security \
 		  $(call cc-disable-warning,maybe-uninitialized,) \
 		  -std=gnu89 \
-		  -DNDEBUG \
 		  -D_FORTIFY_SOURCE=1 \
 		  -march=armv7-a \
 		  -mcpu=cortex-a9 \
@@ -388,8 +385,7 @@ KBUILD_FLAGS_1 := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -mtls-dialect=gnu2 \
 		  -pipe
 
-KBUILD_FLAGS_2 := -O3 -fno-unswitch-loops \
-		  -marm \
+KBUILD_FLAGS_2 := -O3 -marm \
 		  -ftree-vectorize \
 		  -fmodulo-sched \
 		  -fmodulo-sched-allow-regmoves \
@@ -416,13 +412,8 @@ KBUILD_FLAGS_2 := -O3 -fno-unswitch-loops \
 		  -floop-interchange \
 		  -floop-parallelize-all \
 		  -ftree-parallelize-loops=2 \
-		  -fcx-limited-range \
-		  -fno-signed-zeros \
 		  -fomit-frame-pointer \
-		  -fno-builtin-sin \
-		  -fno-strict-volatile-bitfields \
-		  -fno-align-jumps \
-		  -fno-short-enums
+		  -DNDEBUG
 
 KBUILD_CFLAGS := $(KBUILD_FLAGS_1)
 KBUILD_CPPFLAGS := -D__KERNEL__
