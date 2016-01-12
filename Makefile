@@ -246,9 +246,9 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-strict-aliasing -fno-common -fomit-frame-pointer -mtls-dialect=gnu2 -DNDEBUG -std=gnu89 -pipe
+HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-strict-aliasing -fno-common -fomit-frame-pointer -mtls-dialect=gnu2 -DNDEBUG -D_FORTIFY_SOURCE=1 -std=gnu89 -pipe
 
-HOSTCXXFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-strict-aliasing -fno-common -fomit-frame-pointer -mtls-dialect=gnu2 -DNDEBUG -std=c++98 -pipe
+HOSTCXXFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-strict-aliasing -fno-common -fomit-frame-pointer -mtls-dialect=gnu2 -DNDEBUG -D_FORTIFY_SOURCE=1 -std=c++98 -pipe
 
 
 ifeq ($(shell $(HOSTCC) -v 2>&1 | grep -c "clang version"), 1)
