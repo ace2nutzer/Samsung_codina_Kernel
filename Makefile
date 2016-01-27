@@ -370,7 +370,7 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
                    $(if $(KBUILD_SRC), -I$(srctree)/include) \
                    -include include/generated/autoconf.h
 
-KBUILD_FLAGS_1 := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
+KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -fno-strict-aliasing -fno-common \
 		  -Werror-implicit-function-declaration \
 		  -Wno-format-security \
@@ -385,7 +385,10 @@ KBUILD_FLAGS_1 := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -mtls-dialect=gnu2 \
 		  -pipe
 
-KBUILD_FLAGS_2 := -O3 -marm \
+ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
+KBUILD_CFLAGS += -Os -mthumb
+else
+KBUILD_CFLAGS += -O3 -marm \
 		  -ftree-vectorize \
 		  -mvectorize-with-neon-quad \
 		  -fmodulo-sched \
@@ -403,7 +406,6 @@ KBUILD_FLAGS_2 := -O3 -marm \
 		  -ftree-coalesce-inlined-vars \
 		  -fweb \
 		  -frename-registers \
-		  -funwind-tables \
 		  -fuse-linker-plugin \
 		  -fdevirtualize-speculatively \
 		  -fdevirtualize-at-ltrans \
@@ -417,17 +419,11 @@ KBUILD_FLAGS_2 := -O3 -marm \
 		  -ftree-parallelize-loops=2 \
 		  -fomit-frame-pointer \
 		  -DNDEBUG
+endif
 
-KBUILD_CFLAGS := $(KBUILD_FLAGS_1)
 KBUILD_CPPFLAGS := -D__KERNEL__
 
 LDFLAGS += --as-needed --sort-common
-
-ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS += -Os -mthumb
-else
-KBUILD_CFLAGS += $(KBUILD_FLAGS_2)
-endif
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
