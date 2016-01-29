@@ -81,9 +81,9 @@ arch-$(CONFIG_CPU_32v3)		:=-D__LINUX_ARM_ARCH__=3 -march=armv3
 # bigger problems.
 arch-$(CONFIG_ARCH_U8500)	:=-D__LINUX_ARM_ARCH__=7 $(call cc-option,-mcpu=cortex-a9,-march=armv7-a)
 
-# Never want PIC in a 32-bit kernel, prevent breakage with GCC built
+# Never want PIC and PIE in a 32-bit kernel, prevent breakage with GCC built
 # with nonstandard options
-KBUILD_CFLAGS += -fno-pic
+KBUILD_CFLAGS += -fno-pic -fno-pie
 
 # This selects how we optimise for the processor.
 tune-$(CONFIG_CPU_ARM610)	:=-mtune=arm610
