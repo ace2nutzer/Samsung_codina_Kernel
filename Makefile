@@ -246,9 +246,9 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-strict-aliasing -fomit-frame-pointer -mtls-dialect=gnu2 -DNDEBUG -D_FORTIFY_SOURCE=1 -std=gnu90 -pipe
+HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-strict-aliasing -fomit-frame-pointer -mtls-dialect=gnu2 -DNDEBUG -std=gnu90 -pipe
 
-HOSTCXXFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-strict-aliasing -fomit-frame-pointer -mtls-dialect=gnu2 -DNDEBUG -D_FORTIFY_SOURCE=1 -std=gnu++14 -pipe
+HOSTCXXFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-strict-aliasing -fomit-frame-pointer -mtls-dialect=gnu2 -DNDEBUG -std=gnu++14 -pipe
 
 
 ifeq ($(shell $(HOSTCC) -v 2>&1 | grep -c "clang version"), 1)
@@ -383,6 +383,7 @@ KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -mfpu=neon \
 		  -mfloat-abi=softfp \
 		  -mtls-dialect=gnu2 \
+		  -mno-thumb-interwork \
 		  -pipe
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
