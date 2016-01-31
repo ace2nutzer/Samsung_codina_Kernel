@@ -29,6 +29,7 @@ config ARM
 	select HAVE_GENERIC_HARDIRQS
 	select HAVE_SPARSE_IRQ
 	select GENERIC_IRQ_SHOW
+	select HAVE_CC_STACKPROTECTOR
 	help
 	  The ARM series is a line of low-power-consumption RISC chip designs
 	  licensed by ARM Ltd and targeted at embedded applications and
@@ -1716,6 +1717,13 @@ config SECCOMP
 	  and the task is only allowed to execute a few safe syscalls
 	  defined by each seccomp mode.
 
+config HAVE_CC_STACKPROTECTOR
+	bool
+	help
+	  An arch should select this symbol if:
+	  - its compiler supports the -fstack-protector option
+	  - it has implemented a stack canary (e.g. __stack_chk_guard)
+
 config CC_STACKPROTECTOR
 	def_bool n
 	help
@@ -1724,6 +1732,7 @@ config CC_STACKPROTECTOR
 
 choice
 	prompt "Stack Protector buffer overflow detection"
+	depends on HAVE_CC_STACKPROTECTOR
 	default CC_STACKPROTECTOR_NONE
 	help
 	  This option turns on the "stack-protector" GCC feature. This
@@ -1772,6 +1781,18 @@ config CC_STACKPROTECTOR_STRONG
 	  On an x86 "defconfig" build, this feature adds canary checks to
 	  about 20% of all kernel functions, which increases the kernel code
 	  size by about 2%.
+
+config CC_STACKPROTECTOR_ALL
+	bool "All"
+	select CC_STACKPROTECTOR
+	help
+	  Like -fstack-protector except that all functions are protected.
+
+config CC_STACKPROTECTOR_EXPLICIT
+	bool "Explicit"
+	select CC_STACKPROTECTOR
+	help
+	  Like -fstack-protector but only protects those functions which have the stack_protect attribute
 
 endchoice
 
