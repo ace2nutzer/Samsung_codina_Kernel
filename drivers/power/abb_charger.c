@@ -359,7 +359,7 @@ static bool bCurrentControl = false;
 static bool bVBUSDropped = false;
 
 /* (codina) Custom AC/USB current */
-static unsigned int vChargeCurrent = 500;
+static unsigned int vChargeCurrent = 700;
 
 static void ab8500_charger_set_usb_connected(struct ab8500_charger *di,
 	bool connected)
@@ -1456,7 +1456,7 @@ static int ab8500_charger_ac_en(struct ux500_charger *charger,
 	if (!bCurrentControl) {
 
 		di->bat->ta_chg_current_input = 700;
-		di->bat->usb_chg_current_input = 500;
+		di->bat->usb_chg_current_input = 700;
 
 	} else {
 
@@ -3212,7 +3212,7 @@ static ssize_t abb_charger_current_store(struct kobject *kobj, struct kobj_attri
 		di->bat->ta_chg_current = di->bat->chg_params->ac_curr_max;
 		di->bat->ta_chg_current_input = 700;
 		di->bat->usb_chg_current = di->bat->chg_params->usb_curr_max;
-		di->bat->usb_chg_current_input = 500;
+		di->bat->usb_chg_current_input = 700;
 
 		return count;
 	}

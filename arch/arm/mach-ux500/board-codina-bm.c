@@ -542,7 +542,7 @@ struct ab8500_bm_data ab8500_bm_data = {
 	.ta_chg_current_input	= 700,
 	.ta_chg_voltage		= 4340,
 	.usb_chg_current	= 1500,
-	.usb_chg_current_input	= 500,
+	.usb_chg_current_input	= 700,
 	.usb_chg_voltage	= 4340,
 #endif
 	.main_safety_tmr_h	= 4,
@@ -555,7 +555,7 @@ struct ab8500_bm_data ab8500_bm_data = {
 #else
 	.adc_therm		= ADC_THERM_BATTEMP,
 #endif
-	.chg_unknown_bat	= true,
+	.chg_unknown_bat	= false,
 	.enable_overshoot	= false,
 	/* Please find the real setting for fg_res
 	   in the ab8500_fg.c probe function  */
