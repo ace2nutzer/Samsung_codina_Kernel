@@ -491,11 +491,11 @@ int __init init_codina_display_devices(void)
 		codina_dpi_pri_display_info.video_mode.vfp = 40;	/* 10 */
 		/* delays */
 	if (is_lpm) {
-		codina_dpi_pri_display_info.sleep_out_delay = 0;	/* 120 */
-		codina_dpi_pri_display_info.power_on_delay = 0;	/* 10 */
-		codina_dpi_pri_display_info.reset_delay = 0;		/* 10 */
-		codina_dpi_pri_display_info.display_off_delay = 0;	/* 25 */
-		codina_dpi_pri_display_info.sleep_in_delay = 0;	/* 120 */
+		codina_dpi_pri_display_info.sleep_out_delay = 20;	/* 120 */
+		codina_dpi_pri_display_info.power_on_delay = 20;	/* 10 */
+		codina_dpi_pri_display_info.reset_delay = 20;		/* 10 */
+		codina_dpi_pri_display_info.display_off_delay = 20;	/* 25 */
+		codina_dpi_pri_display_info.sleep_in_delay = 20;	/* 120 */
 	} else {
 		codina_dpi_pri_display_info.sleep_out_delay = 30;	/* 120 */
 		codina_dpi_pri_display_info.power_on_delay = 30;	/* 10 */
