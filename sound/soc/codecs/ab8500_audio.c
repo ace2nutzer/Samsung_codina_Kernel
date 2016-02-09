@@ -385,13 +385,13 @@ static bool ad2_ponup = false;
  */
 #define SHIFT_ANACONF1_HSDACLOWPOW		6
 
-static bool hslowpow_con = false;
-static bool hsdaclowpow_con = false;
+static bool hslowpow_con = true;
+static bool hsdaclowpow_con = true;
 static bool hshpen_con = false;
 
-static int hslowpow_v = 0;
-static int hsdaclowpow_v = 0;
-static int hshpen_v = 1;
+static int hslowpow_v = 1;
+static int hsdaclowpow_v = 1;
+static int hshpen_v = 0;
 
 static void abbamp_control_hslowpow(void)
 {
@@ -525,9 +525,9 @@ static void abbamp_control_anaconf4_hf(void)
 #define WIDTH_ANAGAIN3_HSX			4
 #define GAIN_ANAGAIN3_MAX			0xF
 
-static bool anagain3_con = false;
-static int anagain3_hsl = 0;
-static int anagain3_hsr = 0;
+static bool anagain3_con = true;
+static int anagain3_hsl = 2;
+static int anagain3_hsr = 2;
 
 /* Volume map */
 static char *anagain3_volmap[] = {
@@ -577,8 +577,8 @@ static void abbamp_control_anagain3(void)
 static bool classdhpg_con = false;
 static bool classdwg_con = false;
 
-static int classdhpg_v = GAIN_CLASSDDIR_MAX;
-static int classdwg_v = GAIN_CLASSDDIR_MAX;
+static int classdhpg_v = 0x00;
+static int classdwg_v = 0x00;
 
 static void abbamp_control_classdhpg(void)
 {
@@ -605,7 +605,7 @@ static void abbamp_control_classdwg(void)
 #define MUTE_AD2_MAX				0x3F
 
 static bool addiggain2_con = false;
-static unsigned int addiggain2_v = 25;
+static unsigned int addiggain2_v = 31;
 static unsigned int addiggain2_ms = 1000;
 
 static char *addiggain2_volmap[] = 
@@ -701,11 +701,11 @@ static DECLARE_WORK(abbamp_ad2_work, abbamp_ad2_delay);
  */
 #define MUTE_HSLEARDIG_MAX			0xF
 
-static bool hsldiggain_con = false;
+static bool hsldiggain_con = true;
 static bool eardiggain_con = false;
 
-static int hsldiggain_v = 0x04;
-static int eardiggain_v = 0x04;
+static int hsldiggain_v = 0x00;
+static int eardiggain_v = 0x08;
 
 /* Volume map */
 static char *hsleardiggain_volmap[] = 
@@ -739,9 +739,9 @@ static void abbamp_control_hsleardiggain(int input)
  */
 #define MUTE_HSRDIG_MAX			0xF
 
-static bool hsrdiggain_con = false;
+static bool hsrdiggain_con = true;
 
-static int hsrdiggain_v = 0x04;
+static int hsrdiggain_v = 0x00;
 
 /* Volume map */
 static char *hsrdiggain_volmap[] = 
