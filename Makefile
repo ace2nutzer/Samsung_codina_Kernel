@@ -380,6 +380,7 @@ KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -march=armv7-a \
 		  -mcpu=cortex-a9 \
 		  -mtune=cortex-a9 \
+		  -D_NDK_MATH_NO_SOFTFP=1 \
 		  -mfpu=neon \
 		  -mfloat-abi=softfp \
 		  -mtls-dialect=gnu2 \
@@ -426,7 +427,7 @@ KBUILD_CPPFLAGS := -D__KERNEL__
 
 LDFLAGS += --as-needed --sort-common
 
-KBUILD_AFLAGS_KERNEL :=
+KBUILD_AFLAGS_KERNEL := -D_NDK_MATH_NO_SOFTFP=1 -mfpu=neon -mfloat-abi=hard
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__
 KBUILD_AFLAGS_MODULE  := -DMODULE -pipe

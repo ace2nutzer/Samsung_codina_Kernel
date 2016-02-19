@@ -4,11 +4,11 @@
 # Copyright (C) 2001 ARM Limited
 #
 
-# ccflags-y := -DNDEBUG -D_FORTIFY_SOURCE=1
+# ccflags-y := -DNDEBUG
 # asflags-y := -DNDEBUG
 
-KBUILD_AFLAGS	:= $(KBUILD_AFLAGS: -mhard-float=-Wa, -mfpu=neon -mfloat-abi=hard)
-LDFLAGS		+= --no-warn-mismatch
+KBUILD_AFLAGS	:= $(KBUILD_AFLAGS: -D_NDK_MATH_NO_SOFTFP=1 -mfpu=neon -mfloat-abi=hard)
+LDFLAGS		+=
 
 obj-y			+= vfp.o
 
