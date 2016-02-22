@@ -380,9 +380,8 @@ KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -march=armv7-a \
 		  -mcpu=cortex-a9 \
 		  -mtune=cortex-a9 \
-		  -D_NDK_MATH_NO_SOFTFP=1 \
-		  -mfpu=neon \
-		  -mfloat-abi=softfp \
+		  -mfpu=vfpv3 \
+		  -mfloat-abi=hard \
 		  -mtls-dialect=gnu2 \
 		  -mno-thumb-interwork \
 		  -pipe
@@ -427,9 +426,9 @@ KBUILD_CPPFLAGS := -D__KERNEL__
 
 LDFLAGS += --as-needed --sort-common
 
-KBUILD_AFLAGS_KERNEL := -D_NDK_MATH_NO_SOFTFP=1 -mfpu=neon -mfloat-abi=hard
+KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
-KBUILD_AFLAGS   := -D__ASSEMBLY__
+KBUILD_AFLAGS   := -D__ASSEMBLY__ -mfpu=vfpv3 -mfloat-abi=hard
 KBUILD_AFLAGS_MODULE  := -DMODULE -pipe
 KBUILD_CFLAGS_MODULE := -DMODULE -pipe
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds

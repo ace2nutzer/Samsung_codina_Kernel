@@ -128,9 +128,8 @@ CFLAGS_MODULE	+=-fno-optimize-sibling-calls
 endif
 endif
 
-# Need -Uarm for gcc < 3.x
-KBUILD_CFLAGS	+=$(CFLAGS_ABI) $(arch-y) $(tune-y) $(call cc-option,-mshort-load-bytes,$(call cc-option,-malignment-traps,)) -mfloat-abi=soft
-KBUILD_AFLAGS	+=$(CFLAGS_ABI) $(arch-y) $(tune-y) -include asm/unified.h -D_NDK_MATH_NO_SOFTFP=1 -mfpu=neon -mfloat-abi=hard
+KBUILD_CFLAGS	+=$(CFLAGS_ABI) $(arch-y) $(tune-y) $(call cc-option,-mshort-load-bytes,$(call cc-option,-malignment-traps,))
+KBUILD_AFLAGS	+=$(CFLAGS_ABI) $(arch-y) $(tune-y) -include asm/unified.h
 
 CHECKFLAGS	+= -D__arm__
 

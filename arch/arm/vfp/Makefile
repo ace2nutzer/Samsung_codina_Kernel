@@ -4,11 +4,8 @@
 # Copyright (C) 2001 ARM Limited
 #
 
-# ccflags-y := -DNDEBUG
-# asflags-y := -DNDEBUG
-
-KBUILD_AFLAGS	:= $(KBUILD_AFLAGS: -D_NDK_MATH_NO_SOFTFP=1 -mfpu=neon -mfloat-abi=hard)
-LDFLAGS		+=
+ccflags-y := -DNDEBUG
+asflags-y := -DNDEBUG
 
 obj-y			+= vfp.o
 
