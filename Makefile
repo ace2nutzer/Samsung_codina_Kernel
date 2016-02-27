@@ -382,6 +382,7 @@ KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -mtune=cortex-a9 \
 		  -mfpu=vfpv3 \
 		  -mfloat-abi=hard \
+		  -D_NDK_MATH_NO_SOFTFP=1 \
 		  -mtls-dialect=gnu2 \
 		  -mno-thumb-interwork \
 		  -pipe
@@ -391,7 +392,6 @@ KBUILD_CFLAGS += -Os -mthumb
 else
 KBUILD_CFLAGS += -O3 -marm \
 		  -ftree-vectorize \
-		  -mvectorize-with-neon-quad \
 		  -fmodulo-sched \
 		  -fmodulo-sched-allow-regmoves \
 		  -fgcse-sm \
@@ -424,7 +424,7 @@ endif
 
 KBUILD_CPPFLAGS := -D__KERNEL__
 
-LDFLAGS += --as-needed --sort-common -O3 -no-strict-aliasing -omit-frame-pointer
+LDFLAGS += -O3 --as-needed --sort-common --no-warn-mismatch
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
