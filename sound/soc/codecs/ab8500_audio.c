@@ -526,13 +526,11 @@ static void abbamp_control_anaconf4_hf(void)
 #define GAIN_ANAGAIN3_MAX			0xF
 
 static bool anagain3_con = true;
-static int anagain3_hsl = 2;
-static int anagain3_hsr = 2;
+static int anagain3_hsl = 0;
+static int anagain3_hsr = 0;
 
 /* Volume map */
 static char *anagain3_volmap[] = {
-	 "+4dB", 
-	 "+2dB", 
 	 "+0dB", 
 	 "-2dB", 
 	 "-4dB", 
