@@ -424,7 +424,7 @@ endif
 
 KBUILD_CPPFLAGS := -D__KERNEL__
 
-LDFLAGS += -O3 --as-needed --sort-common --no-warn-mismatch
+LDFLAGS += -O3 --as-needed --sort-common
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
