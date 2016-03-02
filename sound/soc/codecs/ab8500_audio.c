@@ -703,11 +703,13 @@ static bool hsldiggain_con = true;
 static bool eardiggain_con = false;
 
 static int hsldiggain_v = 0x00;
-static int eardiggain_v = 0x08;
+static int eardiggain_v = 0x10;
 
 /* Volume map */
 static char *hsleardiggain_volmap[] = 
 {
+	"+10dB", 
+	"+9dB", 
 	"+8dB", 
 	"+7dB", 
 	"+6dB", 
@@ -744,6 +746,8 @@ static int hsrdiggain_v = 0x00;
 /* Volume map */
 static char *hsrdiggain_volmap[] = 
 {
+	"+10dB", 
+	"+9dB", 
 	"+8dB", 
 	"+7dB", 
 	"+6dB", 
