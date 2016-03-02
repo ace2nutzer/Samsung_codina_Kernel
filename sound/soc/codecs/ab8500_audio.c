@@ -431,9 +431,10 @@ static void abbamp_control_hshpen(void)
  * 
  * [2] EnHfR
  * 0: The HfR Class-D driver is powered down
+ * 1: The HfR Class-D driver is powered up
  */
 
-/* When these bools are ture, the path will be disable */
+/* When these bools are true, the path will be disable */
 static bool hslanaena_con = false;
 static bool hsranaena_con = false;
 static bool hflanaena_con = false;
