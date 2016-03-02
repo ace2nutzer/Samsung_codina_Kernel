@@ -385,8 +385,8 @@ static bool ad2_ponup = false;
  */
 #define SHIFT_ANACONF1_HSDACLOWPOW		6
 
-static bool hslowpow_con = false;
-static bool hsdaclowpow_con = false;
+static bool hslowpow_con = true;
+static bool hsdaclowpow_con = true;
 static bool hshpen_con = false;
 
 static int hslowpow_v = 0;
