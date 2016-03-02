@@ -390,7 +390,7 @@ static bool hsdaclowpow_con = true;
 static bool hshpen_con = false;
 
 static int hslowpow_v = 0;
-static int hsdaclowpow_v = 00;
+static int hsdaclowpow_v = 0x00;
 static int hshpen_v = 0;
 
 static void abbamp_control_hslowpow(void)
@@ -527,11 +527,13 @@ static void abbamp_control_anaconf4_hf(void)
 #define GAIN_ANAGAIN3_MAX			0xF
 
 static bool anagain3_con = true;
-static int anagain3_hsl = 0;
-static int anagain3_hsr = 0;
+static int anagain3_hsl = 2;
+static int anagain3_hsr = 2;
 
 /* Volume map */
 static char *anagain3_volmap[] = {
+	 "+4dB", 
+	 "+2dB", 
 	 "+0dB", 
 	 "-2dB", 
 	 "-4dB", 
@@ -543,9 +545,9 @@ static char *anagain3_volmap[] = {
 	"-16dB", 
 	"-18dB", 
 	"-20dB", 
+	"-22dB", 
 	"-24dB", 
-	"-28dB", 
-	"-32dB", 
+	"-26dB", 
 };
 
 static void abbamp_control_anagain3(void)
@@ -603,7 +605,7 @@ static void abbamp_control_classdwg(void)
 #define GAIN_AD2_MAX				0x0
 #define MUTE_AD2_MAX				0x3F
 
-static bool addiggain2_con = false;
+static bool addiggain2_con = true;
 static unsigned int addiggain2_v = 31;
 static unsigned int addiggain2_ms = 1000;
 
@@ -701,16 +703,14 @@ static DECLARE_WORK(abbamp_ad2_work, abbamp_ad2_delay);
 #define MUTE_HSLEARDIG_MAX			0xF
 
 static bool hsldiggain_con = true;
-static bool eardiggain_con = false;
+static bool eardiggain_con = true;
 
-static int hsldiggain_v = 0x00;
-static int eardiggain_v = 0x10;
+static int hsldiggain_v = 0x08;
+static int eardiggain_v = 0x08;
 
 /* Volume map */
 static char *hsleardiggain_volmap[] = 
 {
-	"+10dB", 
-	"+9dB", 
 	"+8dB", 
 	"+7dB", 
 	"+6dB", 
@@ -720,6 +720,15 @@ static char *hsleardiggain_volmap[] =
 	"+2dB", 
 	"+1dB", 
 	"+0dB", 
+	"-1dB", 
+	"-2dB", 
+	"-3dB", 
+	"-4dB", 
+	"-5dB", 
+	"-6dB", 
+	"-7dB", 
+	"-8dB", 
+	"mute", 
 };
 
 /* Need to switch hsl/earpiece */
@@ -742,13 +751,11 @@ static void abbamp_control_hsleardiggain(int input)
 
 static bool hsrdiggain_con = true;
 
-static int hsrdiggain_v = 0x00;
+static int hsrdiggain_v = 0x08;
 
 /* Volume map */
 static char *hsrdiggain_volmap[] = 
 {
-	"+10dB", 
-	"+9dB", 
 	"+8dB", 
 	"+7dB", 
 	"+6dB", 
@@ -758,6 +765,15 @@ static char *hsrdiggain_volmap[] =
 	"+2dB", 
 	"+1dB", 
 	"+0dB", 
+	"-1dB", 
+	"-2dB", 
+	"-3dB", 
+	"-4dB", 
+	"-5dB", 
+	"-6dB", 
+	"-7dB", 
+	"-8dB", 
+	"mute", 
 };
 
 static void abbamp_control_hsrdiggain(void)
