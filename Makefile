@@ -246,9 +246,9 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-strict-aliasing -fomit-frame-pointer -mtls-dialect=gnu2 -DNDEBUG -std=gnu90 -pipe
+HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -std=gnu90 -pipe
 
-HOSTCXXFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-strict-aliasing -fomit-frame-pointer -mtls-dialect=gnu2 -DNDEBUG -std=gnu++14 -pipe
+HOSTCXXFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -std=gnu++14 -pipe
 
 
 ifeq ($(shell $(HOSTCC) -v 2>&1 | grep -c "clang version"), 1)
@@ -383,15 +383,12 @@ KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -mfpu=vfpv3 \
 		  -mfloat-abi=hard \
 		  -D_NDK_MATH_NO_SOFTFP=1 \
-		  -mtls-dialect=gnu2 \
-		  -mno-thumb-interwork \
 		  -pipe
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS += -Os -mthumb
 else
 KBUILD_CFLAGS += -O3 -marm \
-		  -ftree-vectorize \
 		  -fmodulo-sched \
 		  -fmodulo-sched-allow-regmoves \
 		  -fgcse-sm \
@@ -420,6 +417,7 @@ KBUILD_CFLAGS += -O3 -marm \
 		  -ftree-parallelize-loops=2 \
 		  -fomit-frame-pointer \
 		  -DNDEBUG
+
 endif
 
 KBUILD_CPPFLAGS := -D__KERNEL__
