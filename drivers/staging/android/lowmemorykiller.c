@@ -80,7 +80,8 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 	int array_size = ARRAY_SIZE(lowmem_adj);
 	int other_free = global_page_state(NR_FREE_PAGES) - totalreserve_pages;
 	int other_file = global_page_state(NR_FILE_PAGES) -
-						global_page_state(NR_SHMEM);
+				global_page_state(NR_SHMEM) -
+				global_page_state(NR_UNEVICTABLE);
 
 	if (lowmem_adj_size < array_size)
 		array_size = lowmem_adj_size;
@@ -120,8 +121,8 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 		if (!p)
 			continue;
 
-		if (test_tsk_thread_flag(p, TIF_MEMDIE) &&
-		    time_before_eq(jiffies, lowmem_deathpending_timeout)) {
+		if (task_lmk_waiting(p) &&
+				time_before_eq(jiffies, lowmem_deathpending_timeout)) {
 			task_unlock(p);
 			rcu_read_unlock();
 			return 0;
@@ -161,9 +162,12 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 			     minfree * (long)(PAGE_SIZE / 1024),
 			     min_score_adj,
 			     other_free * (long)(PAGE_SIZE / 1024));
-		lowmem_deathpending_timeout = jiffies + HZ;
+		task_lock(selected);
 		send_sig(SIGKILL, selected, 0);
-		set_tsk_thread_flag(selected, TIF_MEMDIE);
+		if (selected->mm)
+			task_set_lmk_waiting(selected);
+		task_unlock(selected);
+		lowmem_deathpending_timeout = jiffies + HZ;
 		rem -= selected_tasksize;
 		lowmem_lmkcount++;
 	}
