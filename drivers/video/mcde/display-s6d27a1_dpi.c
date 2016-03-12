@@ -57,9 +57,9 @@
 #define VMODE_YRES			800
 #define POWER_IS_ON(pwr)		((pwr) <= FB_BLANK_NORMAL)
 
-#define MIN_BRIGHTNESS			10
+#define MIN_BRIGHTNESS			0
 #define MAX_BRIGHTNESS			255
-#define DEFAULT_BRIGHTNESS		90
+#define DEFAULT_BRIGHTNESS		80
 
 #define DCS_CMD_S6D27A1_RESCTL		0xB3	/* Resolution Select Control */
 #define DCS_CMD_S6D27A1_PANELCTL2	0xB4	/* ASG Signal Control */
