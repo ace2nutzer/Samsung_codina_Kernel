@@ -246,9 +246,11 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -std=gnu90 -pipe
+HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fno-strict-aliasing -funswitch-loops -fgcse-after-reload -ftree-partial-pre -frename-registers \
+		-fomit-frame-pointer -DNDEBUG -std=gnu90 -pipe
 
-HOSTCXXFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -std=gnu++14 -pipe
+HOSTCXXFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fno-strict-aliasing -funswitch-loops -fgcse-after-reload -ftree-partial-pre -frename-registers \
+		 -fomit-frame-pointer -DNDEBUG -std=gnu++14 -pipe
 
 
 ifeq ($(shell $(HOSTCC) -v 2>&1 | grep -c "clang version"), 1)
@@ -383,46 +385,24 @@ KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		  -mfpu=vfpv3 \
 		  -mfloat-abi=hard \
 		  -D_NDK_MATH_NO_SOFTFP=1 \
+		  -fomit-frame-pointer \
+		  -DNDEBUG \
+		  -frename-registers \
+		  -mno-thumb-interwork \
 		  -pipe
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS += -Os -mthumb
 else
-KBUILD_CFLAGS += -O3 -marm \
-		  -fmodulo-sched \
-		  -fmodulo-sched-allow-regmoves \
-		  -fgcse-sm \
-		  -fgcse-las \
-		  -fsched-pressure \
-		  -fipa-pta \
-		  -fisolate-erroneous-paths-attribute \
-		  -ftree-loop-if-convert \
-		  -ftree-loop-distribution \
-		  -ftree-loop-im \
-		  -ftree-loop-ivcanon \
-		  -fivopts \
-		  -ftree-coalesce-inlined-vars \
-		  -fweb \
-		  -frename-registers \
-		  -fuse-linker-plugin \
-		  -fdevirtualize-speculatively \
-		  -fdevirtualize-at-ltrans \
-		  -fgraphite \
-		  -floop-strip-mine \
-		  -floop-block \
-		  -fgraphite-identity \
-		  -ftree-loop-linear \
-		  -floop-interchange \
-		  -floop-parallelize-all \
-		  -ftree-parallelize-loops=2 \
-		  -fomit-frame-pointer \
-		  -DNDEBUG
-
+KBUILD_CFLAGS += -O2 -marm \
+		  -funswitch-loops \
+		  -fgcse-after-reload \
+		  -ftree-partial-pre
 endif
 
 KBUILD_CPPFLAGS := -D__KERNEL__
 
-LDFLAGS += -O3 --as-needed --sort-common
+LDFLAGS += -O2 --as-needed --sort-common
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
