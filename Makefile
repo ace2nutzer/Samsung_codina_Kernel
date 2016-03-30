@@ -246,11 +246,11 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fno-strict-aliasing -funswitch-loops -fgcse-after-reload -ftree-partial-pre -frename-registers \
-		-fomit-frame-pointer -DNDEBUG -std=gnu90 -fdiagnostics-color=auto -pipe
+HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fno-strict-aliasing -funswitch-loops -fgcse-after-reload -frename-registers \
+		-fomit-frame-pointer -DNDEBUG -std=gnu90 -pipe
 
-HOSTCXXFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fno-strict-aliasing -funswitch-loops -fgcse-after-reload -ftree-partial-pre -frename-registers \
-		 -fomit-frame-pointer -DNDEBUG -std=gnu++14 -fdiagnostics-color=auto -pipe
+HOSTCXXFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fno-strict-aliasing -funswitch-loops -fgcse-after-reload -frename-registers \
+		 -fomit-frame-pointer -DNDEBUG -std=gnu++14 -pipe
 
 
 ifeq ($(shell $(HOSTCC) -v 2>&1 | grep -c "clang version"), 1)
