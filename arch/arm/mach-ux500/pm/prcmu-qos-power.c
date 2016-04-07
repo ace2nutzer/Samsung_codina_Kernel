@@ -29,7 +29,7 @@
 
 #include <mach/prcmu-debug.h>
 
-#define ARM_THRESHOLD_FREQ 600000
+#define ARM_THRESHOLD_FREQ 400000
 
 #define AB8500_VAPESEL1_REG 0x0E   /* APE OPP 100 voltage */
 #define AB8500_VAPESEL2_REG 0x0F   /* APE OPP 50 voltage  */
@@ -356,9 +356,9 @@ static void update_target(int target, bool sem)
 		case 100:
 			/*
 			 * 9540 cross table matrix:set vsafe to 100% and
-			 * ARM  freq min to 600000
+			 * ARM  freq min to 400000
 			 */
-			__prcmu_qos_update_ddr_opp(600000, 100);
+			__prcmu_qos_update_ddr_opp(400000, 100);
 			op = DDR_100_OPP;
 			prcmu_set_ddr_opp(op);
 			pr_debug("prcmu qos: set ddr opp to 100%%\n");
@@ -422,11 +422,11 @@ static void update_target(int target, bool sem)
 			}
 			break;
 		case 100:
-			/* 9540 cross table matrix: set ARM min freq to 600000 */
+			/* 9540 cross table matrix: set ARM min freq to 400000 */
 			if (cpu_is_u9540()) {
 				__prcmu_qos_update_requirement(
 					PRCMU_QOS_ARM_KHZ, "cross_opp_ape",
-					600000, false);
+					400000, false);
 			}
 			op = APE_100_OPP;
 			pr_debug("prcmu qos: set ape opp to 100%%\n");
@@ -468,7 +468,7 @@ void prcmu_qos_force_opp(int prcmu_qos_class, s32 i)
 	update_target(prcmu_qos_class, true);
 }
 
-#define LPA_OVERRIDE_VOLTAGE_SETTING 0x1A    /* 1.025V  and was 0x22  1.125V */
+#define LPA_OVERRIDE_VOLTAGE_SETTING 0x1B /* 1.0375V and was 0x22 1.125V */
 
 int prcmu_qos_lpa_override(bool enable)
 {
