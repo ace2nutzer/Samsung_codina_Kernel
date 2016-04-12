@@ -246,17 +246,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS  := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fno-strict-aliasing -funswitch-loops -fgcse-after-reload -frename-registers \
-		-fomit-frame-pointer -DNDEBUG -std=gnu90 -pipe
-
-HOSTCXXFLAGS := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fno-strict-aliasing -funswitch-loops -fgcse-after-reload -frename-registers \
-		 -fomit-frame-pointer -DNDEBUG -std=gnu++14 -pipe
-
-
-ifeq ($(shell $(HOSTCC) -v 2>&1 | grep -c "clang version"), 1)
-HOSTCFLAGS  += -Wno-unused-value -Wno-unused-parameter \
-		-Wno-missing-field-initializers -fno-delete-null-pointer-checks
-endif
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Os -fno-strict-aliasing -fno-common -fomit-frame-pointer -std=gnu89 -pipe
+HOSTCXXFLAGS = -Os -fno-strict-aliasing -fno-common -pipe
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -357,12 +348,12 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-CFLAGS_MODULE   = -pipe
+CFLAGS_MODULE   =
 AFLAGS_MODULE   =
 LDFLAGS_MODULE  =
-CFLAGS_KERNEL	=
+CFLAGS_KERNEL	= -D__linux__
 AFLAGS_KERNEL	=
-CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage -pipe
+CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
 
 
 # Use LINUXINCLUDE when you must reference the include/ directory.
@@ -372,44 +363,30 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
                    $(if $(KBUILD_SRC), -I$(srctree)/include) \
                    -include include/generated/autoconf.h
 
-KBUILD_CFLAGS := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
-		  -fno-strict-aliasing -fno-common \
-		  -Werror-implicit-function-declaration \
-		  -Wno-format-security \
-		  $(call cc-disable-warning,maybe-uninitialized,) \
-		  -std=gnu90 \
-		  -D_FORTIFY_SOURCE=1 \
-		  -march=armv7-a \
-		  -mcpu=cortex-a9 \
-		  -mtune=cortex-a9 \
-		  -mfpu=vfpv3 \
-		  -mfloat-abi=hard \
-		  -D_NDK_MATH_NO_SOFTFP=1 \
-		  -fomit-frame-pointer \
-		  -DNDEBUG \
-		  -frename-registers \
-		  -mno-thumb-interwork \
-		  -fdiagnostics-color=auto \
-		  -pipe
-
-ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS += -Os -mthumb
-else
-KBUILD_CFLAGS += -O2 -marm \
-		  -funswitch-loops \
-		  -fgcse-after-reload \
-		  -ftree-partial-pre
-endif
-
 KBUILD_CPPFLAGS := -D__KERNEL__
 
-LDFLAGS += -O2 --as-needed --sort-common
+KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
+		   -fno-strict-aliasing -fno-common \
+		   -Werror-implicit-function-declaration \
+		   -Wno-format-security \
+		   -fno-delete-null-pointer-checks \
+		   -D_FORTIFY_SOURCE=1 \
+		   -D_NDK_MATH_NO_SOFTFP=1 \
+		   -march=armv7-a \
+		   -mcpu=cortex-a9 \
+		   -mtune=cortex-a9 \
+		   -marm \
+		   -mfpu=vfpv3 \
+		   -mfloat-abi=hard \
+		   -mno-thumb-interwork \
+		   -fdiagnostics-color=auto \
+		   -pipe
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__ -mfpu=vfpv3 -mfloat-abi=hard
-KBUILD_AFLAGS_MODULE  := -DMODULE -pipe
-KBUILD_CFLAGS_MODULE := -DMODULE -pipe
+KBUILD_AFLAGS_MODULE  := -DMODULE
+KBUILD_CFLAGS_MODULE  := -DMODULE
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
@@ -594,7 +571,13 @@ endif # $(dot-config)
 # Defaults to vmlinux, but the arch makefile usually adds further targets
 all: vmlinux
 
-KBUILD_CFLAGS	+= $(call cc-option,-fno-delete-null-pointer-checks,)
+ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
+KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
+LDFLAGS += -Os --as-needed --sort-common
+else
+KBUILD_CFLAGS	+= -O2
+LDFLAGS += -O2 --as-needed --sort-common
+endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
@@ -633,24 +616,8 @@ ifdef CONFIG_CC_STACKPROTECTOR_STRONG
 	      -fstack-protector-strong not supported by compiler)
   endif
 else
-ifdef CONFIG_CC_STACKPROTECTOR_ALL
-  stackp-flag := -fstack-protector-all
-  ifeq ($(call cc-option, $(stackp-flag)),)
-    $(warning Cannot use CONFIG_CC_STACKPROTECTOR_ALL: \
-	      -fstack-protector-all not supported by compiler)
-  endif
-else
-ifdef CONFIG_CC_STACKPROTECTOR_EXPLICIT
-  stackp-flag := -fstack-protector-explicit
-  ifeq ($(call cc-option, $(stackp-flag)),)
-    $(warning Cannot use CONFIG_CC_STACKPROTECTOR_EXPLICIT: \
-	      -fstack-protector-explicit not supported by compiler)
-  endif
-else
   # Force off for distro compilers that enable stack protector by default.
   stackp-flag := $(call cc-option, -fno-stack-protector)
-endif
-endif
 endif
 endif
 KBUILD_CFLAGS += $(stackp-flag)
@@ -718,7 +685,6 @@ KBUILD_ARFLAGS := $(call ar-option,D)
 # check for 'asm goto'
 ifeq ($(shell $(CONFIG_SHELL) $(srctree)/scripts/gcc-goto.sh $(CC)), y)
 	KBUILD_CFLAGS += -DCC_HAVE_ASM_GOTO
-	KBUILD_AFLAGS += -DCC_HAVE_ASM_GOTO
 endif
 
 # Add user supplied CPPFLAGS, AFLAGS and CFLAGS as the last assignments
@@ -1102,6 +1068,12 @@ PHONY += headerdep
 headerdep:
 	$(Q)find $(srctree)/include/ -name '*.h' | xargs --max-args 1 \
 	$(srctree)/scripts/headerdep.pl -I$(srctree)/include
+
+# ---------------------------------------------------------------------------
+
+PHONY += depend dep
+depend dep:
+	@echo '*** Warning: make $@ is unnecessary now.'
 
 # ---------------------------------------------------------------------------
 # Firmware install

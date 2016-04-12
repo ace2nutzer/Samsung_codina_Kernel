@@ -1781,19 +1781,6 @@ config CC_STACKPROTECTOR_STRONG
 	  On an x86 "defconfig" build, this feature adds canary checks to
 	  about 20% of all kernel functions, which increases the kernel code
 	  size by about 2%.
-
-config CC_STACKPROTECTOR_ALL
-	bool "All"
-	select CC_STACKPROTECTOR
-	help
-	  Like -fstack-protector except that all functions are protected.
-
-config CC_STACKPROTECTOR_EXPLICIT
-	bool "Explicit"
-	select CC_STACKPROTECTOR
-	help
-	  Like -fstack-protector but only protects those functions which have the stack_protect attribute
-
 endchoice
 
 config DEPRECATED_PARAM_STRUCT
