@@ -4,8 +4,8 @@
 # Copyright (C) 2001 ARM Limited
 #
 
-ccflags-y := -DNDEBUG
-asflags-y := -DNDEBUG
+# ccflags-y := -DDEBUG
+# asflags-y := -DDEBUG
 
 obj-y			+= vfp.o
 
