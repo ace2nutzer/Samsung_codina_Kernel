@@ -371,7 +371,6 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
 		   -D_FORTIFY_SOURCE=1 \
-		   -D_NDK_MATH_NO_SOFTFP=1 \
 		   -march=armv7-a \
 		   -mcpu=cortex-a9 \
 		   -mtune=cortex-a9 \
@@ -573,10 +572,8 @@ all: vmlinux
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
-LDFLAGS += -Os --as-needed --sort-common
 else
 KBUILD_CFLAGS	+= -O2
-LDFLAGS += -O2 --as-needed --sort-common
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
@@ -685,6 +682,7 @@ KBUILD_ARFLAGS := $(call ar-option,D)
 # check for 'asm goto'
 ifeq ($(shell $(CONFIG_SHELL) $(srctree)/scripts/gcc-goto.sh $(CC)), y)
 	KBUILD_CFLAGS += -DCC_HAVE_ASM_GOTO
+	KBUILD_AFLAGS += -DCC_HAVE_ASM_GOTO
 endif
 
 # Add user supplied CPPFLAGS, AFLAGS and CFLAGS as the last assignments
