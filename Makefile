@@ -246,8 +246,10 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Os -fno-strict-aliasing -fno-common -fomit-frame-pointer -std=gnu89 -pipe
-HOSTCXXFLAGS = -Os -fno-strict-aliasing -fno-common -pipe
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Os -fno-strict-aliasing -freorder-blocks -freorder-blocks-and-partition \
+		-funswitch-loops -fgcse-after-reload -frename-registers -fomit-frame-pointer -DNDEBUG -std=gnu89 -pipe
+HOSTCXXFLAGS = -Os -fno-strict-aliasing -freorder-blocks -freorder-blocks-and-partition -funswitch-loops -fgcse-after-reload \
+		-frename-registers -fomit-frame-pointer -DNDEBUG -pipe
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -378,6 +380,12 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -mfpu=vfpv3 \
 		   -mfloat-abi=hard \
 		   -mno-thumb-interwork \
+		   -freorder-blocks \
+		   -funswitch-loops \
+		   -fgcse-after-reload \
+		   -ftree-partial-pre \
+		   -frename-registers \
+		   -DNDEBUG \
 		   -fdiagnostics-color=auto \
 		   -pipe
 
