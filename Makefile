@@ -247,9 +247,9 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 HOSTCC       = gcc
 HOSTCXX      = g++
 HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Os -fno-strict-aliasing -freorder-blocks -freorder-blocks-and-partition \
-		-funswitch-loops -fgcse-after-reload -frename-registers -fomit-frame-pointer -DNDEBUG -std=gnu89 -pipe
+		-funswitch-loops -fgcse-after-reload -mhard-float -frename-registers -fomit-frame-pointer -DNDEBUG -std=gnu89 -pipe
 HOSTCXXFLAGS = -Os -fno-strict-aliasing -freorder-blocks -freorder-blocks-and-partition -funswitch-loops -fgcse-after-reload \
-		-frename-registers -fomit-frame-pointer -DNDEBUG -pipe
+		-mhard-float -frename-registers -fomit-frame-pointer -DNDEBUG -pipe
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
