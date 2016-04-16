@@ -246,10 +246,124 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Os -fno-strict-aliasing -freorder-blocks -freorder-blocks-and-partition \
-		-funswitch-loops -fgcse-after-reload -mhard-float -frename-registers -fomit-frame-pointer -DNDEBUG -std=gnu89 -pipe
-HOSTCXXFLAGS = -Os -fno-strict-aliasing -freorder-blocks -freorder-blocks-and-partition -funswitch-loops -fgcse-after-reload \
-		-mhard-float -frename-registers -fomit-frame-pointer -DNDEBUG -pipe
+HOSTCFLAGS   =    -Wall -Wmissing-prototypes -Wstrict-prototypes \
+		   -mhard-float \
+		   -O2 \
+		   -fno-strict-aliasing \
+		   -fomit-frame-pointer \
+		   -DNDEBUG \
+		   -std=gnu89 \
+		   -funswitch-loops \
+		   -fpredictive-commoning \
+		   -ftree-partial-pre \
+		   -frename-registers \
+		   -fira-loop-pressure \
+		   -fsched-pressure \
+		   -fselective-scheduling \
+		   -fselective-scheduling2 \
+		   -fsel-sched-pipelining \
+		   -fsel-sched-pipelining-outer-loops \
+		   -flive-range-shrinkage \
+		   -fira-hoist-pressure \
+		   -fisolate-erroneous-paths-attribute \
+		   -ftree-coalesce-inlined-vars \
+		   -fipa-pta \
+		   -fivopts \
+		   -fweb \
+		   -flto \
+		   -ffat-lto-objects \
+		   -fuse-linker-plugin \
+		   -fno-split-ivs-in-unroller \
+		   -fno-sched-dep-count-heuristic \
+		   -fno-sched-last-insn-heuristic \
+		   -fno-sched-rank-heuristic \
+		   -fno-sched-spec-insn-heuristic \
+		   -fno-sched-critical-path-heuristic \
+		   -fno-sched-group-heuristic \
+		   -fno-zero-initialized-in-bss \
+		   -fno-align-functions \
+		   -fno-align-jumps \
+		   -fno-align-loops \
+		   -fno-align-labels \
+		   -fno-prefetch-loop-arrays \
+		   -fno-sched-spec \
+		   -fno-inline-small-functions \
+		   -fno-gcse \
+		   -fno-crossjumping \
+		   -fno-guess-branch-probability \
+		   -fno-ipa-icf \
+		   -fno-ipa-cp-alignment \
+		   -fno-hoist-adjacent-loads \
+		   -fno-devirtualize-speculatively \
+		   -fgraphite \
+		   -floop-strip-mine \
+		   -floop-block \
+		   -fgraphite-identity \
+		   -floop-unroll-and-jam \
+		   -ftree-loop-distribution \
+		   -ftree-loop-distribute-patterns \
+		   -ftree-loop-im \
+		   -ftree-loop-ivcanon \
+		   -pipe
+
+HOSTCXXFLAGS =    -mhard-float \
+		   -O2 \
+		   -fno-strict-aliasing \
+		   -fomit-frame-pointer \
+		   -DNDEBUG \
+		   -funswitch-loops \
+		   -fpredictive-commoning \
+		   -ftree-partial-pre \
+		   -frename-registers \
+		   -fira-loop-pressure \
+		   -fsched-pressure \
+		   -fselective-scheduling \
+		   -fselective-scheduling2 \
+		   -fsel-sched-pipelining \
+		   -fsel-sched-pipelining-outer-loops \
+		   -fdeclone-ctor-dtor \
+		   -flive-range-shrinkage \
+		   -fira-hoist-pressure \
+		   -fisolate-erroneous-paths-attribute \
+		   -ftree-coalesce-inlined-vars \
+		   -fipa-pta \
+		   -fivopts \
+		   -fweb \
+		   -flto \
+		   -ffat-lto-objects \
+		   -fuse-linker-plugin \
+		   -fno-split-ivs-in-unroller \
+		   -fno-sched-dep-count-heuristic \
+		   -fno-sched-last-insn-heuristic \
+		   -fno-sched-rank-heuristic \
+		   -fno-sched-spec-insn-heuristic \
+		   -fno-sched-critical-path-heuristic \
+		   -fno-sched-group-heuristic \
+		   -fno-zero-initialized-in-bss \
+		   -fno-align-functions \
+		   -fno-align-jumps \
+		   -fno-align-loops \
+		   -fno-align-labels \
+		   -fno-prefetch-loop-arrays \
+		   -fno-sched-spec \
+		   -fno-inline-small-functions \
+		   -fno-gcse \
+		   -fno-crossjumping \
+		   -fno-guess-branch-probability \
+		   -fno-ipa-icf \
+		   -fno-ipa-cp-alignment \
+		   -fno-hoist-adjacent-loads \
+		   -fno-devirtualize-speculatively \
+		   -fgraphite \
+		   -floop-strip-mine \
+		   -floop-block \
+		   -fgraphite-identity \
+		   -floop-unroll-and-jam \
+		   -ftree-loop-distribution \
+		   -ftree-loop-distribute-patterns \
+		   -ftree-loop-im \
+		   -ftree-loop-ivcanon \
+		   -pipe
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -380,14 +494,64 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -mfpu=vfpv3 \
 		   -mfloat-abi=hard \
 		   -mno-thumb-interwork \
-		   -freorder-blocks \
+		   -DNDEBUG \
 		   -funswitch-loops \
-		   -fgcse-after-reload \
+		   -fpredictive-commoning \
 		   -ftree-partial-pre \
 		   -frename-registers \
-		   -DNDEBUG \
-		   -fdiagnostics-color=auto \
+		   -fira-loop-pressure \
+		   -fsched-pressure \
+		   -fselective-scheduling \
+		   -fselective-scheduling2 \
+		   -fsel-sched-pipelining \
+		   -fsel-sched-pipelining-outer-loops \
+		   -flive-range-shrinkage \
+		   -fira-hoist-pressure \
+		   -fisolate-erroneous-paths-attribute \
+		   -ftree-coalesce-inlined-vars \
+		   -fipa-pta \
+		   -fivopts \
+		   -fweb \
+		   -flto \
+		   -ffat-lto-objects \
+		   -fuse-linker-plugin \
+		   -fno-split-ivs-in-unroller \
+		   -fno-sched-dep-count-heuristic \
+		   -fno-sched-last-insn-heuristic \
+		   -fno-sched-rank-heuristic \
+		   -fno-sched-spec-insn-heuristic \
+		   -fno-sched-critical-path-heuristic \
+		   -fno-sched-group-heuristic \
+		   -fno-zero-initialized-in-bss \
+		   -fno-align-functions \
+		   -fno-align-jumps \
+		   -fno-align-loops \
+		   -fno-align-labels \
+		   -fno-prefetch-loop-arrays \
+		   -fno-sched-spec \
+		   -fno-inline-small-functions \
+		   -fno-gcse \
+		   -fno-crossjumping \
+		   -fno-guess-branch-probability \
+		   -fno-ipa-icf \
+		   -fno-ipa-cp-alignment \
+		   -fno-hoist-adjacent-loads \
+		   -fno-devirtualize-speculatively \
+		   -ftree-loop-distribution \
+		   -ftree-loop-distribute-patterns \
+		   -ftree-loop-im \
+		   -ftree-loop-ivcanon \
 		   -pipe
+
+# not working for now
+
+#		   -ftree-parallelize-loops=2 \
+#		   -fgraphite \
+#		   -fgraphite-identity \
+#		   -floop-block \
+#		   -floop-strip-mine \
+#		   -floop-unroll-and-jam \
+
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
