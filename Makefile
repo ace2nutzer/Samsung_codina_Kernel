@@ -304,6 +304,8 @@ HOSTCFLAGS   =    -Wall -Wmissing-prototypes -Wstrict-prototypes \
 		   -ftree-loop-distribute-patterns \
 		   -ftree-loop-im \
 		   -ftree-loop-ivcanon \
+		   -floop-parallelize-all \
+		   -ftree-parallelize-loops=2 \
 		   -pipe
 
 HOSTCXXFLAGS =    -mhard-float \
@@ -363,6 +365,8 @@ HOSTCXXFLAGS =    -mhard-float \
 		   -ftree-loop-distribute-patterns \
 		   -ftree-loop-im \
 		   -ftree-loop-ivcanon \
+		   -floop-parallelize-all \
+		   -ftree-parallelize-loops=2 \
 		   -pipe
 
 # Decide whether to build built-in, modular, or both.
@@ -464,7 +468,7 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-CFLAGS_MODULE   =
+CFLAGS_MODULE   = -fno-lto
 AFLAGS_MODULE   =
 LDFLAGS_MODULE  =
 CFLAGS_KERNEL	= -D__linux__
@@ -545,12 +549,13 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 
 # not working for now
 
-#		   -ftree-parallelize-loops=2 \
 #		   -fgraphite \
 #		   -fgraphite-identity \
 #		   -floop-block \
 #		   -floop-strip-mine \
 #		   -floop-unroll-and-jam \
+#		   -floop-parallelize-all \
+#		   -ftree-parallelize-loops=2 \
 
 
 KBUILD_AFLAGS_KERNEL :=
@@ -795,17 +800,15 @@ KBUILD_CFLAGS += $(stackp-flag)
 # Use make W=1 to enable this warning (see scripts/Makefile.build)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-but-set-variable)
 
-ifdef CONFIG_FRAME_POINTER
-KBUILD_CFLAGS	+= -fno-omit-frame-pointer -fno-optimize-sibling-calls
-else
 # Some targets (ARM with Thumb2, for example), can't be built with frame
 # pointers.  For those, we don't have FUNCTION_TRACER automatically
 # select FRAME_POINTER.  However, FUNCTION_TRACER adds -pg, and this is
 # incompatible with -fomit-frame-pointer with current GCC, so we don't use
 # -fomit-frame-pointer with FUNCTION_TRACER.
-ifndef CONFIG_FUNCTION_TRACER
+ifdef CONFIG_FUNCTION_TRACER
+KBUILD_CFLAGS	+= -fno-omit-frame-pointer
+else
 KBUILD_CFLAGS	+= -fomit-frame-pointer
-endif
 endif
 
 ifdef CONFIG_DEBUG_INFO
