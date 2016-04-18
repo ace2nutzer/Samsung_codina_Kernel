@@ -253,26 +253,6 @@ HOSTCFLAGS   =    -Wall -Wmissing-prototypes -Wstrict-prototypes \
 		   -fomit-frame-pointer \
 		   -DNDEBUG \
 		   -std=gnu89 \
-		   -funswitch-loops \
-		   -fpredictive-commoning \
-		   -ftree-partial-pre \
-		   -frename-registers \
-		   -fira-loop-pressure \
-		   -fsched-pressure \
-		   -fselective-scheduling \
-		   -fselective-scheduling2 \
-		   -fsel-sched-pipelining \
-		   -fsel-sched-pipelining-outer-loops \
-		   -flive-range-shrinkage \
-		   -fira-hoist-pressure \
-		   -fisolate-erroneous-paths-attribute \
-		   -ftree-coalesce-inlined-vars \
-		   -fipa-pta \
-		   -fivopts \
-		   -fweb \
-		   -flto \
-		   -ffat-lto-objects \
-		   -fuse-linker-plugin \
 		   -fno-split-ivs-in-unroller \
 		   -fno-sched-dep-count-heuristic \
 		   -fno-sched-last-insn-heuristic \
@@ -294,18 +274,6 @@ HOSTCFLAGS   =    -Wall -Wmissing-prototypes -Wstrict-prototypes \
 		   -fno-ipa-icf \
 		   -fno-ipa-cp-alignment \
 		   -fno-hoist-adjacent-loads \
-		   -fno-devirtualize-speculatively \
-		   -fgraphite \
-		   -floop-strip-mine \
-		   -floop-block \
-		   -fgraphite-identity \
-		   -floop-unroll-and-jam \
-		   -ftree-loop-distribution \
-		   -ftree-loop-distribute-patterns \
-		   -ftree-loop-im \
-		   -ftree-loop-ivcanon \
-		   -floop-parallelize-all \
-		   -ftree-parallelize-loops=2 \
 		   -pipe
 
 HOSTCXXFLAGS =    -mhard-float \
@@ -313,27 +281,6 @@ HOSTCXXFLAGS =    -mhard-float \
 		   -fno-strict-aliasing \
 		   -fomit-frame-pointer \
 		   -DNDEBUG \
-		   -funswitch-loops \
-		   -fpredictive-commoning \
-		   -ftree-partial-pre \
-		   -frename-registers \
-		   -fira-loop-pressure \
-		   -fsched-pressure \
-		   -fselective-scheduling \
-		   -fselective-scheduling2 \
-		   -fsel-sched-pipelining \
-		   -fsel-sched-pipelining-outer-loops \
-		   -fdeclone-ctor-dtor \
-		   -flive-range-shrinkage \
-		   -fira-hoist-pressure \
-		   -fisolate-erroneous-paths-attribute \
-		   -ftree-coalesce-inlined-vars \
-		   -fipa-pta \
-		   -fivopts \
-		   -fweb \
-		   -flto \
-		   -ffat-lto-objects \
-		   -fuse-linker-plugin \
 		   -fno-split-ivs-in-unroller \
 		   -fno-sched-dep-count-heuristic \
 		   -fno-sched-last-insn-heuristic \
@@ -355,18 +302,6 @@ HOSTCXXFLAGS =    -mhard-float \
 		   -fno-ipa-icf \
 		   -fno-ipa-cp-alignment \
 		   -fno-hoist-adjacent-loads \
-		   -fno-devirtualize-speculatively \
-		   -fgraphite \
-		   -floop-strip-mine \
-		   -floop-block \
-		   -fgraphite-identity \
-		   -floop-unroll-and-jam \
-		   -ftree-loop-distribution \
-		   -ftree-loop-distribute-patterns \
-		   -ftree-loop-im \
-		   -ftree-loop-ivcanon \
-		   -floop-parallelize-all \
-		   -ftree-parallelize-loops=2 \
 		   -pipe
 
 # Decide whether to build built-in, modular, or both.
@@ -503,12 +438,18 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fpredictive-commoning \
 		   -ftree-partial-pre \
 		   -frename-registers \
+		   -fmodulo-sched \
+		   -fmodulo-sched-allow-regmoves \
 		   -fira-loop-pressure \
 		   -fsched-pressure \
 		   -flive-range-shrinkage \
 		   -fira-hoist-pressure \
 		   -fisolate-erroneous-paths-attribute \
 		   -ftree-coalesce-inlined-vars \
+		   -ftree-loop-distribution \
+		   -ftree-loop-distribute-patterns \
+		   -ftree-loop-im \
+		   -ftree-loop-ivcanon \
 		   -fipa-pta \
 		   -fivopts \
 		   -fweb \
@@ -536,14 +477,9 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-ipa-icf \
 		   -fno-ipa-cp-alignment \
 		   -fno-hoist-adjacent-loads \
-		   -fno-devirtualize-speculatively \
-		   -ftree-loop-distribution \
-		   -ftree-loop-distribute-patterns \
-		   -ftree-loop-im \
-		   -ftree-loop-ivcanon \
 		   -pipe
 
-# not working for now
+# graphite optimizations
 
 #		   -fgraphite \
 #		   -fgraphite-identity \
