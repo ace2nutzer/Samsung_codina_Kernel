@@ -135,6 +135,6 @@ endif
 obj-$(CONFIG_MPU_SENSORS_TIMERIRQ)+= timerirq.o
 
 ifdef CONFIG_MPU_SENSORS_DEBUG
-EXTRA_CFLAGS += -DDEBUG 
+EXTRA_CFLAGS += 
 endif
 
