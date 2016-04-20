@@ -1769,7 +1769,8 @@ CONFIG_VIDEO_V4L2=y
 #
 # Graphics support
 #
-# CONFIG_DRM is not set
+CONFIG_DRM=y
+# CONFIG_DRM_NOVA is not set
 # CONFIG_ION is not set
 CONFIG_GPU_MALI=y
 CONFIG_MALI400=y
