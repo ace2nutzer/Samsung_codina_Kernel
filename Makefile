@@ -253,7 +253,6 @@ HOSTCFLAGS   =    -Wall -Wmissing-prototypes -Wstrict-prototypes \
 		   -fomit-frame-pointer \
 		   -DNDEBUG \
 		   -std=gnu89 \
-		   -fno-split-ivs-in-unroller \
 		   -fno-sched-dep-count-heuristic \
 		   -fno-sched-last-insn-heuristic \
 		   -fno-sched-rank-heuristic \
@@ -271,8 +270,6 @@ HOSTCFLAGS   =    -Wall -Wmissing-prototypes -Wstrict-prototypes \
 		   -fno-gcse \
 		   -fno-crossjumping \
 		   -fno-guess-branch-probability \
-		   -fno-ipa-icf \
-		   -fno-ipa-cp-alignment \
 		   -fno-hoist-adjacent-loads \
 		   -pipe
 
@@ -281,7 +278,6 @@ HOSTCXXFLAGS =    -mhard-float \
 		   -fno-strict-aliasing \
 		   -fomit-frame-pointer \
 		   -DNDEBUG \
-		   -fno-split-ivs-in-unroller \
 		   -fno-sched-dep-count-heuristic \
 		   -fno-sched-last-insn-heuristic \
 		   -fno-sched-rank-heuristic \
@@ -299,8 +295,6 @@ HOSTCXXFLAGS =    -mhard-float \
 		   -fno-gcse \
 		   -fno-crossjumping \
 		   -fno-guess-branch-probability \
-		   -fno-ipa-icf \
-		   -fno-ipa-cp-alignment \
 		   -fno-hoist-adjacent-loads \
 		   -pipe
 
@@ -456,7 +450,6 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -flto \
 		   -ffat-lto-objects \
 		   -fuse-linker-plugin \
-		   -fno-split-ivs-in-unroller \
 		   -fno-sched-dep-count-heuristic \
 		   -fno-sched-last-insn-heuristic \
 		   -fno-sched-rank-heuristic \
@@ -474,8 +467,6 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-gcse \
 		   -fno-crossjumping \
 		   -fno-guess-branch-probability \
-		   -fno-ipa-icf \
-		   -fno-ipa-cp-alignment \
 		   -fno-hoist-adjacent-loads \
 		   -fgraphite \
 		   -fgraphite-identity \
