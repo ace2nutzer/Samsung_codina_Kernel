@@ -477,17 +477,13 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-ipa-icf \
 		   -fno-ipa-cp-alignment \
 		   -fno-hoist-adjacent-loads \
+		   -fgraphite \
+		   -fgraphite-identity \
+		   -floop-block \
+		   -floop-strip-mine \
+		   -floop-parallelize-all \
+		   -ftree-parallelize-loops=2 \
 		   -pipe
-
-# graphite optimizations
-
-#		   -fgraphite \
-#		   -fgraphite-identity \
-#		   -floop-block \
-#		   -floop-strip-mine \
-#		   -floop-unroll-and-jam \
-#		   -floop-parallelize-all \
-#		   -ftree-parallelize-loops=2 \
 
 
 KBUILD_AFLAGS_KERNEL :=
