@@ -430,9 +430,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fpredictive-commoning \
 		   -ftree-partial-pre \
 		   -fsched-pressure \
-		   -flive-range-shrinkage \
 		   -fira-hoist-pressure \
-		   -fisolate-erroneous-paths-attribute \
 		   -ftree-coalesce-inlined-vars \
 		   -ftree-loop-distribution \
 		   -ftree-loop-distribute-patterns \
@@ -443,7 +441,6 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-toplevel-reorder \
 		   -fweb \
 		   -flto \
-		   -ffat-lto-objects \
 		   -fuse-linker-plugin \
 		   -fno-sched-dep-count-heuristic \
 		   -fno-sched-last-insn-heuristic \
@@ -466,8 +463,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fgraphite-identity \
 		   -floop-block \
 		   -floop-strip-mine \
-		   -floop-parallelize-all \
-		   -ftree-parallelize-loops=2 \
+		   -fdiagnostics-color=auto \
 		   -pipe
 
 
