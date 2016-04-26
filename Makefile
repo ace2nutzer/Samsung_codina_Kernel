@@ -259,7 +259,6 @@ HOSTCFLAGS   =    -Wall -Wmissing-prototypes -Wstrict-prototypes \
 		   -fno-sched-spec-insn-heuristic \
 		   -fno-sched-critical-path-heuristic \
 		   -fno-sched-group-heuristic \
-		   -fno-zero-initialized-in-bss \
 		   -fno-align-functions \
 		   -fno-align-jumps \
 		   -fno-align-loops \
@@ -284,7 +283,6 @@ HOSTCXXFLAGS =    -mhard-float \
 		   -fno-sched-spec-insn-heuristic \
 		   -fno-sched-critical-path-heuristic \
 		   -fno-sched-group-heuristic \
-		   -fno-zero-initialized-in-bss \
 		   -fno-align-functions \
 		   -fno-align-jumps \
 		   -fno-align-loops \
@@ -431,10 +429,6 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -funswitch-loops \
 		   -fpredictive-commoning \
 		   -ftree-partial-pre \
-		   -frename-registers \
-		   -fmodulo-sched \
-		   -fmodulo-sched-allow-regmoves \
-		   -fira-loop-pressure \
 		   -fsched-pressure \
 		   -flive-range-shrinkage \
 		   -fira-hoist-pressure \
@@ -446,6 +440,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -ftree-loop-ivcanon \
 		   -fipa-pta \
 		   -fivopts \
+		   -fno-toplevel-reorder \
 		   -fweb \
 		   -flto \
 		   -ffat-lto-objects \
@@ -456,7 +451,6 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-sched-spec-insn-heuristic \
 		   -fno-sched-critical-path-heuristic \
 		   -fno-sched-group-heuristic \
-		   -fno-zero-initialized-in-bss \
 		   -fno-align-functions \
 		   -fno-align-jumps \
 		   -fno-align-loops \
@@ -719,15 +713,17 @@ KBUILD_CFLAGS += $(stackp-flag)
 # Use make W=1 to enable this warning (see scripts/Makefile.build)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-but-set-variable)
 
+ifdef CONFIG_FRAME_POINTER
+KBUILD_CFLAGS	+= -fno-omit-frame-pointer -fno-optimize-sibling-calls
+else
 # Some targets (ARM with Thumb2, for example), can't be built with frame
 # pointers.  For those, we don't have FUNCTION_TRACER automatically
 # select FRAME_POINTER.  However, FUNCTION_TRACER adds -pg, and this is
 # incompatible with -fomit-frame-pointer with current GCC, so we don't use
 # -fomit-frame-pointer with FUNCTION_TRACER.
-ifdef CONFIG_FUNCTION_TRACER
-KBUILD_CFLAGS	+= -fno-omit-frame-pointer
-else
+ifndef CONFIG_FUNCTION_TRACER
 KBUILD_CFLAGS	+= -fomit-frame-pointer
+endif
 endif
 
 ifdef CONFIG_DEBUG_INFO
