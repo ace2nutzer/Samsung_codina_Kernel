@@ -270,6 +270,7 @@ HOSTCFLAGS   =    -Wall -Wmissing-prototypes -Wstrict-prototypes \
 		   -fno-crossjumping \
 		   -fno-guess-branch-probability \
 		   -fno-hoist-adjacent-loads \
+		   -fno-toplevel-reorder \
 		   -pipe
 
 HOSTCXXFLAGS =    -mhard-float \
@@ -294,6 +295,7 @@ HOSTCXXFLAGS =    -mhard-float \
 		   -fno-crossjumping \
 		   -fno-guess-branch-probability \
 		   -fno-hoist-adjacent-loads \
+		   -fno-toplevel-reorder \
 		   -pipe
 
 # Decide whether to build built-in, modular, or both.
