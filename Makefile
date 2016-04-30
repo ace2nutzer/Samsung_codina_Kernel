@@ -270,7 +270,6 @@ HOSTCFLAGS   =    -Wall -Wmissing-prototypes -Wstrict-prototypes \
 		   -fno-crossjumping \
 		   -fno-guess-branch-probability \
 		   -fno-hoist-adjacent-loads \
-		   -fno-toplevel-reorder \
 		   -pipe
 
 HOSTCXXFLAGS =    -mhard-float \
@@ -295,7 +294,6 @@ HOSTCXXFLAGS =    -mhard-float \
 		   -fno-crossjumping \
 		   -fno-guess-branch-probability \
 		   -fno-hoist-adjacent-loads \
-		   -fno-toplevel-reorder \
 		   -pipe
 
 # Decide whether to build built-in, modular, or both.
@@ -438,11 +436,10 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -ftree-loop-distribute-patterns \
 		   -ftree-loop-im \
 		   -ftree-loop-ivcanon \
-		   -fipa-pta \
 		   -fivopts \
-		   -fno-toplevel-reorder \
 		   -fweb \
 		   -flto \
+		   -ffat-lto-objects \
 		   -fuse-linker-plugin \
 		   -fno-sched-dep-count-heuristic \
 		   -fno-sched-last-insn-heuristic \
