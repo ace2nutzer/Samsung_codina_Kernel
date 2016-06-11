@@ -438,7 +438,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -ftree-loop-ivcanon \
 		   -fivopts \
 		   -fweb \
-		   -flto \
+		   -flto=jobserver \
 		   -ffat-lto-objects \
 		   -fuse-linker-plugin \
 		   -fno-sched-dep-count-heuristic \
@@ -722,7 +722,7 @@ endif
 endif
 
 ifdef CONFIG_DEBUG_INFO
-KBUILD_CFLAGS	+= -g
+KBUILD_CFLAGS	+= -g -fno-lto
 KBUILD_AFLAGS	+= -gdwarf-2
 endif
 
