@@ -252,7 +252,6 @@ HOSTCFLAGS   =    -Wall -Wmissing-prototypes -Wstrict-prototypes \
 		   -fno-strict-aliasing \
 		   -fomit-frame-pointer \
 		   -DNDEBUG \
-		   -std=gnu89 \
 		   -fno-sched-dep-count-heuristic \
 		   -fno-sched-last-insn-heuristic \
 		   -fno-sched-rank-heuristic \
@@ -395,7 +394,7 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-CFLAGS_MODULE   = -fno-lto
+CFLAGS_MODULE   =
 AFLAGS_MODULE   =
 LDFLAGS_MODULE  =
 CFLAGS_KERNEL	= -D__linux__
@@ -426,21 +425,6 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -mfloat-abi=hard \
 		   -mno-thumb-interwork \
 		   -DNDEBUG \
-		   -funswitch-loops \
-		   -fpredictive-commoning \
-		   -ftree-partial-pre \
-		   -fsched-pressure \
-		   -fira-hoist-pressure \
-		   -ftree-coalesce-inlined-vars \
-		   -ftree-loop-distribution \
-		   -ftree-loop-distribute-patterns \
-		   -ftree-loop-im \
-		   -ftree-loop-ivcanon \
-		   -fivopts \
-		   -fweb \
-		   -flto=jobserver \
-		   -ffat-lto-objects \
-		   -fuse-linker-plugin \
 		   -fno-sched-dep-count-heuristic \
 		   -fno-sched-last-insn-heuristic \
 		   -fno-sched-rank-heuristic \
@@ -458,13 +442,8 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-crossjumping \
 		   -fno-guess-branch-probability \
 		   -fno-hoist-adjacent-loads \
-		   -fgraphite \
-		   -fgraphite-identity \
-		   -floop-block \
-		   -floop-strip-mine \
 		   -fdiagnostics-color=auto \
 		   -pipe
-
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
@@ -722,7 +701,7 @@ endif
 endif
 
 ifdef CONFIG_DEBUG_INFO
-KBUILD_CFLAGS	+= -g -fno-lto
+KBUILD_CFLAGS	+= -g
 KBUILD_AFLAGS	+= -gdwarf-2
 endif
 
