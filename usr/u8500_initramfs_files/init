@@ -2,6 +2,9 @@
 _PATH="$PATH"
 export PATH=/stage1
 
+busybox mount -t ext2 /dev/block/mmcblk0p8 /ramdisk
+busybox mount -t ext2 /dev/block/mmcblk0p17 /recovery
+
 busybox cd /
 busybox date >>boot.txt
 exec >>boot.txt 2>&1
@@ -13,14 +16,20 @@ load_image=/stage1/boot.cpio
 
 if busybox grep -q bootmode=2 /proc/cmdline ; then
 	# recovery boot
-	load_image=/stage1/recovery.cpio
+	load_image=/recovery/recovery.cpio
 fi
 
-busybox cpio -i < ${load_image}
+if test -f ${load_image} ; then
+	busybox cpio -i < ${load_image}
+fi
+
+if test -f ${load_image}.gz ; then
+	busybox zcat ${load_image}.gz | busybox cpio -i -u
+fi
 
 busybox umount /sys
 busybox umount /proc
 busybox date >>boot.txt
-busybox rm -fr /stage1 /dev/*
+busybox rm -fr /stage1
 export PATH="${_PATH}"
 exec /init
