@@ -147,7 +147,7 @@ static struct dbs_tuners {
 	unsigned int _oc_limit;
 	unsigned int _standby_threshold_freq;
 } dbs_tuners_ins = {
-	.input_boost_freq = 800000,
+	.input_boost_freq = 600000,
 	.input_boost_us = 300*1000,
 	.power_optimal_freq = 0,
 	.high_freq_sampling_up_factor = 2,
@@ -170,7 +170,7 @@ static struct dbs_tuners {
 
 	.suspend_sampling_rate = 4*HZ/100,
 	.suspend_sampling_up_factor = 4,
-	.suspend_max_freq = 800000,
+	.suspend_max_freq = 600000,
 };
 
 static struct workqueue_struct *dbs_wq;
