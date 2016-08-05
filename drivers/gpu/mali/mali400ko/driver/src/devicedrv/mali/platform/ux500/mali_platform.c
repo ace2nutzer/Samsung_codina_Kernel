@@ -37,8 +37,8 @@
 #include <linux/mfd/dbx500-prcmu.h>
 #endif
 
-#define MALI_HIGH_TO_LOW_LEVEL_UTILIZATION_LIMIT 51 /* 20% */
-#define MALI_LOW_TO_HIGH_LEVEL_UTILIZATION_LIMIT 230 /* 90% */
+#define MALI_HIGH_TO_LOW_LEVEL_UTILIZATION_LIMIT 26 /* 10% */
+#define MALI_LOW_TO_HIGH_LEVEL_UTILIZATION_LIMIT 243 /* 95% */
 
 #define MALI_UX500_VERSION		"1.0.1"
 
@@ -56,7 +56,7 @@
 #define AB8500_VAPE_MIN_UV		700000
 #define AB8500_VAPE_MAX_UV		1487500
 
-#define MALI_CLOCK_DEFLO		299520
+#define MALI_CLOCK_DEFLO		199680
 #define MALI_CLOCK_DEFHI		399360
 
 struct mali_dvfs_data
@@ -67,6 +67,7 @@ struct mali_dvfs_data
 };
 
 static struct mali_dvfs_data mali_dvfs[] = {
+	{748800, 0x010501C3, 0x3F},
 	{698880, 0x010501B6, 0x3F},
 	{652800, 0x010501AA, 0x3F},
 	{599040, 0x0105019C, 0x3F},
@@ -76,6 +77,9 @@ static struct mali_dvfs_data mali_dvfs[] = {
 	{399360, 0x01050168, 0x24},
 	{349440, 0x0105015B, 0x24},
 	{299520, 0x0105014E, 0x24},
+	{249600, 0x01050141, 0x24},
+	{199680, 0x01050134, 0x24},
+	{149760, 0x01050127, 0x24},
 };
 
 int mali_utilization_high_to_low = MALI_HIGH_TO_LOW_LEVEL_UTILIZATION_LIMIT;
@@ -103,8 +107,8 @@ static u32 boost_required 	= 0;
 static u32 boost_delay 		= 0;
 static u32 boost_low 		= 0;
 static u32 boost_high 		= 0;
-static u32 boost_upthreshold 	= 230; /* 90% */
-static u32 boost_downthreshold 	= 51; /* 20% */
+static u32 boost_upthreshold 	= 243; /* 95% */
+static u32 boost_downthreshold	= 26; /* 10% */
 //mutex to protect above variables
 static DEFINE_MUTEX(mali_boost_lock);
 
