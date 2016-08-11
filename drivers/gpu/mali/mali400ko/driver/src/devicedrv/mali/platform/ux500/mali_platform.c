@@ -56,7 +56,7 @@
 #define AB8500_VAPE_MIN_UV		700000
 #define AB8500_VAPE_MAX_UV		1487500
 
-#define MALI_CLOCK_DEFLO		199680
+#define MALI_CLOCK_DEFLO		249600
 #define MALI_CLOCK_DEFHI		399360
 
 struct mali_dvfs_data
@@ -67,6 +67,7 @@ struct mali_dvfs_data
 };
 
 static struct mali_dvfs_data mali_dvfs[] = {
+	{798720, 0x010501D0, 0x3F},
 	{748800, 0x010501C3, 0x3F},
 	{698880, 0x010501B6, 0x3F},
 	{652800, 0x010501AA, 0x3F},
