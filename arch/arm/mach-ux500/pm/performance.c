@@ -25,7 +25,7 @@
 
 int wlan_probe_delay = WLAN_PROBE_DELAY_DEFAULT;
 int wlan_limit = WLAN_LIMIT_DEFAULT;
-int wlan_arm_khz = 200000;
+int wlan_arm_khz = 25000;
 
 /*
  * MMC TODO:
