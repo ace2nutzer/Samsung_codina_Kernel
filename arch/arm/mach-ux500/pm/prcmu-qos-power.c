@@ -29,7 +29,7 @@
 
 #include <mach/prcmu-debug.h>
 
-#define ARM_THRESHOLD_FREQ 25000
+#define ARM_THRESHOLD_FREQ 100000
 
 #define AB8500_VAPESEL1_REG 0x0E   /* APE OPP 100 voltage */
 #define AB8500_VAPESEL2_REG 0x0F   /* APE OPP 50 voltage  */
@@ -356,9 +356,9 @@ static void update_target(int target, bool sem)
 		case 100:
 			/*
 			 * 9540 cross table matrix:set vsafe to 100% and
-			 * ARM  freq min to 25000
+			 * ARM  freq min to 100000
 			 */
-			__prcmu_qos_update_ddr_opp(25000, 100);
+			__prcmu_qos_update_ddr_opp(100000, 100);
 			op = DDR_100_OPP;
 			prcmu_set_ddr_opp(op);
 			pr_debug("prcmu qos: set ddr opp to 100%%\n");
@@ -422,11 +422,11 @@ static void update_target(int target, bool sem)
 			}
 			break;
 		case 100:
-			/* 9540 cross table matrix: set ARM min freq to 25000 */
+			/* 9540 cross table matrix: set ARM min freq to 100000 */
 			if (cpu_is_u9540()) {
 				__prcmu_qos_update_requirement(
 					PRCMU_QOS_ARM_KHZ, "cross_opp_ape",
-					25000, false);
+					100000, false);
 			}
 			op = APE_100_OPP;
 			pr_debug("prcmu qos: set ape opp to 100%%\n");

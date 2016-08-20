@@ -687,10 +687,6 @@ static struct cpufreq_frequency_table db8500_freq_table[] = {
 		.index = 14,
 		.frequency = CPUFREQ_TABLE_END,
 	},
-	[15] = {
-		.index = 15,
-		.frequency = CPUFREQ_TABLE_END,
-	},
 #endif
 };
 struct platform_device db8500_prcmu_device = {
