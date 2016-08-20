@@ -50,6 +50,7 @@ config XFRM_IPCOMP
 	tristate
 	select XFRM
 	select CRYPTO
+	select CRYPTO_DEFLATE
 
 config NET_KEY
 	tristate "PF_KEY sockets"
