@@ -1,5 +1,5 @@
 /*
- * include/linux/doubletap2wake.h
+ * include/linux/sweep2wake.h
  *
  * Copyright (c) 2012, Dennis Rassmann <showp1984@gmail.com>
  *
@@ -18,24 +18,24 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef _LINUX_DOUBLETAP2WAKE_H
-#define _LINUX_DOUBLETAP2WAKE_H
+#ifndef _LINUX_SWEEP2WAKE_H
+#define _LINUX_SWEEP2WAKE_H
 
 #include <linux/input.h>
 #include <linux/earlysuspend.h>
 #include <linux/hrtimer.h>
 
-#define DOUBLETAP2WAKE_I2C_SLEEP 40
+#define SWEEP2WAKE_I2C_SLEEP 40
 
-extern int dt2w_switch;
+extern int s2w_switch;
 
-/* DoubleTap2wake main function */
-extern void detect_doubletap2wake(int, int, bool);
+/* Sweep2wake main function */
+extern void detect_sweep2wake(int, int, bool);
 
 /* Update Screen state */
-extern void dt2w_set_scr_suspended(bool);
+extern void s2w_set_scr_suspended(bool);
 
 /* PowerKey setter */
-extern void doubletap2wake_setdev(struct input_dev *);
+extern void sweep2wake_setdev(struct input_dev *);
 
-#endif	/* _LINUX_DOUBLETAP2WAKE_H */
+#endif	/* _LINUX_SWEEP2WAKE_H */

@@ -48,9 +48,9 @@
 #include <linux/input/mt.h>
 #include <linux/regulator/consumer.h>
 #include <linux/wakelock.h>
-#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
-#include <linux/input/doubletap2wake.h>
-extern bool dt2w_use_wakelock;
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+#include <linux/input/sweep2wake.h>
+extern bool s2w_use_wakelock;
 #endif
 #ifdef TSP_FACTORY
 #include <linux/list.h>
@@ -1541,8 +1541,8 @@ static void bt404_ts_report_touch_data(struct bt404_ts_data *data,
 #endif
 #endif
 			prev->coord[i].sub_status &= ~(0x01);
-#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
-			detect_doubletap2wake(cur->coord[i].x, cur->coord[i].y, false);
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+			detect_sweep2wake(cur->coord[i].x, cur->coord[i].y, false);
 #endif
 			input_mt_slot(data->input_dev_ts, i);
 			input_mt_report_slot_state(data->input_dev_ts,
@@ -1617,8 +1617,8 @@ static void bt404_ts_report_touch_data(struct bt404_ts_data *data,
 							cur->coord[i].width);
 			input_report_abs(data->input_dev_ts, ABS_MT_PRESSURE,
 							cur->coord[i].width);
-#ifdef CONFIG_TOUCHSCREEN_DOUBLETAP2WAKE
-			detect_doubletap2wake(cur->coord[i].x, cur->coord[i].y, true);
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+			detect_sweep2wake(cur->coord[i].x, cur->coord[i].y, true);
 #endif
 		}
 	}
@@ -4342,7 +4342,7 @@ static int bt404_ts_suspend(struct device *dev)
 		goto out;
 	}
 
-        if (dt2w_switch) {
+        if (s2w_switch) {
                  if (break_suspend_early(true)) {
                         pr_err("%s: skipped\n", __func__);
                         goto out;
@@ -4395,7 +4395,7 @@ static int bt404_ts_resume(struct device *dev)
 		goto out;
 	}
 
-        if (dt2w_switch) {
+        if (s2w_switch) {
                 if (break_suspend_early(false)) {
                         if (last_suspend_skipped) {
                                 pr_err("%s: skipped\n", __func__);
@@ -4432,7 +4432,7 @@ out:
 }
 #endif
 
-extern bool is_dt2w_wakelock_active(void);
+extern bool is_s2w_wakelock_active(void);
 extern unsigned int is_charger_present;
 
 static bool is_suspend = false;
@@ -4448,7 +4448,7 @@ inline bool break_suspend_early(bool suspend)
 
 	 ret = prcmu_qos_requirement_is_active(PRCMU_QOS_APE_OPP, "sia")	||
 		prcmu_qos_requirement_is_active(PRCMU_QOS_APE_OPP, "sva")	||
-		is_dt2w_wakelock_active()		||
+		is_s2w_wakelock_active()		||
 		is_charger_present;
 
 	 if (suspend) {
@@ -4501,11 +4501,11 @@ void should_break_suspend_early_check_fn(struct work_struct *work)
 	should_break_suspend_early = 
 		prcmu_qos_requirement_is_active(PRCMU_QOS_APE_OPP, "sia")	||
 		prcmu_qos_requirement_is_active(PRCMU_QOS_APE_OPP, "sva")	||
-                is_dt2w_wakelock_active()		||
+                is_s2w_wakelock_active()		||
                 is_charger_present;
 
 
-	if (dt2w_switch) {
+	if (s2w_switch) {
 		// we're in suspend, and we skipped it,
 		// but should_break_suspend_early now == false
 		if (is_suspend && last_suspend_skipped && !should_break_suspend_early) {
@@ -4533,8 +4533,8 @@ static void bt404_ts_late_resume(struct early_suspend *h)
 {
 	is_suspend = false;
 
-	if (dt2w_switch) {
-		dt2w_set_scr_suspended(is_suspend);
+	if (s2w_switch) {
+		s2w_set_scr_suspended(is_suspend);
 	}
 
 	late_resume_();
@@ -4544,8 +4544,8 @@ static void bt404_ts_early_suspend(struct early_suspend *h)
 {
 	is_suspend = true;
 
-	if (dt2w_switch) {
-		 dt2w_set_scr_suspended(is_suspend);
+	if (s2w_switch) {
+		 s2w_set_scr_suspended(is_suspend);
 	 }
 
 	early_suspend_();
