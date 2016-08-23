@@ -76,7 +76,7 @@ int perf_mmc_probe_delay = PERF_MMC_PROBE_DELAY_DEFAULT;
 int perf_mmc_limit_read = PERF_MMC_LIMIT_READ_DEFAULT;
 int perf_mmc_limit_write = PERF_MMC_LIMIT_WRITE_DEFAULT;
 int perf_mmc_limit_combined = 4096;
-int perf_mmc_arm_khz = 200000;
+int perf_mmc_arm_khz = 100000;
 
 INT_PARAM_RW(mmc_probe_delay, perf_mmc_probe_delay);
 INT_PARAM_RW(mmc_limit_read, perf_mmc_limit_read);

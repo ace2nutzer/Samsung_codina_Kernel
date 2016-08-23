@@ -32,8 +32,8 @@
  * It helps to keep variable names smaller, simpler
  */
 
-#define DEF_FREQUENCY_UP_THRESHOLD		(80)
-#define DEF_DOWN_DIFFERENTIAL		(20)
+#define DEF_FREQUENCY_UP_THRESHOLD		(95)
+#define DEF_DOWN_DIFFERENTIAL		(10)
 
 /*
  * The polling frequency of this governor depends on the capability of
@@ -148,20 +148,20 @@ static struct dbs_tuners {
 	unsigned int _standby_threshold_freq;
 } dbs_tuners_ins = {
 	.input_boost_freq = 800000,
-	.input_boost_us = 400*1000,
+	.input_boost_us = 100*1000,
 	.power_optimal_freq = 0,
 	.high_freq_sampling_up_factor = 2,
 
 	.up_threshold = DEF_FREQUENCY_UP_THRESHOLD,
 	.down_differential = DEF_DOWN_DIFFERENTIAL,
 	.ignore_nice = 0,
-	.io_is_busy = 1,	/* 20*128/100, */
-	.standby_delay_factor = 2,
+	.io_is_busy = 1,	/* 20*128/100 */
+	.standby_delay_factor = 1,
 	.standby_threshold_freq = 100000,
 
 	.sampling_rate = 2*HZ/100,
 	.sampling_down_factor = 2,
-	.sampling_down_factor_relax_khz = 200000,
+	.sampling_down_factor_relax_khz = 100000,
 	.max_non_oc_freq = 0,
 	.oc_freq_boost_ms = 0,
 
