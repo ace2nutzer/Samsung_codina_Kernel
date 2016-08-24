@@ -53,7 +53,7 @@ static unsigned int min_sampling_rate;
 #define LATENCY_MULTIPLIER			(1000)
 #define MIN_LATENCY_MULTIPLIER			(100)
 #define MICRO_FREQUENCY_MIN_SAMPLE_RATE		(10000)
-#define MICRO_FREQUENCY_UP_THRESHOLD		(95)
+#define MICRO_FREQUENCY_UP_THRESHOLD		(40)
 #define MICRO_FREQUENCY_DOWN_DIFFERENTIAL		(10)
 #define DEF_SAMPLING_DOWN_FACTOR		(1)
 #define MAX_SAMPLING_DOWN_FACTOR		(10)
@@ -148,7 +148,7 @@ static struct dbs_tuners {
 	unsigned int _standby_threshold_freq;
 } dbs_tuners_ins = {
 	.input_boost_freq = 800000,
-	.input_boost_us = 100*1000,
+	.input_boost_us = 200*1000,
 	.power_optimal_freq = 0,
 	.high_freq_sampling_up_factor = 2,
 
