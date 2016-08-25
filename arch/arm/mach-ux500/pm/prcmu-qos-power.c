@@ -29,7 +29,7 @@
 
 #include <mach/prcmu-debug.h>
 
-#define ARM_THRESHOLD_FREQ 150000
+#define ARM_THRESHOLD_FREQ 800000
 
 #define AB8500_VAPESEL1_REG 0x0E   /* APE OPP 100 voltage */
 #define AB8500_VAPESEL2_REG 0x0F   /* APE OPP 50 voltage  */
