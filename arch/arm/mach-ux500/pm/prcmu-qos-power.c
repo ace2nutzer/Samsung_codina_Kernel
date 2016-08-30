@@ -214,8 +214,8 @@ static DEFINE_SPINLOCK(prcmu_qos_lock);
 
 static bool ape_opp_50_partly_25_enabled;
 
-#define CPUFREQ_OPP_DELAY 10
-#define CPUFREQ_OPP_DELAY_VOICECALL 10
+#define CPUFREQ_OPP_DELAY 20
+#define CPUFREQ_OPP_DELAY_VOICECALL 20
 static unsigned long cpufreq_opp_delay = CPUFREQ_OPP_DELAY;
 
 static bool prcmu_qos_cpufreq_init_done;
