@@ -265,7 +265,6 @@ HOSTCFLAGS   =    -Wall -Wmissing-prototypes -Wstrict-prototypes \
 		   -fno-sched-spec \
 		   -fno-inline-small-functions \
 		   -fno-guess-branch-probability \
-		   -fno-hoist-adjacent-loads \
 		   -pipe
 
 HOSTCXXFLAGS =    -mhard-float \
@@ -286,7 +285,6 @@ HOSTCXXFLAGS =    -mhard-float \
 		   -fno-sched-spec \
 		   -fno-inline-small-functions \
 		   -fno-guess-branch-probability \
-		   -fno-hoist-adjacent-loads \
 		   -pipe
 
 # Decide whether to build built-in, modular, or both.
