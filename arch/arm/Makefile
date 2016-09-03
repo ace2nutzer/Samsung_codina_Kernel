@@ -17,16 +17,13 @@ endif
 
 OBJCOPYFLAGS	:=-O binary -R .comment -S
 GZFLAGS		:=-9
-#KBUILD_CFLAGS	+=-pipe
-# Explicitly specifiy 32-bit ARM ISA since toolchain default can be -mthumb:
-KBUILD_CFLAGS	+=$(call cc-option,-marm,)
 
 # Never generate .eh_frame
 KBUILD_CFLAGS	+= $(call cc-option,-fno-dwarf2-cfi-asm)
 
 # Do not use arch/arm/defconfig - it's always outdated.
 # Select a platform tht is kept up-to-date
-KBUILD_DEFCONFIG := versatile_defconfig
+KBUILD_DEFCONFIG := codina_defconfig
 
 # defines filename extension depending memory management type.
 ifeq ($(CONFIG_MMU),)
@@ -57,17 +54,11 @@ comma = ,
 # Note that GCC does not numerically define an architecture version
 # macro, but instead defines a whole series of macros which makes
 # testing for a specific architecture or later rather impossible.
-arch-$(CONFIG_CPU_32v7)		:=-D__LINUX_ARM_ARCH__=7 $(call cc-option,-march=armv7-a,-march=armv5t -Wa$(comma)-march=armv7-a)
-arch-$(CONFIG_CPU_32v6)		:=-D__LINUX_ARM_ARCH__=6 $(call cc-option,-march=armv6,-march=armv5t -Wa$(comma)-march=armv6)
+
+arch-$(CONFIG_CPU_32v7)                :=-D__LINUX_ARM_ARCH__=7 $(call cc-option,-march=armv7-a,-mcpu=cortex-a9,-mtune=cortex-a9)
+
 # Only override the compiler option if ARMv6. The ARMv6K extensions are
 # always available in ARMv7
-ifeq ($(CONFIG_CPU_32v6),y)
-arch-$(CONFIG_CPU_32v6K)	:=-D__LINUX_ARM_ARCH__=6 $(call cc-option,-march=armv6k,-march=armv5t -Wa$(comma)-march=armv6k)
-endif
-arch-$(CONFIG_CPU_32v5)		:=-D__LINUX_ARM_ARCH__=5 $(call cc-option,-march=armv5te,-march=armv4t)
-arch-$(CONFIG_CPU_32v4T)	:=-D__LINUX_ARM_ARCH__=4 -march=armv4t
-arch-$(CONFIG_CPU_32v4)		:=-D__LINUX_ARM_ARCH__=4 -march=armv4
-arch-$(CONFIG_CPU_32v3)		:=-D__LINUX_ARM_ARCH__=3 -march=armv3
 
 # Since 'cortex-a9' is a superset of the 'armv7-a' arch spec, we need to
 # explicitly redefine the arch options to not include '-march=armv7-a' when
@@ -79,33 +70,10 @@ arch-$(CONFIG_CPU_32v3)		:=-D__LINUX_ARM_ARCH__=3 -march=armv3
 # keep things simpler, we don't bother with a fallback option if the compiler
 # doesn't even support -march=armv7-a, since in that situation we would have
 # bigger problems.
-arch-$(CONFIG_ARCH_U8500)	:=-D__LINUX_ARM_ARCH__=7 $(call cc-option,-mcpu=cortex-a9,-march=armv7-a)
 
 # Never want PIC and PIE in a 32-bit kernel, prevent breakage with GCC built
 # with nonstandard options
 KBUILD_CFLAGS += -fno-pic -fno-pie
-
-# This selects how we optimise for the processor.
-tune-$(CONFIG_CPU_ARM610)	:=-mtune=arm610
-tune-$(CONFIG_CPU_ARM710)	:=-mtune=arm710
-tune-$(CONFIG_CPU_ARM7TDMI)	:=-mtune=arm7tdmi
-tune-$(CONFIG_CPU_ARM720T)	:=-mtune=arm7tdmi
-tune-$(CONFIG_CPU_ARM740T)	:=-mtune=arm7tdmi
-tune-$(CONFIG_CPU_ARM9TDMI)	:=-mtune=arm9tdmi
-tune-$(CONFIG_CPU_ARM940T)	:=-mtune=arm9tdmi
-tune-$(CONFIG_CPU_ARM946E)	:=$(call cc-option,-mtune=arm9e,-mtune=arm9tdmi)
-tune-$(CONFIG_CPU_ARM920T)	:=-mtune=arm9tdmi
-tune-$(CONFIG_CPU_ARM922T)	:=-mtune=arm9tdmi
-tune-$(CONFIG_CPU_ARM925T)	:=-mtune=arm9tdmi
-tune-$(CONFIG_CPU_ARM926T)	:=-mtune=arm9tdmi
-tune-$(CONFIG_CPU_FA526)	:=-mtune=arm9tdmi
-tune-$(CONFIG_CPU_SA110)	:=-mtune=strongarm110
-tune-$(CONFIG_CPU_SA1100)	:=-mtune=strongarm1100
-tune-$(CONFIG_CPU_XSCALE)	:=$(call cc-option,-mtune=xscale,-mtune=strongarm110) -Wa,-mcpu=xscale
-tune-$(CONFIG_CPU_XSC3)		:=$(call cc-option,-mtune=xscale,-mtune=strongarm110) -Wa,-mcpu=xscale
-tune-$(CONFIG_CPU_FEROCEON)	:=$(call cc-option,-mtune=marvell-f,-mtune=xscale)
-tune-$(CONFIG_CPU_V6)		:=$(call cc-option,-mtune=arm1136j-s,-mtune=strongarm)
-tune-$(CONFIG_CPU_V6K)		:=$(call cc-option,-mtune=arm1136j-s,-mtune=strongarm)
 
 ifeq ($(CONFIG_AEABI),y)
 CFLAGS_ABI	:=-mabi=aapcs-linux -mno-thumb-interwork
@@ -214,6 +182,7 @@ machine-$(CONFIG_MACH_SPEAR600)		:= spear6xx
 
 # Platform directory name.  This list is sorted alphanumerically
 # by CONFIG_* macro name.
+plat-$(CONFIG_ARCH_U8500)		:= ux500
 plat-$(CONFIG_ARCH_MXC)		:= mxc
 plat-$(CONFIG_ARCH_OMAP)	:= omap
 plat-$(CONFIG_ARCH_S3C64XX)	:= samsung
