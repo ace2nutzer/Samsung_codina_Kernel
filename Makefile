@@ -248,7 +248,7 @@ HOSTCC       = gcc
 HOSTCXX      = g++
 HOSTCFLAGS   =    -Wall -Wmissing-prototypes -Wstrict-prototypes \
 		   -mhard-float \
-		   -O2 \
+		   -Os \
 		   -fno-strict-aliasing \
 		   -fomit-frame-pointer \
 		   -DNDEBUG \
@@ -268,7 +268,7 @@ HOSTCFLAGS   =    -Wall -Wmissing-prototypes -Wstrict-prototypes \
 		   -pipe
 
 HOSTCXXFLAGS =    -mhard-float \
-		   -O2 \
+		   -Os \
 		   -fno-strict-aliasing \
 		   -fomit-frame-pointer \
 		   -DNDEBUG \
@@ -412,7 +412,6 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -march=armv7-a \
 		   -mcpu=cortex-a9 \
 		   -mtune=cortex-a9 \
-		   -marm \
 		   -mfpu=vfpv3 \
 		   -mfloat-abi=hard \
 		   -mno-thumb-interwork \
@@ -436,7 +435,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
-KBUILD_AFLAGS   := -D__ASSEMBLY__ -marm -mfpu=vfpv3 -mfloat-abi=hard
+KBUILD_AFLAGS   := -D__ASSEMBLY__ -mfpu=vfpv3 -mfloat-abi=hard
 KBUILD_AFLAGS_MODULE  := -DMODULE
 KBUILD_CFLAGS_MODULE  := -DMODULE
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
@@ -627,6 +626,22 @@ ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
 else
 KBUILD_CFLAGS	+= -O2
+endif
+
+ifeq ($(CONFIG_THUMB2_KERNEL),y)
+AFLAGS_AUTOIT	:=$(call as-option,-Wa$(comma)-mimplicit-it=always,-Wa$(comma)-mauto-it)
+AFLAGS_NOWARN	:=$(call as-option,-Wa$(comma)-mno-warn-deprecated,-Wa$(comma)-W)
+CFLAGS_THUMB2	:=-mthumb $(AFLAGS_AUTOIT) $(AFLAGS_NOWARN)
+AFLAGS_THUMB2	:=$(CFLAGS_THUMB2) -Wa$(comma)-mthumb
+KBUILD_CFLAGS	+= -mthumb
+KBUILD_AFLAGS	+= -mthumb
+else
+KBUILD_CFLAGS	+= -marm
+KBUILD_AFLAGS	+= -marm
+# Work around buggy relocation from gas if requested:
+ifeq ($(CONFIG_THUMB2_AVOID_R_ARM_THM_JUMP11),y)
+CFLAGS_MODULE	+=-fno-optimize-sibling-calls
+endif
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
