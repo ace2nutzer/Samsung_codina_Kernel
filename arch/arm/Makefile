@@ -76,9 +76,9 @@ arch-$(CONFIG_CPU_32v7)                :=-D__LINUX_ARM_ARCH__=7 $(call cc-option
 KBUILD_CFLAGS += -fno-pic -fno-pie
 
 ifeq ($(CONFIG_AEABI),y)
-CFLAGS_ABI	:=-mabi=aapcs-linux -mno-thumb-interwork
+CFLAGS_ABI	:=-mabi=aapcs-linux
 else
-CFLAGS_ABI	:=$(call cc-option,-mapcs-32,-mabi=apcs-gnu) $(call cc-option,-mno-thumb-interwork,)
+CFLAGS_ABI	:=$(call cc-option,-mapcs-32,-mabi=apcs-gnu)
 endif
 
 ifeq ($(CONFIG_ARM_UNWIND),y)
