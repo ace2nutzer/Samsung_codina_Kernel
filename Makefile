@@ -246,46 +246,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   =    -Wall -Wmissing-prototypes -Wstrict-prototypes \
-		   -mhard-float \
-		   -Os \
-		   -fno-strict-aliasing \
-		   -fomit-frame-pointer \
-		   -DNDEBUG \
-		   -fno-sched-dep-count-heuristic \
-		   -fno-sched-last-insn-heuristic \
-		   -fno-sched-rank-heuristic \
-		   -fno-sched-spec-insn-heuristic \
-		   -fno-sched-critical-path-heuristic \
-		   -fno-sched-group-heuristic \
-		   -fno-align-functions \
-		   -fno-align-jumps \
-		   -fno-align-loops \
-		   -fno-align-labels \
-		   -fno-sched-spec \
-		   -fno-inline-small-functions \
-		   -fno-guess-branch-probability \
-		   -pipe
-
-HOSTCXXFLAGS =    -mhard-float \
-		   -Os \
-		   -fno-strict-aliasing \
-		   -fomit-frame-pointer \
-		   -DNDEBUG \
-		   -fno-sched-dep-count-heuristic \
-		   -fno-sched-last-insn-heuristic \
-		   -fno-sched-rank-heuristic \
-		   -fno-sched-spec-insn-heuristic \
-		   -fno-sched-critical-path-heuristic \
-		   -fno-sched-group-heuristic \
-		   -fno-align-functions \
-		   -fno-align-jumps \
-		   -fno-align-loops \
-		   -fno-align-labels \
-		   -fno-sched-spec \
-		   -fno-inline-small-functions \
-		   -fno-guess-branch-probability \
-		   -pipe
+HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -mhard-float -O2 -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -pipe
+HOSTCXXFLAGS = -mhard-float -O2 -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -pipe
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -417,20 +379,6 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -marm \
 		   -mno-thumb-interwork \
 		   -DNDEBUG \
-		   -fno-sched-dep-count-heuristic \
-		   -fno-sched-last-insn-heuristic \
-		   -fno-sched-rank-heuristic \
-		   -fno-sched-spec-insn-heuristic \
-		   -fno-sched-critical-path-heuristic \
-		   -fno-sched-group-heuristic \
-		   -fno-align-functions \
-		   -fno-align-jumps \
-		   -fno-align-loops \
-		   -fno-align-labels \
-		   -fno-sched-spec \
-		   -fno-inline-small-functions \
-		   -fno-guess-branch-probability \
-		   -fno-hoist-adjacent-loads \
 		   -fdiagnostics-color=auto \
 		   -pipe
 
