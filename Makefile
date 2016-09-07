@@ -380,7 +380,14 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -mno-thumb-interwork \
 		   -DNDEBUG \
 		   -fdiagnostics-color=auto \
-		   -pipe
+		   -pipe \
+		   --param omega-eliminate-redundant-constraints=1 \
+		   --param max-reload-search-insns=300 \
+		   --param max-cselib-memory-locations=1500 \
+		   --param max-sched-ready-insns=300 \
+		   --param max-fields-for-field-sensitive=300 \
+		   --param loop-invariant-max-bbs-in-loop=30000 \
+		   --param max-hoist-depth=0
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
