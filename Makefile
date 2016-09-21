@@ -381,13 +381,13 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -DNDEBUG \
 		   -fdiagnostics-color=auto \
 		   -pipe \
-		   --param omega-eliminate-redundant-constraints=1 \
-		   --param max-reload-search-insns=300 \
-		   --param max-cselib-memory-locations=1500 \
-		   --param max-sched-ready-insns=300 \
-		   --param max-fields-for-field-sensitive=300 \
-		   --param loop-invariant-max-bbs-in-loop=30000 \
-		   --param max-hoist-depth=0
+		   -finline-functions \
+		   -fpredictive-commoning \
+		   -fgcse-after-reload \
+		   -ftree-loop-distribute-patterns \
+		   -fipa-cp-clone \
+		   -fira-loop-pressure \
+		   -ftree-partial-pre
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
