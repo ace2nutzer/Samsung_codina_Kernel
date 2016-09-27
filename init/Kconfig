@@ -904,10 +904,10 @@ endif
 config CC_OPTIMIZE_FOR_SIZE
 	bool "Optimize for size"
 	help
-	  Enabling this option will pass "-Os" instead of "-O2" to gcc
+	  Enabling this option will pass "-Os" instead of "-O3" to gcc
 	  resulting in a smaller kernel.
 
-	  If unsure, say Y.
+	  If unsure, say N.
 
 config SYSCTL
 	bool

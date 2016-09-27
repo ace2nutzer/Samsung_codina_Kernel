@@ -4,9 +4,6 @@
 # Copyright (C) 2001 ARM Limited
 #
 
-ccflags-y := -DNDEBUG
-asflags-y := -DNDEBUG
-
 obj-y			+= vfp.o
 
 vfp-$(CONFIG_VFP)	+= vfpmodule.o entry.o vfphw.o vfpsingle.o vfpdouble.o

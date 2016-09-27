@@ -246,8 +246,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -mhard-float -O2 -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -pipe
-HOSTCXXFLAGS = -mhard-float -O2 -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -pipe
+HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -mhard-float -O3 -fvect-cost-model -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -pipe
+HOSTCXXFLAGS = -mhard-float -O3 -fvect-cost-model -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -pipe
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -369,29 +369,22 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
+		   $(call cc-disable-warning,maybe-uninitialized,) \
 		   -fno-delete-null-pointer-checks \
 		   -D_FORTIFY_SOURCE=1 \
 		   -march=armv7-a \
 		   -mcpu=cortex-a9 \
 		   -mtune=cortex-a9 \
-		   -mfpu=vfpv3 \
+		   -mfpu=neon \
 		   -mfloat-abi=hard \
 		   -marm \
 		   -mno-thumb-interwork \
 		   -DNDEBUG \
-		   -fdiagnostics-color=auto \
-		   -pipe \
-		   -finline-functions \
-		   -fpredictive-commoning \
-		   -fgcse-after-reload \
-		   -ftree-loop-distribute-patterns \
-		   -fipa-cp-clone \
-		   -fira-loop-pressure \
-		   -ftree-partial-pre
+		   -pipe
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
-KBUILD_AFLAGS   := -D__ASSEMBLY__ -marm -mfpu=vfpv3 -mfloat-abi=hard
+KBUILD_AFLAGS   := -D__ASSEMBLY__ -marm -mfpu=neon -mfloat-abi=hard
 KBUILD_AFLAGS_MODULE  := -DMODULE
 KBUILD_CFLAGS_MODULE  := -DMODULE
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
@@ -579,9 +572,9 @@ endif # $(dot-config)
 all: vmlinux
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
+KBUILD_CFLAGS	+= -Os
 else
-KBUILD_CFLAGS	+= -O2
+KBUILD_CFLAGS	+= -O3
 endif
 
 # Work around buggy relocation from gas if requested:
@@ -637,7 +630,9 @@ KBUILD_CFLAGS += $(stackp-flag)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-but-set-variable)
 
 ifdef CONFIG_FRAME_POINTER
-KBUILD_CFLAGS	+= -fno-omit-frame-pointer -fno-optimize-sibling-calls
+# KBUILD_CFLAGS	+= -fno-omit-frame-pointer -fno-optimize-sibling-calls
+# force to omit-frame-pointer
+KBUILD_CFLAGS	+= -fomit-frame-pointer
 else
 # Some targets (ARM with Thumb2, for example), can't be built with frame
 # pointers.  For those, we don't have FUNCTION_TRACER automatically
