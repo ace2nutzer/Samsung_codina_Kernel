@@ -31,7 +31,7 @@ MMUEXT		:= -nommu
 endif
 
 ifeq ($(CONFIG_FRAME_POINTER),y)
-# KBUILD_CFLAGS  +=-fno-omit-frame-pointer -mapcs -mno-sched-prolog
+KBUILD_CFLAGS  +=-fno-omit-frame-pointer -mapcs -mno-sched-prolog
 endif
 
 ifeq ($(CONFIG_CC_STACKPROTECTOR),y)
@@ -87,7 +87,8 @@ endif
 
 KBUILD_CFLAGS	+=$(CFLAGS_ABI) $(arch-y) $(tune-y) $(call cc-option,-mshort-load-bytes,$(call cc-option,-malignment-traps,)) -mfpu=vfpv3 -fno-tree-vectorize \
 						-fno-tree-loop-vectorize -fno-tree-slp-vectorize -fno-vect-cost-model
-KBUILD_AFLAGS	+=$(CFLAGS_ABI) $(arch-y) $(tune-y) -include asm/unified.h -mfpu=vfpv3 -fno-tree-vectorize -fno-tree-loop-vectorize -fno-tree-slp-vectorize -fno-vect-cost-model
+KBUILD_AFLAGS	+=$(CFLAGS_ABI) $(arch-y) $(tune-y) -include asm/unified.h -mfpu=vfpv3 -fno-tree-vectorize -fno-tree-loop-vectorize -fno-tree-slp-vectorize \
+						-fno-vect-cost-model
 
 CHECKFLAGS	+= -D__arm__
 

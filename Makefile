@@ -369,7 +369,6 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
-		   $(call cc-disable-warning,maybe-uninitialized,) \
 		   -fno-delete-null-pointer-checks \
 		   -D_FORTIFY_SOURCE=1 \
 		   -march=armv7-a \
@@ -379,6 +378,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -mfloat-abi=hard \
 		   -marm \
 		   -mno-thumb-interwork \
+		   -mvectorize-with-neon-quad \
 		   -DNDEBUG \
 		   -pipe
 
@@ -571,6 +571,8 @@ endif # $(dot-config)
 # Defaults to vmlinux, but the arch makefile usually adds further targets
 all: vmlinux
 
+KBUILD_CFLAGS	+= $(call cc-disable-warning,maybe-uninitialized,)
+
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
 else
@@ -630,9 +632,7 @@ KBUILD_CFLAGS += $(stackp-flag)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-but-set-variable)
 
 ifdef CONFIG_FRAME_POINTER
-# KBUILD_CFLAGS	+= -fno-omit-frame-pointer -fno-optimize-sibling-calls
-# force to omit-frame-pointer
-KBUILD_CFLAGS	+= -fomit-frame-pointer
+KBUILD_CFLAGS	+= -fno-omit-frame-pointer -fno-optimize-sibling-calls
 else
 # Some targets (ARM with Thumb2, for example), can't be built with frame
 # pointers.  For those, we don't have FUNCTION_TRACER automatically
