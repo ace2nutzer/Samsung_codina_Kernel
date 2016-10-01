@@ -8,10 +8,6 @@ CFLAGS_THUMB2	:=-mthumb $(AFLAGS_AUTOIT) $(AFLAGS_NOWARN)
 AFLAGS_THUMB2	:=$(CFLAGS_THUMB2) -Wa$(comma)-mthumb
 KBUILD_CFLAGS	+= $(CFLAGS_THUMB2)
 KBUILD_AFLAGS	+= $(AFLAGS_THUMB2)
-# Work around buggy relocation from gas if requested:
-ifeq ($(CONFIG_THUMB2_AVOID_R_ARM_THM_JUMP11),y)
-CFLAGS_MODULE	+= -fno-optimize-sibling-calls
-endif
 endif
 
 obj-$(CONFIG_SOUND) += soundcore.o

@@ -579,11 +579,6 @@ else
 KBUILD_CFLAGS	+= -O3
 endif
 
-# Work around buggy relocation from gas if requested:
-ifeq ($(CONFIG_THUMB2_AVOID_R_ARM_THM_JUMP11),y)
-CFLAGS_MODULE  += -fno-optimize-sibling-calls
-endif
-
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
 ifneq ($(CONFIG_FRAME_WARN),0)
