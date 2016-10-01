@@ -2,15 +2,6 @@
 # Makefile for the linux kernel.
 #
 
-ifeq ($(CONFIG_THUMB2),y)
-AFLAGS_AUTOIT	:=$(call as-option,-Wa$(comma)-mimplicit-it=always,-Wa$(comma)-mauto-it)
-AFLAGS_NOWARN	:=$(call as-option,-Wa$(comma)-mno-warn-deprecated,-Wa$(comma)-W)
-CFLAGS_THUMB2	:=-mthumb $(AFLAGS_AUTOIT) $(AFLAGS_NOWARN)
-AFLAGS_THUMB2	:=$(CFLAGS_THUMB2) -Wa$(comma)-mthumb
-KBUILD_CFLAGS	+= $(CFLAGS_THUMB2)
-KBUILD_AFLAGS	+= $(AFLAGS_THUMB2)
-endif
-
 obj-y     = sched.o fork.o exec_domain.o panic.o printk.o \
 	    cpu.o exit.o itimer.o time.o softirq.o resource.o \
 	    sysctl.o sysctl_binary.o capability.o ptrace.o timer.o user.o \
