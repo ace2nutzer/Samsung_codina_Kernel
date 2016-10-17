@@ -246,8 +246,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -mhard-float -O3 -fvect-cost-model -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -pipe
-HOSTCXXFLAGS = -mhard-float -O3 -fvect-cost-model -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -pipe
+HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -mhard-float -O2 -ftree-vectorize -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -pipe
+HOSTCXXFLAGS = -mhard-float -O2 -ftree-vectorize -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -pipe
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -378,6 +378,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -mfloat-abi=hard \
 		   -marm \
 		   -mno-thumb-interwork \
+		   -ftree-vectorize \
 		   -mvectorize-with-neon-quad \
 		   -DNDEBUG \
 		   -pipe
@@ -576,7 +577,7 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning,maybe-uninitialized,)
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os
 else
-KBUILD_CFLAGS	+= -O3
+KBUILD_CFLAGS	+= -O2
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
