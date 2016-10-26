@@ -2292,9 +2292,6 @@ static void toggle_rearcam_flash(bool on)
 
 		assistive_mode = 0;
 		mmio_cam_flash_on_off(info, 3, 0);
-		#if defined(CONFIG_MACH_SEC_SKOMER)
-		printk(KERN_DEBUG "rear_flash_enable_store, Control Value = [0]\n");
-		#endif
 	} else {
 		if (burning_mode) {
 			burning_mode = 0;
@@ -2306,12 +2303,9 @@ static void toggle_rearcam_flash(bool on)
 
 		assistive_mode = 1;
 #if defined CONFIG_MACH_GAVINI
-		mmio_cam_flash_on_off(info, 2, (100+5));
+		mmio_cam_flash_on_off(info, 2, (100+2));
 #else
-		gpio_set_value(140, 1);
-		#if defined(CONFIG_MACH_SEC_SKOMER)
-		printk(KERN_DEBUG "rear_flash_enable_store, Control Value = [100+3]\n");
-		#endif
+		mmio_cam_flash_on_off(info, 3, (100+2));
 #endif
 	}
 }
@@ -2356,7 +2350,11 @@ rear_flash_burning_store(struct device *dev,
 		}
 
 		burning_mode = 1;
-		mmio_cam_flash_on_off(info, 3, (100+6));
+#if defined CONFIG_MACH_GAVINI
+		mmio_cam_flash_on_off(info, 2, (100+8));
+#else
+		mmio_cam_flash_on_off(info, 3, (100+8));
+#endif
 	}
 
 	return size;
