@@ -98,6 +98,7 @@ int vt_id;    // Global variable  (VT_CAM_ID) value
 int vendorID; // Global variable for 5M SOC Camera vendor ID
 int assistive_mode;
 int burning_mode = 0;
+int eco_light = 0;
 
 #if defined (CONFIG_TORCH_FLASH)
 extern int Torch_Flash_mode;
@@ -2285,16 +2286,18 @@ rear_flash_enable_show(struct device *dev,
 static void toggle_rearcam_flash(bool on)
 {
 	if (!on) {
-		if (burning_mode) {
+		if (burning_mode || eco_light) {
 			burning_mode = 0;
+			eco_light = 0;
 			gpio_set_value(140, 0);
 		}
 
 		assistive_mode = 0;
 		mmio_cam_flash_on_off(info, 3, 0);
 	} else {
-		if (burning_mode) {
+		if (burning_mode || eco_light) {
 			burning_mode = 0;
+			eco_light = 0;
 			gpio_set_value(140, 0);
 
 			/* For safety */
@@ -2333,17 +2336,19 @@ rear_flash_burning_store(struct device *dev,
 	/* Enable/Disable camera rear flash gpio directly */
 
 	if (buf[0] == '0') {
-		if (assistive_mode) {
+		if (assistive_mode || eco_light) {
 			assistive_mode = 0;
-			mmio_cam_flash_on_off(info, 3, 0);
+			eco_light = 0;
+			gpio_set_value(140, 0);
 		}
 
 		burning_mode = 0;
-		gpio_set_value(140, 0);
-	} else {
-		if (assistive_mode) {
-			assistive_mode = 0;
 			mmio_cam_flash_on_off(info, 3, 0);
+	} else {
+		if (assistive_mode || eco_light) {
+			assistive_mode = 0;
+			eco_light = 0;
+			gpio_set_value(140, 0);
 			
 			/* For safety */
 			msleep(1000);
@@ -2358,7 +2363,44 @@ rear_flash_burning_store(struct device *dev,
 	}
 
 	return size;
+}
 
+static ssize_t
+eco_light_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", eco_light);
+}
+
+static ssize_t
+eco_light_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t size)
+{
+	/* Enable/Disable camera rear flash gpio directly */
+
+	if (buf[0] == '0') {
+		if (assistive_mode || burning_mode) {
+			assistive_mode = 0;
+			burning_mode = 0;
+			gpio_set_value(140, 0);
+		}
+
+		eco_light = 0;
+			mmio_cam_flash_on_off(info, 3, 0);
+	} else {
+		if (assistive_mode || burning_mode) {
+			assistive_mode = 0;
+			burning_mode = 0;
+			gpio_set_value(140, 0);
+			
+			/* For safety */
+			msleep(1000);
+		}
+
+		eco_light = 1;
+		mmio_cam_flash_on_off(info, 3, (100+1));
+	}
+	return size;
 }
 
 static enum led_brightness st_mmio_led_get_brightness(struct led_classdev *led_cdev)
@@ -2430,6 +2472,7 @@ static DEVICE_ATTR(front_camtype, 0440, front_camera_type_show, NULL); // Front 
 static DEVICE_ATTR(rear_camtype, 0440, rear_camera_type_show, NULL); // Rear camera type attribute
 static DEVICE_ATTR(rear_flash, 0644, rear_flash_enable_show, rear_flash_enable_store);
 static DEVICE_ATTR(burning_led, 0644, rear_flash_burning_show, rear_flash_burning_store);
+static DEVICE_ATTR(eco_light, 0644, eco_light_show, eco_light_store);
 static DEVICE_ATTR(rear_vendorid, 0440, rear_vendor_id_store, NULL); // Rear camera vendor ID attribute
 
 void sec_cam_init(void)
@@ -2482,6 +2525,11 @@ void sec_cam_init(void)
 				__func__, dev_attr_burning_led.attr.name);
 	}
 
+	if (device_create_file(cam_dev_rear, &dev_attr_eco_light) < 0) {
+		printk(KERN_DEBUG "%s: failed to create device file, %s\n",
+				__func__, dev_attr_eco_light.attr.name);
+	}
+
     if(device_create_file(cam_dev_rear, &dev_attr_rear_vendorid) <0){ // Vendor ID
         printk(KERN_DEBUG "%s: failed to create device file, %s\n", 
                 __func__, dev_attr_rear_vendorid.attr.name);
@@ -2498,6 +2546,11 @@ void sec_cam_init(void)
 	if (device_create_file(cam_dev_flash, &dev_attr_burning_led) < 0) {
 		printk(KERN_DEBUG "%s: failed to create device file, %s\n",
 				__func__, dev_attr_burning_led.attr.name);
+	}
+
+	if (device_create_file(cam_dev_flash, &dev_attr_eco_light) < 0) {
+		printk(KERN_DEBUG "%s: failed to create device file, %s\n",
+				__func__, dev_attr_eco_light.attr.name);
 	}
 }
 
