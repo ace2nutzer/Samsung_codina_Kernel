@@ -246,8 +246,45 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -mhard-float -O2 -ftree-vectorize -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -pipe
-HOSTCXXFLAGS = -mhard-float -O2 -ftree-vectorize -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -pipe
+HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -mhard-float -O2 -ftree-vectorize -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -pipe \
+		   -mtls-dialect=gnu2 \
+		   -funswitch-loops \
+		   -fgcse-after-reload \
+		   -ftree-loop-distribute-patterns \
+		   -fsplit-paths \
+		   -ftree-partial-pre \
+		   -fno-guess-branch-probability \
+		   -fno-devirtualize-speculatively \
+		   -fno-hoist-adjacent-loads \
+		   -fno-sched-spec \
+		   -fno-strict-overflow \
+		   -fno-sched-group-heuristic \
+		   -fno-sched-critical-path-heuristic \
+		   -fno-sched-spec-insn-heuristic \
+		   -fno-sched-rank-heuristic \
+		   -fno-sched-last-insn-heuristic \
+		   -fno-sched-dep-count-heuristic \
+		   -fno-profile-correction
+
+HOSTCXXFLAGS = -mhard-float -O2 -ftree-vectorize -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -pipe \
+		   -mtls-dialect=gnu2 \
+		   -funswitch-loops \
+		   -fgcse-after-reload \
+		   -ftree-loop-distribute-patterns \
+		   -fsplit-paths \
+		   -ftree-partial-pre \
+		   -fno-guess-branch-probability \
+		   -fno-devirtualize-speculatively \
+		   -fno-hoist-adjacent-loads \
+		   -fno-sched-spec \
+		   -fno-strict-overflow \
+		   -fno-sched-group-heuristic \
+		   -fno-sched-critical-path-heuristic \
+		   -fno-sched-spec-insn-heuristic \
+		   -fno-sched-rank-heuristic \
+		   -fno-sched-last-insn-heuristic \
+		   -fno-sched-dep-count-heuristic \
+		   -fno-profile-correction
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -380,6 +417,24 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -mno-thumb-interwork \
 		   -ftree-vectorize \
 		   -mvectorize-with-neon-quad \
+		   -mtls-dialect=gnu2 \
+		   -funswitch-loops \
+		   -fgcse-after-reload \
+		   -ftree-loop-distribute-patterns \
+		   -fsplit-paths \
+		   -ftree-partial-pre \
+		   -fno-guess-branch-probability \
+		   -fno-devirtualize-speculatively \
+		   -fno-hoist-adjacent-loads \
+		   -fno-sched-spec \
+		   -fno-strict-overflow \
+		   -fno-sched-group-heuristic \
+		   -fno-sched-critical-path-heuristic \
+		   -fno-sched-spec-insn-heuristic \
+		   -fno-sched-rank-heuristic \
+		   -fno-sched-last-insn-heuristic \
+		   -fno-sched-dep-count-heuristic \
+		   -fno-profile-correction \
 		   -DNDEBUG \
 		   -pipe
 

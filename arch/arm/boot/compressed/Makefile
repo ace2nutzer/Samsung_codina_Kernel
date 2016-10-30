@@ -22,6 +22,7 @@ HEAD = head.o
 AFLAGS_misc.o +=-Wa,-march=armv7-a$(plus_sec)
 MISC = misc.o
 
+CFLAGS_decompress.o += -fstack-protector
 AFLAGS_decompress.o += -Wa,-march=armv7-a$(plus_sec)
 DECOMPRESS = decompress.o
 
