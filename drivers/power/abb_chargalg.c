@@ -48,6 +48,12 @@
 #include <linux/ab8500-ponkey.h>
 #include <linux/earlysuspend.h>
 
+/* ace2nutzer: bln on eoc_real=1 */
+#include <linux/bln.h>
+
+static unsigned int eoc_bln = 0;
+module_param_named(eoc_bln, eoc_bln, uint, 0644);
+
 #define CHARGING_PAUSED			-1
 #define CHARGING_STOPPED		0
 #define CHARGING_WORKING		1
@@ -63,6 +69,9 @@ static bool is_suspend = 0;
 static void ab8500_chargalg_early_suspend(struct early_suspend *h)
 {
 	is_suspend = 1;
+	if (eoc_bln) {
+	bln_disable_backlights(gen_all_leds_mask());
+	}
 }
 
 static void ab8500_chargalg_late_resume(struct early_suspend *h)
@@ -983,6 +992,10 @@ static void ab8500_chargalg_end_of_charge(struct ab8500_chargalg *di)
 in the UI, BUT NOT Real Full charging\n");
 					power_supply_changed(&di->chargalg_psy);
 					eoc_first = 1;
+					if (eoc_bln && is_suspend) {
+					/* enable BLN */
+					bln_enable_backlights(get_led_mask());
+					}
 				} else {
 					dev_dbg(di->dev,
 					"1st Full Charging EOC limit reached \
@@ -1214,6 +1227,8 @@ static int ab8500_chargalg_get_ext_psy_data(struct device *dev, void *data)
                                 (di->chg_info.conn_chg & AC_CHG || di->chg_info.conn_chg & USB_CHG);
 			if (!ret.intval && is_charger) {
 				is_charger_present = false;
+				/* disable BLN */
+				bln_disable_backlights(gen_all_leds_mask());
 			} else if (ret.intval && is_charger) {
 				is_charger_present = true;
 			}
@@ -2480,11 +2495,36 @@ static ssize_t abb_chargalg_eoc_real_show(struct kobject *kobj, struct kobj_attr
 
 static struct kobj_attribute abb_chargalg_eoc_real_interface = __ATTR(eoc_real, 0444, abb_chargalg_eoc_real_show, NULL);
 
+static ssize_t abb_chargalg_eoc_bln_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+{
+	sprintf(buf, "%d\n", eoc_bln);
+
+	return strlen(buf);
+}
+
+static ssize_t abb_chargalg_eoc_bln_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
+{
+	int ret, val;
+
+	ret = sscanf(buf, "%d", &val);
+
+	if (!ret)
+		return -EINVAL;
+
+	eoc_bln = val;
+
+	return count;
+}
+
+static struct kobj_attribute abb_chargalg_eoc_bln_interface = 
+	__ATTR(eoc_bln, 0644, abb_chargalg_eoc_bln_show, abb_chargalg_eoc_bln_store);
+
 static struct attribute *abb_chargalg_attrs[] = {
 	&abb_chargalg_charging_stats_interface.attr, 
 	&abb_chargalg_eoc_stats_interface.attr, 
 	&abb_chargalg_eoc_first_interface.attr, 
 	&abb_chargalg_eoc_real_interface.attr, 
+	&abb_chargalg_eoc_bln_interface.attr, 
 	NULL,
 };
 
