@@ -4,8 +4,8 @@
 # Copyright (C) 2001 ARM Limited
 #
 
-KBUILD_CFLAGS	+= -mfpu=neon -ftree-vectorize -ftree-loop-vectorize -ftree-slp-vectorize -fvect-cost-model
-KBUILD_AFLAGS	+= -mfpu=neon -ftree-vectorize -ftree-loop-vectorize -ftree-slp-vectorize -fvect-cost-model
+KBUILD_CFLAGS	+= -mfpu=neon -ftree-vectorize
+KBUILD_AFLAGS	+= -mfpu=neon -ftree-vectorize
 
 obj-y			+= vfp.o
 

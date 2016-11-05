@@ -73,7 +73,7 @@ arch-$(CONFIG_CPU_32v7)                :=-D__LINUX_ARM_ARCH__=7 $(call cc-option
 
 # Never want PIC and PIE in a 32-bit kernel, prevent breakage with GCC built
 # with nonstandard options
-KBUILD_CFLAGS += -fno-pic -fno-pie
+KBUILD_CFLAGS += -fno-pic -fno-pie -fno-PIC -fno-PIE
 
 ifeq ($(CONFIG_AEABI),y)
 CFLAGS_ABI	:=-mabi=aapcs-linux
@@ -85,10 +85,8 @@ ifeq ($(CONFIG_ARM_UNWIND),y)
 CFLAGS_ABI	+=-funwind-tables
 endif
 
-KBUILD_CFLAGS	+=$(CFLAGS_ABI) $(arch-y) $(tune-y) $(call cc-option,-mshort-load-bytes,$(call cc-option,-malignment-traps,)) -mfpu=vfpv3 -fno-tree-vectorize \
-						-fno-tree-loop-vectorize -fno-tree-slp-vectorize -fno-vect-cost-model
-KBUILD_AFLAGS	+=$(CFLAGS_ABI) $(arch-y) $(tune-y) -include asm/unified.h -mfpu=vfpv3 -fno-tree-vectorize -fno-tree-loop-vectorize -fno-tree-slp-vectorize \
-						-fno-vect-cost-model
+KBUILD_CFLAGS	+=$(CFLAGS_ABI) $(arch-y) $(tune-y) $(call cc-option,-mshort-load-bytes,$(call cc-option,-malignment-traps,)) -mfpu=vfpv3 -fno-tree-vectorize
+KBUILD_AFLAGS	+=$(CFLAGS_ABI) $(arch-y) $(tune-y) -include asm/unified.h -mfpu=vfpv3 -fno-tree-vectorize
 
 CHECKFLAGS	+= -D__arm__
 

@@ -246,7 +246,7 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -mhard-float -O2 -ftree-vectorize -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -pipe \
+HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -mhard-float -O2 -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -pipe \
 		   -mtls-dialect=gnu2 \
 		   -funswitch-loops \
 		   -fgcse-after-reload \
@@ -266,7 +266,7 @@ HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -mhard-float -O2 -ft
 		   -fno-sched-dep-count-heuristic \
 		   -fno-profile-correction
 
-HOSTCXXFLAGS = -mhard-float -O2 -ftree-vectorize -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -pipe \
+HOSTCXXFLAGS = -mhard-float -O2 -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -pipe \
 		   -mtls-dialect=gnu2 \
 		   -funswitch-loops \
 		   -fgcse-after-reload \
@@ -440,7 +440,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
-KBUILD_AFLAGS   := -D__ASSEMBLY__ -marm -mfpu=neon -mfloat-abi=hard
+KBUILD_AFLAGS   := -D__ASSEMBLY__ -marm -mfpu=neon -mfloat-abi=hard -ftree-vectorize -mvectorize-with-neon-quad
 KBUILD_AFLAGS_MODULE  := -DMODULE
 KBUILD_CFLAGS_MODULE  := -DMODULE
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
