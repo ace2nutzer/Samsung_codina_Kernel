@@ -1462,7 +1462,7 @@ static int ab8500_charger_ac_en(struct ux500_charger *charger,
 		pr_warn("[ABB-Charger] Switched custom input current\n");
 
 		di->bat->ta_chg_current_input = vChargeCurrent;
-		di->bat->usb_chg_current_input = vChargeCurrent;
+		di->bat->usb_chg_current_input = 500;
 	}
 
 	ab8500_charger_init_vdrop_state(di);
@@ -3196,7 +3196,7 @@ static ssize_t abb_charger_current_store(struct kobject *kobj, struct kobj_attri
 		di->bat->ta_chg_current = di->bat->chg_params->ac_curr_max;
 		di->bat->ta_chg_current_input = vChargeCurrent;
 		di->bat->usb_chg_current = di->bat->chg_params->usb_curr_max;
-		di->bat->usb_chg_current_input = vChargeCurrent;
+		di->bat->usb_chg_current_input = 500;
 
 		return count;
 	}
@@ -3230,7 +3230,7 @@ static ssize_t abb_charger_current_store(struct kobject *kobj, struct kobj_attri
 			di->bat->ta_chg_current = di->bat->chg_params->ac_curr_max;
 			di->bat->ta_chg_current_input = vChargeCurrent;
 			di->bat->usb_chg_current = di->bat->chg_params->usb_curr_max;
-			di->bat->usb_chg_current_input = vChargeCurrent;
+			di->bat->usb_chg_current_input = 500;
 
 			return count;
 		}

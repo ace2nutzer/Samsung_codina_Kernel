@@ -304,7 +304,7 @@ static sec_charging_current_t charging_current_table[] = {
 	{0,	0,	0,	0},
 	{0,	0,	0,	0},
 	{700,	1500,	195,	40 * 60}, /* POWER_SUPPLY_TYPE_MAINS */
-	{500,	500,	195,	40 * 60}, /* POWER_SUPPLY_TYPE_USB */
+	{500,	1500,	195,	40 * 60}, /* POWER_SUPPLY_TYPE_USB */
 	{700,	1500,	195,	40 * 60}, /* POWER_SUPPLY_TYPE_DCP */
 	{700,	1500,	195,	40 * 60}, /* POWER_SUPPLY_TYPE_CDP */
 	{700,	1500,	195,	40 * 60},   /* POWER_SUPPLY_TYPE_ACA */
@@ -320,7 +320,7 @@ static sec_charging_current_t charging_current_recharging_table[] = {
 	{0,	0,	0,	0},
 	{0,	0,	0,	0},
 	{700,	1500,	185,	105}, /* POWER_SUPPLY_TYPE_MAINS */
-	{500,	500,	185,	105}, /* POWER_SUPPLY_TYPE_USB */
+	{500,	1500,	185,	105}, /* POWER_SUPPLY_TYPE_USB */
 	{700,	1500,	185,	105}, /* POWER_SUPPLY_TYPE_DCP */
 	{700,	1500,	185,	105}, /* POWER_SUPPLY_TYPE_CDP */
 	{700,	1500,	185,	105},   /* POWER_SUPPLY_TYPE_ACA */
