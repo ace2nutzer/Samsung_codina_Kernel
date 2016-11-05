@@ -48,11 +48,14 @@
 #include <linux/ab8500-ponkey.h>
 #include <linux/earlysuspend.h>
 
-/* ace2nutzer: bln on eoc_real=1 */
+/* ace2nutzer: bln on eoc_first=1 */
 #include <linux/bln.h>
 
 static unsigned int eoc_bln = 0;
 module_param_named(eoc_bln, eoc_bln, uint, 0644);
+
+extern unsigned int is_lpm;
+extern unsigned int is_recovery;
 
 #define CHARGING_PAUSED			-1
 #define CHARGING_STOPPED		0
@@ -992,7 +995,7 @@ static void ab8500_chargalg_end_of_charge(struct ab8500_chargalg *di)
 in the UI, BUT NOT Real Full charging\n");
 					power_supply_changed(&di->chargalg_psy);
 					eoc_first = 1;
-					if (eoc_bln && is_suspend) {
+					if ((eoc_bln) && (is_suspend || is_lpm || is_recovery)) {
 					/* enable BLN */
 					bln_enable_backlights(get_led_mask());
 					}
