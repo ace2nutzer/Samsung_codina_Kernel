@@ -253,6 +253,7 @@ HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -mhard-float -O2 -fn
 		   -ftree-loop-distribute-patterns \
 		   -fsplit-paths \
 		   -ftree-partial-pre \
+		   -fira-hoist-pressure \
 		   -fno-guess-branch-probability \
 		   -fno-devirtualize-speculatively \
 		   -fno-hoist-adjacent-loads \
@@ -273,6 +274,8 @@ HOSTCXXFLAGS = -mhard-float -O2 -fno-strict-aliasing -fomit-frame-pointer -DNDEB
 		   -ftree-loop-distribute-patterns \
 		   -fsplit-paths \
 		   -ftree-partial-pre \
+		   -fdeclone-ctor-dtor \
+		   -fira-hoist-pressure \
 		   -fno-guess-branch-probability \
 		   -fno-devirtualize-speculatively \
 		   -fno-hoist-adjacent-loads \
@@ -423,6 +426,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -ftree-loop-distribute-patterns \
 		   -fsplit-paths \
 		   -ftree-partial-pre \
+		   -fira-hoist-pressure \
 		   -fno-guess-branch-probability \
 		   -fno-devirtualize-speculatively \
 		   -fno-hoist-adjacent-loads \
