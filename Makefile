@@ -246,48 +246,19 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -mhard-float -O2 -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -pipe \
-		   -mtls-dialect=gnu2 \
+HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -mhard-float -O2 -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -std=gnu89 -pipe \
 		   -funswitch-loops \
 		   -fgcse-after-reload \
 		   -ftree-loop-distribute-patterns \
 		   -fsplit-paths \
-		   -ftree-partial-pre \
-		   -fira-hoist-pressure \
-		   -fno-guess-branch-probability \
-		   -fno-devirtualize-speculatively \
-		   -fno-hoist-adjacent-loads \
-		   -fno-sched-spec \
-		   -fno-strict-overflow \
-		   -fno-sched-group-heuristic \
-		   -fno-sched-critical-path-heuristic \
-		   -fno-sched-spec-insn-heuristic \
-		   -fno-sched-rank-heuristic \
-		   -fno-sched-last-insn-heuristic \
-		   -fno-sched-dep-count-heuristic \
-		   -fno-profile-correction
+		   -ftree-partial-pre
 
 HOSTCXXFLAGS = -mhard-float -O2 -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -pipe \
-		   -mtls-dialect=gnu2 \
 		   -funswitch-loops \
 		   -fgcse-after-reload \
 		   -ftree-loop-distribute-patterns \
 		   -fsplit-paths \
-		   -ftree-partial-pre \
-		   -fdeclone-ctor-dtor \
-		   -fira-hoist-pressure \
-		   -fno-guess-branch-probability \
-		   -fno-devirtualize-speculatively \
-		   -fno-hoist-adjacent-loads \
-		   -fno-sched-spec \
-		   -fno-strict-overflow \
-		   -fno-sched-group-heuristic \
-		   -fno-sched-critical-path-heuristic \
-		   -fno-sched-spec-insn-heuristic \
-		   -fno-sched-rank-heuristic \
-		   -fno-sched-last-insn-heuristic \
-		   -fno-sched-dep-count-heuristic \
-		   -fno-profile-correction
+		   -ftree-partial-pre
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -409,6 +380,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
+		   -std=gnu89 \
 		   -fno-delete-null-pointer-checks \
 		   -D_FORTIFY_SOURCE=1 \
 		   -march=armv7-a \
@@ -420,25 +392,11 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -mno-thumb-interwork \
 		   -ftree-vectorize \
 		   -mvectorize-with-neon-quad \
-		   -mtls-dialect=gnu2 \
 		   -funswitch-loops \
 		   -fgcse-after-reload \
 		   -ftree-loop-distribute-patterns \
 		   -fsplit-paths \
 		   -ftree-partial-pre \
-		   -fira-hoist-pressure \
-		   -fno-guess-branch-probability \
-		   -fno-devirtualize-speculatively \
-		   -fno-hoist-adjacent-loads \
-		   -fno-sched-spec \
-		   -fno-strict-overflow \
-		   -fno-sched-group-heuristic \
-		   -fno-sched-critical-path-heuristic \
-		   -fno-sched-spec-insn-heuristic \
-		   -fno-sched-rank-heuristic \
-		   -fno-sched-last-insn-heuristic \
-		   -fno-sched-dep-count-heuristic \
-		   -fno-profile-correction \
 		   -DNDEBUG \
 		   -pipe
 
