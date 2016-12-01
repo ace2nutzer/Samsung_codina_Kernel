@@ -38,8 +38,11 @@
 
 #ifdef CONFIG_FB_MCDE
 
+extern unsigned int is_lpm;
+extern unsigned int is_recovery;
+
 #define PRCMU_DPI_CLK_SHARP_FREQ	39936000	/* 30720000 */
-#define PRCMU_DPI_CLK_SMD_FREQ		66560000	/* 49920000 */
+#define PRCMU_DPI_CLK_SMD_FREQ		49920000	/* 49920000 */
 
 enum {
 	PRIMARY_DISPLAY_ID,
@@ -402,8 +405,6 @@ if ((reqs->num_rot_channels && reqs->num_overlays > 1) ||
 	
 }
 
-extern unsigned int is_lpm;
-
 int __init init_codina_display_devices(void)
 {
 	int ret;
@@ -458,50 +459,66 @@ int __init init_codina_display_devices(void)
 
 	if (lcd_type == LCD_PANEL_TYPE_SMD) {
 		generic_display0.name = LCD_DRIVER_NAME_WS2401;
+	if (is_lpm || is_recovery) {
 		/* video modes */
-		codina_dpi_pri_display_info.video_mode.hsw = 4;		/* 10 */
-		codina_dpi_pri_display_info.video_mode.hbp = 4;		/* 8 */
-		codina_dpi_pri_display_info.video_mode.hfp = 4;		/* 8 */
-		codina_dpi_pri_display_info.video_mode.vsw = 8;		/* 2 */
-		codina_dpi_pri_display_info.video_mode.vbp = 8;		/* 8 */
-		codina_dpi_pri_display_info.video_mode.vfp = 4;		/* 18 and on GB 8 */
+		codina_dpi_pri_display_info.video_mode.hsw = 4;
+		codina_dpi_pri_display_info.video_mode.hbp = 4;
+		codina_dpi_pri_display_info.video_mode.hfp = 4;
+		codina_dpi_pri_display_info.video_mode.vsw = 8;
+		codina_dpi_pri_display_info.video_mode.vbp = 8;
+		codina_dpi_pri_display_info.video_mode.vfp = 4;
 		/* delays */
-	if (is_lpm) {
-		codina_dpi_pri_display_info.sleep_out_delay = 30;	/* 50 */
-		codina_dpi_pri_display_info.power_on_delay = 30;	/* 10 */
-		codina_dpi_pri_display_info.reset_delay = 30;		/* 10 */
-		codina_dpi_pri_display_info.display_off_delay = 30;	/* 25 */
-		codina_dpi_pri_display_info.sleep_in_delay = 30;	/* 120 */
+		codina_dpi_pri_display_info.sleep_out_delay = 60;
+		codina_dpi_pri_display_info.power_on_delay = 10;
+		codina_dpi_pri_display_info.reset_delay = 20;
+		codina_dpi_pri_display_info.display_off_delay = 25;
+		codina_dpi_pri_display_info.sleep_in_delay = 120;
 	} else {
-		codina_dpi_pri_display_info.sleep_out_delay = 50;	/* 50 */
-		codina_dpi_pri_display_info.power_on_delay = 50;	/* 10 */
-		codina_dpi_pri_display_info.reset_delay = 50;		/* 10 */
-		codina_dpi_pri_display_info.display_off_delay = 50;	/* 25 */
-		codina_dpi_pri_display_info.sleep_in_delay = 50;	/* 120 */
+		/* video modes */
+		codina_dpi_pri_display_info.video_mode.hsw = 4;
+		codina_dpi_pri_display_info.video_mode.hbp = 4;
+		codina_dpi_pri_display_info.video_mode.hfp = 4;
+		codina_dpi_pri_display_info.video_mode.vsw = 8;
+		codina_dpi_pri_display_info.video_mode.vbp = 8;
+		codina_dpi_pri_display_info.video_mode.vfp = 4;
+		/* delays */
+		codina_dpi_pri_display_info.sleep_out_delay = 60;
+		codina_dpi_pri_display_info.power_on_delay = 10;
+		codina_dpi_pri_display_info.reset_delay = 20;
+		codina_dpi_pri_display_info.display_off_delay = 25;
+		codina_dpi_pri_display_info.sleep_in_delay = 120;
 	}
 }
 	if (lcd_type == LCD_PANEL_TYPE_S6D27A1) {
 		generic_display0.name = LCD_DRIVER_NAME_S6D27A1;
+	if (is_lpm || is_recovery) {
 		/* video modes */
-		codina_dpi_pri_display_info.video_mode.hsw = 6;		/* 2 */
-		codina_dpi_pri_display_info.video_mode.hbp = 6;		/* 63 */
-		codina_dpi_pri_display_info.video_mode.hfp = 6;		/* 63 */
-		codina_dpi_pri_display_info.video_mode.vsw = 6;		/* 2 */
-		codina_dpi_pri_display_info.video_mode.vbp = 6;		/* 11 */
-		codina_dpi_pri_display_info.video_mode.vfp = 6;		/* 10 and on GB 3 */
+		codina_dpi_pri_display_info.video_mode.hsw = 12;
+		codina_dpi_pri_display_info.video_mode.hbp = 12;
+		codina_dpi_pri_display_info.video_mode.hfp = 12;
+		codina_dpi_pri_display_info.video_mode.vsw = 6;
+		codina_dpi_pri_display_info.video_mode.vbp = 6;
+		codina_dpi_pri_display_info.video_mode.vfp = 12;
 		/* delays */
-	if (is_lpm) {
-		codina_dpi_pri_display_info.sleep_out_delay = 20;	/* 120 */
-		codina_dpi_pri_display_info.power_on_delay = 20;	/* 10 */
-		codina_dpi_pri_display_info.reset_delay = 20;		/* 10 */
-		codina_dpi_pri_display_info.display_off_delay = 20;	/* 25 */
-		codina_dpi_pri_display_info.sleep_in_delay = 20;	/* 120 */
+		codina_dpi_pri_display_info.sleep_out_delay = 60;
+		codina_dpi_pri_display_info.power_on_delay = 10;
+		codina_dpi_pri_display_info.reset_delay = 20;
+		codina_dpi_pri_display_info.display_off_delay = 25;
+		codina_dpi_pri_display_info.sleep_in_delay = 120;
 	} else {
-		codina_dpi_pri_display_info.sleep_out_delay = 30;	/* 120 */
-		codina_dpi_pri_display_info.power_on_delay = 30;	/* 10 */
-		codina_dpi_pri_display_info.reset_delay = 30;		/* 10 */
-		codina_dpi_pri_display_info.display_off_delay = 30;	/* 25 */
-		codina_dpi_pri_display_info.sleep_in_delay = 30;	/* 120 */
+		/* video modes */
+		codina_dpi_pri_display_info.video_mode.hsw = 6;
+		codina_dpi_pri_display_info.video_mode.hbp = 6;
+		codina_dpi_pri_display_info.video_mode.hfp = 6;
+		codina_dpi_pri_display_info.video_mode.vsw = 6;
+		codina_dpi_pri_display_info.video_mode.vbp = 6;
+		codina_dpi_pri_display_info.video_mode.vfp = 6;
+		/* delays */
+		codina_dpi_pri_display_info.sleep_out_delay = 60;
+		codina_dpi_pri_display_info.power_on_delay = 10;
+		codina_dpi_pri_display_info.reset_delay = 20;
+		codina_dpi_pri_display_info.display_off_delay = 25;
+		codina_dpi_pri_display_info.sleep_in_delay = 120;
 	}
 }
 	

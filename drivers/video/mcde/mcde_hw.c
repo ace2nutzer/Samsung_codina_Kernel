@@ -1174,14 +1174,14 @@ static int wait_for_vsync(struct mcde_chnl_state *chnl)
 	}
 }
 /* PRCMU LCDCLK
- * 30720000
+ * 30720000	[S6D27A1 - Stock]
  * 33280000
  * 36305454
- * 39936000	[S6D27A1]
+ * 39936000	[S6D27A1 - Tuned]
  * 44373333
- * 49920000
+ * 49920000	[WS2401 - Stock]
  * 57051428
- * 66560000	[WS2401]
+ * 66560000	[WS2401 - Tuned]
  * 79872000
  */
 #include <linux/kobject.h>
@@ -1198,7 +1198,7 @@ struct lcdclk_prop
 
 static struct lcdclk_prop lcdclk_prop[] = {
   	[1] = {
-		.name = "30.72 Mhz (30720000)",
+		.name = "30.72 Mhz (30720000) [S6D27A1 - Stock]",
 		.clk = 30720000,
 	},
   	[2] = {
@@ -1210,7 +1210,7 @@ static struct lcdclk_prop lcdclk_prop[] = {
 		.clk = 36305454,
 	},
   	[4] = {
-		.name = "39.93 Mhz (39936000) [S6D27A1]",
+		.name = "39.93 Mhz (39936000) [S6D27A1 - Tuned]",
 		.clk = 39936000,
 	},
   	[5] = {
@@ -1218,7 +1218,7 @@ static struct lcdclk_prop lcdclk_prop[] = {
 		.clk = 44373333,
 	},
   	[6] = {
-		.name = "49.92 Mhz (49920000)",
+		.name = "49.92 Mhz (49920000) [WS2401 - Stock]",
 		.clk = 49920000,
 	},
   	[7] = {
@@ -1226,7 +1226,7 @@ static struct lcdclk_prop lcdclk_prop[] = {
 		.clk = 57051428,
 	},
   	[8] = {
-		.name = "66.56 Mhz (66560000) [WS2401]",
+		.name = "66.56 Mhz (66560000) [WS2401 - Tuned]",
 		.clk = 66560000,
 	},
   	[9] = {
