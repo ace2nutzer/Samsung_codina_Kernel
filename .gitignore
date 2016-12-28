@@ -135,3 +135,7 @@ scripts/kconfig/lex.zconf.c
 scripts/kconfig/zconf.hash.c
 scripts/kconfig/zconf.tab.c
 scripts/mod/elfconfig.h
+scripts/selinux/genheaders/genheaders
+scripts/selinux/mdp/mdp
+security/selinux/av_permissions.h
+security/selinux/flask.h
