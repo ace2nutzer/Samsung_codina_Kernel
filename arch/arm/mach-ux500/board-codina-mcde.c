@@ -38,17 +38,16 @@
 
 #ifdef CONFIG_FB_MCDE
 
-extern unsigned int is_lpm;
-extern unsigned int is_recovery;
-
-#define PRCMU_DPI_CLK_SHARP_FREQ	30720000
-#define PRCMU_DPI_CLK_SMD_FREQ		49920000
+#define PRCMU_DPI_CLK_SHARP_FREQ	33280000
+#define PRCMU_DPI_CLK_SMD_FREQ		66560000
 
 enum {
 	PRIMARY_DISPLAY_ID,
 	MCDE_NR_OF_DISPLAYS
 };
 
+extern unsigned int is_lpm;
+extern unsigned int is_recovery;
 extern unsigned int system_rev;
 static int display_initialized_during_boot = (int)false;
 static struct ux500_pins *dpi_pins;
@@ -89,13 +88,13 @@ static struct mcde_port port0 = {
 	.phy = {
 		.dpi = {
 			.tv_mode = false,
-			.clock_div = 2,
+			.clock_div = 1,
 			.polarity =
 				DPI_ACT_LOW_VSYNC |
 				DPI_ACT_LOW_HSYNC |
 				/* DPI_ACT_LOW_DATA_ENABLE | */
 				DPI_ACT_ON_FALLING_EDGE,
-			.lcd_freq = PRCMU_DPI_CLK_SMD_FREQ
+			.lcd_freq = PRCMU_DPI_CLK_SHARP_FREQ
 		},
 	},
 };
@@ -138,8 +137,9 @@ struct ssg_dpi_display_platform_data codina_dpi_pri_display_info = {
 	.reset_gpio		= LCD_RESX_CODINA_R0_0,
 	.pwr_gpio		= LCD_PWR_EN_CODINA_R0_0,
 	.bl_ctrl		= false,
-	.min_ddr_opp		= 50,
-
+	.power_on_delay = 10,
+	.reset_delay = 10,
+	.display_off_delay = 25,
 	.video_mode.xres	= 480,
 	.video_mode.yres	= 800,
 	.video_mode.interlaced	= false,
@@ -150,7 +150,7 @@ struct ssg_dpi_display_platform_data codina_dpi_pri_display_info = {
 	 * space.
 	 */
 
-	.video_mode.pixclock = (int)(1e+12 * (1.0 / PRCMU_DPI_CLK_SMD_FREQ)),
+	.video_mode.pixclock = (int)(1e+12 * (1.0 / PRCMU_DPI_CLK_SHARP_FREQ)),
 
 	.reset		= pri_display_reset,
 	.lcd_pwr_setup = pri_lcd_pwr_setup,	
@@ -296,7 +296,7 @@ static int display_postregistered_callback(struct notifier_block *nb,
 {
 	struct mcde_display_device *ddev = dev;
 	u16 width, height;
-	u16 virtual_height;
+	u16 virtual_width, virtual_height;
 	struct fb_info *fbi;
 #if defined(CONFIG_COMPDEV)
 	struct mcde_fb *mfb;
@@ -309,11 +309,12 @@ static int display_postregistered_callback(struct notifier_block *nb,
 		return 0;
 
 	mcde_dss_get_native_resolution(ddev, &width, &height);
-	virtual_height = height * 3;
+	virtual_width = width;
+	virtual_height = height * 2;
 
 
 	/* Create frame buffer */
-	fbi = mcde_fb_create(ddev, width, height, width, virtual_height,
+	fbi = mcde_fb_create(ddev, width, height, virtual_width, virtual_height,
 				ddev->default_pixel_format, FB_ROTATE_UR);
 
 	if (IS_ERR(fbi)) {
@@ -353,57 +354,6 @@ display_postregistered_callback_err:
 static struct notifier_block display_nb = {
 	.notifier_call = display_postregistered_callback,
 };
-
-static void update_mcde_opp(struct device *dev,
-					struct mcde_opp_requirements *reqs)
-{
-	static s32 requested_qos;
-	s32 req_ape = PRCMU_QOS_DEFAULT_VALUE;
-	static bool update_first = true;
-	s32 req_ddr = PRCMU_QOS_DEFAULT_VALUE;
-
-	static u8 prev_rot_channels;
-	static ktime_t rot_time;
-	s64 diff;
-
-	/* If a rotation is detected, clock up CPU to max */
-	if (reqs->num_rot_channels != prev_rot_channels) {
-		prev_rot_channels = reqs->num_rot_channels;
-		rot_time = ktime_get();
-	}
-
-	diff = ktime_to_ms(ktime_sub(ktime_get(),rot_time));
-
-/*
- * Wait a while before clocking down again
-	 * unless we have an overlay
- */
-if ((reqs->num_rot_channels && reqs->num_overlays > 1) ||
-		 (diff < 5000)) {
-		req_ape = PRCMU_QOS_MAX_VALUE;
-				req_ddr = PRCMU_QOS_MAX_VALUE;
-	} else {
-		req_ape = PRCMU_QOS_DEFAULT_VALUE;
-		req_ddr = PRCMU_QOS_DEFAULT_VALUE;
-	}
-
-	if (req_ape != requested_qos) {
-		requested_qos = req_ape;
-		prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
-						dev_name(dev), req_ape);
-		prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
-						dev_name(dev), req_ddr);
-		pr_info("Requested APE QOS = %d\n", req_ape);
-
-		if (update_first == true) {
-			codina_backlight_on_off(false);
-			msleep(1);
-			codina_backlight_on_off(true);
-			update_first = false;
-		}
-	}
-	
-}
 
 int __init init_codina_display_devices(void)
 {
@@ -455,57 +405,27 @@ int __init init_codina_display_devices(void)
 	pdata->pixelfetchwtrmrk[1] = fifo * 3 / 24;	/* LCD 24bpp */
 #endif
 	}
-	pdata->update_opp = update_mcde_opp;
 
 	if (lcd_type == LCD_PANEL_TYPE_SMD) {
 		generic_display0.name = LCD_DRIVER_NAME_WS2401;
-	if (is_lpm || is_recovery) {
 		/* video modes */
-		codina_dpi_pri_display_info.video_mode.hsw = 4;
-		codina_dpi_pri_display_info.video_mode.hbp = 4;
-		codina_dpi_pri_display_info.video_mode.hfp = 4;
+		codina_dpi_pri_display_info.video_mode.hsw = 8;
+		codina_dpi_pri_display_info.video_mode.hbp = 8;
+		codina_dpi_pri_display_info.video_mode.hfp = 8;
 		codina_dpi_pri_display_info.video_mode.vsw = 8;
 		codina_dpi_pri_display_info.video_mode.vbp = 8;
-		codina_dpi_pri_display_info.video_mode.vfp = 4;
+		codina_dpi_pri_display_info.video_mode.vfp = 8;
 		/* delays */
-		codina_dpi_pri_display_info.sleep_out_delay = 120;
-		codina_dpi_pri_display_info.power_on_delay = 10;
-		codina_dpi_pri_display_info.reset_delay = 20;
-		codina_dpi_pri_display_info.display_off_delay = 25;
-		codina_dpi_pri_display_info.sleep_in_delay = 240;
-	} else {
-		/* video modes */
-		codina_dpi_pri_display_info.video_mode.hsw = 4;
-		codina_dpi_pri_display_info.video_mode.hbp = 4;
-		codina_dpi_pri_display_info.video_mode.hfp = 4;
-		codina_dpi_pri_display_info.video_mode.vsw = 8;
-		codina_dpi_pri_display_info.video_mode.vbp = 8;
-		codina_dpi_pri_display_info.video_mode.vfp = 4;
-		/* delays */
-		codina_dpi_pri_display_info.sleep_out_delay = 120;
-		codina_dpi_pri_display_info.power_on_delay = 10;
-		codina_dpi_pri_display_info.reset_delay = 20;
-		codina_dpi_pri_display_info.display_off_delay = 25;
-		codina_dpi_pri_display_info.sleep_in_delay = 240;
+		if (is_lpm || is_recovery) {
+		codina_dpi_pri_display_info.sleep_in_delay = 100;
+		codina_dpi_pri_display_info.sleep_out_delay = 50;
+		} else {
+		codina_dpi_pri_display_info.sleep_in_delay = 50;
+		codina_dpi_pri_display_info.sleep_out_delay = 100;
+		}
 	}
-}
 	if (lcd_type == LCD_PANEL_TYPE_S6D27A1) {
 		generic_display0.name = LCD_DRIVER_NAME_S6D27A1;
-	if (is_lpm || is_recovery) {
-		/* video modes */
-		codina_dpi_pri_display_info.video_mode.hsw = 12;
-		codina_dpi_pri_display_info.video_mode.hbp = 12;
-		codina_dpi_pri_display_info.video_mode.hfp = 12;
-		codina_dpi_pri_display_info.video_mode.vsw = 6;
-		codina_dpi_pri_display_info.video_mode.vbp = 6;
-		codina_dpi_pri_display_info.video_mode.vfp = 12;
-		/* delays */
-		codina_dpi_pri_display_info.sleep_out_delay = 120;
-		codina_dpi_pri_display_info.power_on_delay = 10;
-		codina_dpi_pri_display_info.reset_delay = 20;
-		codina_dpi_pri_display_info.display_off_delay = 25;
-		codina_dpi_pri_display_info.sleep_in_delay = 240;
-	} else {
 		/* video modes */
 		codina_dpi_pri_display_info.video_mode.hsw = 6;
 		codina_dpi_pri_display_info.video_mode.hbp = 6;
@@ -514,13 +434,14 @@ int __init init_codina_display_devices(void)
 		codina_dpi_pri_display_info.video_mode.vbp = 6;
 		codina_dpi_pri_display_info.video_mode.vfp = 6;
 		/* delays */
-		codina_dpi_pri_display_info.sleep_out_delay = 120;
-		codina_dpi_pri_display_info.power_on_delay = 10;
-		codina_dpi_pri_display_info.reset_delay = 20;
-		codina_dpi_pri_display_info.display_off_delay = 25;
-		codina_dpi_pri_display_info.sleep_in_delay = 240;
+		if (is_lpm || is_recovery) {
+		codina_dpi_pri_display_info.sleep_in_delay = 200;
+		codina_dpi_pri_display_info.sleep_out_delay = 50;
+		} else {
+		codina_dpi_pri_display_info.sleep_in_delay = 50;
+		codina_dpi_pri_display_info.sleep_out_delay = 200;
+		}
 	}
-}
 	
 	ret = mcde_display_device_register(&generic_display0);
 	if (ret)
@@ -530,7 +451,7 @@ int __init init_codina_display_devices(void)
 	dpi_pins = ux500_pins_get("mcde-dpi");
 	if (!dpi_pins)
 		return -EINVAL;
-error:
+
 	return ret;
 }
 

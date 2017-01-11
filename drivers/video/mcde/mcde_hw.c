@@ -1174,15 +1174,15 @@ static int wait_for_vsync(struct mcde_chnl_state *chnl)
 	}
 }
 /* PRCMU LCDCLK
- * 30720000	[S6D27A1 - Stock]
- * 33280000
- * 36305454
- * 39936000	[S6D27A1 - Tuned]
+ * 30720000
+ * 33280000	[S6D27A1]
+ * 36305454	[S6D27A1 - Tuned]
+ * 39936000
  * 44373333
- * 49920000	[WS2401 - Stock]
+ * 49920000
  * 57051428
- * 66560000	[WS2401 - Tuned]
- * 79872000
+ * 66560000	[WS2401]
+ * 79872000	[WS2401 - Tuned]
  */
 #include <linux/kobject.h>
 #include <linux/mfd/dbx500-prcmu.h>
@@ -1198,19 +1198,19 @@ struct lcdclk_prop
 
 static struct lcdclk_prop lcdclk_prop[] = {
   	[1] = {
-		.name = "30.72 Mhz (30720000) [S6D27A1 - Stock]",
+		.name = "30.72 Mhz (30720000)",
 		.clk = 30720000,
 	},
   	[2] = {
-		.name = "33.28 Mhz (33280000)",
+		.name = "33.28 Mhz (33280000) [S6D27A1]",
 		.clk = 33280000,
 	},
   	[3] = {
-		.name = "36.30 Mhz (36305454)",
+		.name = "36.30 Mhz (36305454) [S6D27A1 - Tuned]",
 		.clk = 36305454,
 	},
   	[4] = {
-		.name = "39.93 Mhz (39936000) [S6D27A1 - Tuned]",
+		.name = "39.93 Mhz (39936000)",
 		.clk = 39936000,
 	},
   	[5] = {
@@ -1218,7 +1218,7 @@ static struct lcdclk_prop lcdclk_prop[] = {
 		.clk = 44373333,
 	},
   	[6] = {
-		.name = "49.92 Mhz (49920000) [WS2401 - Stock]",
+		.name = "49.92 Mhz (49920000)",
 		.clk = 49920000,
 	},
   	[7] = {
@@ -1226,11 +1226,11 @@ static struct lcdclk_prop lcdclk_prop[] = {
 		.clk = 57051428,
 	},
   	[8] = {
-		.name = "66.56 Mhz (66560000) [WS2401 - Tuned]",
+		.name = "66.56 Mhz (66560000) [WS2401]",
 		.clk = 66560000,
 	},
   	[9] = {
-		.name = "79.87 Mhz (79872000)",
+		.name = "79.87 Mhz (79872000) [WS2401 - Tuned]",
 		.clk = 79872000,
 	},
 };
@@ -4360,7 +4360,7 @@ static int __devinit mcde_probe(struct platform_device *pdev)
 	INIT_DELAYED_WORK_DEFERRABLE(&hw_timeout_work, work_sleep_function);
 
 	WARN_ON(prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
-		dev_name(&pdev->dev), PRCMU_QOS_MAX_VALUE));
+		dev_name(&pdev->dev), PRCMU_QOS_DEFAULT_VALUE));
 	WARN_ON(prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
 		dev_name(&pdev->dev), PRCMU_QOS_DEFAULT_VALUE));
 	ret = probe_hw(pdev);
