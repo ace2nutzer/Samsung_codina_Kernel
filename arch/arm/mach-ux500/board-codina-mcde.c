@@ -38,8 +38,13 @@
 
 #ifdef CONFIG_FB_MCDE
 
+/* for the system */
 #define PRCMU_DPI_CLK_SHARP_FREQ	33280000
 #define PRCMU_DPI_CLK_SMD_FREQ		66560000
+
+/* for recovery & lpm */
+#define PRCMU_DPI_CLK_SHARP_FREQ2	30720000
+#define PRCMU_DPI_CLK_SMD_FREQ2		49920000
 
 enum {
 	PRIMARY_DISPLAY_ID,
@@ -376,14 +381,26 @@ int __init init_codina_display_devices(void)
 	 */
 	if (lcd_type == LCD_PANEL_TYPE_SMD) {
 		port0.phy.dpi.clock_div = 2;
+		if (is_lpm || is_recovery) {
+		port0.phy.dpi.lcd_freq = PRCMU_DPI_CLK_SMD_FREQ2;
+		codina_dpi_pri_display_info.video_mode.pixclock	=
+				(int)(1e+12 * (1.0 / PRCMU_DPI_CLK_SMD_FREQ2));
+		} else {
 		port0.phy.dpi.lcd_freq = PRCMU_DPI_CLK_SMD_FREQ;
 		codina_dpi_pri_display_info.video_mode.pixclock	=
 				(int)(1e+12 * (1.0 / PRCMU_DPI_CLK_SMD_FREQ));
+		}
 	} else {
 		port0.phy.dpi.clock_div = 1;
+		if (is_lpm || is_recovery) {
+		port0.phy.dpi.lcd_freq = PRCMU_DPI_CLK_SHARP_FREQ2;
+		codina_dpi_pri_display_info.video_mode.pixclock	=
+				(int)(1e+12 * (1.0 / PRCMU_DPI_CLK_SHARP_FREQ2));
+		} else {
 		port0.phy.dpi.lcd_freq = PRCMU_DPI_CLK_SHARP_FREQ;
 		codina_dpi_pri_display_info.video_mode.pixclock	=
 				(int)(1e+12 * (1.0 / PRCMU_DPI_CLK_SHARP_FREQ));
+		}
 	}
 
 	codina_dpi_pri_display_info.video_mode.pixclock /=

@@ -1369,7 +1369,7 @@ ret = device_create_file(&(ddev->dev), &dev_attr_mcde_chnl);
 		pr_info("pcrm_qos_add APE failed\n");
 	}
 	if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
-			"codina_lcd_dpi", 25)) {
+			"codina_lcd_dpi", 50)) {
 		pr_info("pcrm_qos_add DDR failed\n");
 	}
 
@@ -1520,7 +1520,7 @@ static void ws2401_dpi_mcde_late_resume(
 		pr_info("pcrm_qos_add APE failed\n");
 	}
 	if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
-			"codina_lcd_dpi", 25)) {
+			"codina_lcd_dpi", 50)) {
 		pr_info("pcrm_qos_add DDR failed\n");
 	}
 	
