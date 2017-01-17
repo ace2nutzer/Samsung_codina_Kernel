@@ -320,8 +320,8 @@ static const struct battery_type bat_type[] = {
 		.termination_vol = 4190,
 #ifdef CONFIG_SAMSUNG_CHARGER_SPEC
 		.termination_curr_1st = 170,
-		.termination_curr_2nd = 0,
-		.recharge_vol = 4089,
+		.termination_curr_2nd = 170,
+		.recharge_vol = 4047,
 #else
 		.termination_curr = 170,
 #endif
@@ -357,7 +357,7 @@ static const struct battery_type bat_type[] = {
 		.subsequent_timeout_time = HZ*60*90,
 			/* After an error stop charging for a minute. */
 		.error_charge_stoptime = HZ*60,
-		.over_voltage_threshold =  4340,
+		.over_voltage_threshold =  4290,
 #else
 		.n_batres_tbl_elements = ARRAY_SIZE(temp_to_batres_tbl),
 		.batres_tbl = temp_to_batres_tbl,
@@ -389,8 +389,8 @@ static const struct battery_type bat_type[] = {
 		.termination_vol =  4340,
 #ifdef CONFIG_SAMSUNG_CHARGER_SPEC
 		.termination_curr_1st = 150,
-		.termination_curr_2nd = 0,
-		.recharge_vol = 4237,
+		.termination_curr_2nd = 150,
+		.recharge_vol = 4190,
 #else
 		.termination_curr = 150,
 #endif
@@ -426,7 +426,7 @@ static const struct battery_type bat_type[] = {
 		.subsequent_timeout_time = HZ*60*90,
 			/* After an error stop charging for a minute. */
 		.error_charge_stoptime = HZ*60,
-		.over_voltage_threshold =  4490,
+		.over_voltage_threshold =  4440,
 #else
 		.n_batres_tbl_elements = ARRAY_SIZE(temp_to_batres_tbl),
 		.batres_tbl = temp_to_batres_tbl,
