@@ -321,7 +321,7 @@ static const struct battery_type bat_type[] = {
 #ifdef CONFIG_SAMSUNG_CHARGER_SPEC
 		.termination_curr_1st = 170,
 		.termination_curr_2nd = 170,
-		.recharge_vol = 4047,
+		.recharge_vol = 4100,
 #else
 		.termination_curr = 170,
 #endif
@@ -390,7 +390,7 @@ static const struct battery_type bat_type[] = {
 #ifdef CONFIG_SAMSUNG_CHARGER_SPEC
 		.termination_curr_1st = 150,
 		.termination_curr_2nd = 150,
-		.recharge_vol = 4190,
+		.recharge_vol = 4250,
 #else
 		.termination_curr = 150,
 #endif
