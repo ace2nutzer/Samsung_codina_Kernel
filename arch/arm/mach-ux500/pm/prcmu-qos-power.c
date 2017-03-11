@@ -29,8 +29,6 @@
 
 #include <mach/prcmu-debug.h>
 
-#define ARM_THRESHOLD_FREQ 150000
-
 #define AB8500_VAPESEL1_REG 0x0E   /* APE OPP 100 voltage */
 #define AB8500_VAPESEL2_REG 0x0F   /* APE OPP 50 voltage  */
 
@@ -924,53 +922,10 @@ static int qos_delayed_cpufreq_notifier(struct notifier_block *nb,
 			unsigned long event, void *data)
 {
 	struct cpufreq_freqs *freq = data;
-	s32 new_ddr_target;
 
 	/* Only react once per transition and only for one core, e.g. core 0 */
 	if (event != CPUFREQ_POSTCHANGE || freq->cpu != 0)
-		return 0;
-
-	/*
-	 * APE and DDR OPP are always handled together in this solution.
-	 * Hence no need to check both DDR and APE opp in the code below.
-	 */
-
-	/* Which DDR OPP are we aiming for? */
-	if (freq->new > ARM_THRESHOLD_FREQ)
-		new_ddr_target = PRCMU_QOS_DDR_OPP_MAX;
-	else
-		new_ddr_target = PRCMU_QOS_DEFAULT_VALUE;
-
-	if (new_ddr_target == cpufreq_requirement_queued) {
-		/*
-		 * We're already at, or going to, the target requirement.
-		 * This is only a fluctuation within the interval
-		 * corresponding to the same DDR requirement.
-		 */
-		return 0;
-	}
-	cpufreq_requirement_queued = new_ddr_target;
-
-	if (freq->new > ARM_THRESHOLD_FREQ) {
-		cancel_delayed_work_sync(&qos_delayed_work_down);
-		/*
-		 * Only schedule this requirement if it is not the current
-		 * one.
-		 */
-		if (new_ddr_target != cpufreq_requirement_set)
-			schedule_delayed_work(&qos_delayed_work_up,
-					      cpufreq_opp_delay);
-	} else {
-		cancel_delayed_work_sync(&qos_delayed_work_up);
-		/*
-		 * Only schedule this requirement if it is not the current
-		 * one.
-		 */
-		if (new_ddr_target != cpufreq_requirement_set)
-			schedule_delayed_work(&qos_delayed_work_down,
-					      cpufreq_opp_delay);
-	}
-
+	return 0;
 	return 0;
 }
 
