@@ -71,9 +71,9 @@ arch-$(CONFIG_CPU_32v7)                :=-D__LINUX_ARM_ARCH__=7 $(call cc-option
 # doesn't even support -march=armv7-a, since in that situation we would have
 # bigger problems.
 
-# Never want PIC and PIE in a 32-bit kernel, prevent breakage with GCC built
+# Never want PIC in a 32-bit kernel, prevent breakage with GCC built
 # with nonstandard options
-KBUILD_CFLAGS += -fno-pic -fno-pie -fno-PIC -fno-PIE
+KBUILD_CFLAGS += -fno-pic -fno-PIC
 
 ifeq ($(CONFIG_AEABI),y)
 CFLAGS_ABI	:=-mabi=aapcs-linux
