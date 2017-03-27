@@ -24,7 +24,6 @@ MISC = misc.o
 
 AFLAGS_decompress.o += -Wa,-march=armv7-a$(plus_sec)
 DECOMPRESS = decompress.o
-CFLAGS_decompress.o := -fno-stack-protector
 
 FONTC	= $(srctree)/drivers/video/console/font_acorn_8x8.c
 
@@ -120,7 +119,7 @@ ORIG_CFLAGS := $(KBUILD_CFLAGS)
 KBUILD_CFLAGS = $(subst -pg, , $(ORIG_CFLAGS))
 endif
 
-ccflags-y := -fPIC -fPIE -fno-builtin -I$(src)
+ccflags-y := -fPIC -fPIE -fno-builtin -I$(src) -fno-stack-protector
 asflags-y := -Wa,-march=all
 
 # Supply kernel BSS size to the decompressor via a linker symbol.

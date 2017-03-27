@@ -380,7 +380,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
-		   -std=gnu89 \
+		   -std=gnu89 $(call cc-option,-fno-PIE) \
 		   -fno-delete-null-pointer-checks \
 		   -D_FORTIFY_SOURCE=1 \
 		   -march=armv7-a \
@@ -402,7 +402,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
-KBUILD_AFLAGS   := -D__ASSEMBLY__ -marm -mfpu=neon -mfloat-abi=hard -ftree-vectorize -mvectorize-with-neon-quad
+KBUILD_AFLAGS   := -D__ASSEMBLY__ $(call cc-option,-fno-PIE) -marm -mfpu=neon -mfloat-abi=hard -ftree-vectorize -mvectorize-with-neon-quad
 KBUILD_AFLAGS_MODULE  := -DMODULE
 KBUILD_CFLAGS_MODULE  := -DMODULE
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
