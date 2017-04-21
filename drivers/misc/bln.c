@@ -44,6 +44,10 @@ static long unsigned int notification_led_mask = 0x0;
 #ifdef CONFIG_GENERIC_BLN_USE_WAKELOCK
 static bool use_wakelock = false;
 static struct wake_lock bln_wake_lock;
+bool is_bln_wakelock_active(void) {
+	return wake_lock_active(&bln_wake_lock);
+}
+EXPORT_SYMBOL(is_bln_wakelock_active);
 #endif
 
 #ifdef CONFIG_GENERIC_BLN_EMULATE_BUTTONS_LED
