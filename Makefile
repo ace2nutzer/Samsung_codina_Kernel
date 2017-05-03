@@ -248,6 +248,7 @@ HOSTCC       = gcc
 HOSTCXX      = g++
 HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -mhard-float -O2 -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -std=gnu89 -pipe \
 		   -funswitch-loops \
+		   -fpredictive-commoning \
 		   -fgcse-after-reload \
 		   -ftree-loop-distribute-patterns \
 		   -fsplit-paths \
@@ -255,6 +256,7 @@ HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -mhard-float -O2 -fn
 
 HOSTCXXFLAGS = -mhard-float -O2 -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -pipe \
 		   -funswitch-loops \
+		   -fpredictive-commoning \
 		   -fgcse-after-reload \
 		   -ftree-loop-distribute-patterns \
 		   -fsplit-paths \
@@ -393,6 +395,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -ftree-vectorize \
 		   -mvectorize-with-neon-quad \
 		   -funswitch-loops \
+		   -fpredictive-commoning \
 		   -fgcse-after-reload \
 		   -ftree-loop-distribute-patterns \
 		   -fsplit-paths \
