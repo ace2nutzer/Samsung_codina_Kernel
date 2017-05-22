@@ -431,14 +431,10 @@ int __init init_codina_display_devices(void)
 		codina_dpi_pri_display_info.video_mode.vsw = 8;
 		codina_dpi_pri_display_info.video_mode.vbp = 8;
 		codina_dpi_pri_display_info.video_mode.vfp = 8;
-		if (is_lpm || is_recovery) {
-		codina_dpi_pri_display_info.sleep_in_delay = 100;
+		codina_dpi_pri_display_info.sleep_in_delay = 120;
 		codina_dpi_pri_display_info.sleep_out_delay = 50;
-		} else {
-		codina_dpi_pri_display_info.sleep_in_delay = 50;
-		codina_dpi_pri_display_info.sleep_out_delay = 100;
-		}
 	}
+
 	if (lcd_type == LCD_PANEL_TYPE_S6D27A1) {
 		generic_display0.name = LCD_DRIVER_NAME_S6D27A1;
 		codina_dpi_pri_display_info.video_mode.vsw = 6;
