@@ -1,5 +1,5 @@
 config XVMALLOC
-	bool
+	tristate
 	default n
 
 config ZRAM
