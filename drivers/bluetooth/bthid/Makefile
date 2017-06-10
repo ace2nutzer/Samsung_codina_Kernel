@@ -1,1 +1,1 @@
-obj-m	+= bthid.o
+obj-$(CONFIG_BT_HID)	+= bthid.o

@@ -269,7 +269,7 @@ config BT_WILINK
 
 config BT_HID
 	tristate "Bluetooth HID (Human interface device) driver"
-	default m
+	default n
 	help
 	  say M to compile it as module.
 endmenu

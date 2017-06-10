@@ -1,8 +1,6 @@
 /*
  * Copyright (C) ST-Ericsson SA 2010
  * Author: Pankaj Chauhan <pankaj.chauhan@stericsson.com> for ST-Ericsson.
- * Copyright (C) 2014
- * Modified: Jonathan Dennis [Meticulus] theonejohnnyd@gmail.com
  * License terms: GNU General Public License (GPL), version 2.
  */
 #include <linux/delay.h>
@@ -23,8 +21,6 @@
 #include <linux/mfd/dbx500-prcmu.h>
 #include <linux/mmio.h>
 #include <linux/ratelimit.h>
-#include <linux/leds.h>
-#include <linux/bln.h>
 
 #include <mach/board-sec-u8500.h> // Include STE Board Revision
 #include "st_mmio.h"
@@ -97,8 +93,6 @@
 int vt_id;    // Global variable  (VT_CAM_ID) value
 int vendorID; // Global variable for 5M SOC Camera vendor ID
 int assistive_mode;
-int burning_mode = 0;
-int eco_light = 0;
 
 #if defined (CONFIG_TORCH_FLASH)
 extern int Torch_Flash_mode;
@@ -2277,189 +2271,28 @@ rear_camera_type_show(struct device *dev,
 }
 
 	static ssize_t
-rear_flash_enable_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
-{
-	return sprintf(buf, "%d\n", assistive_mode);
-}
-
-static void toggle_rearcam_flash(bool on)
-{
-	if (!on) {
-		if (burning_mode || eco_light) {
-			burning_mode = 0;
-			eco_light = 0;
-			gpio_set_value(140, 0);
-		}
-
-		assistive_mode = 0;
-		mmio_cam_flash_on_off(info, 3, 0);
-	} else {
-		if (burning_mode || eco_light) {
-			burning_mode = 0;
-			eco_light = 0;
-			gpio_set_value(140, 0);
-
-			/* For safety */
-			msleep(1000);
-		}
-
-		assistive_mode = 1;
-#if defined CONFIG_MACH_GAVINI
-		mmio_cam_flash_on_off(info, 2, (100+2));
-#else
-		mmio_cam_flash_on_off(info, 3, (100+2));
-#endif
-	}
-}
-
-static ssize_t
 rear_flash_enable_store(struct device *dev,
 		struct device_attribute *attr, char *buf, size_t size)
 {
-	toggle_rearcam_flash(buf[0] == '1');
-
-	return size;
-}
-
-static ssize_t
-rear_flash_burning_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
-{
-	return sprintf(buf, "%d\n", burning_mode);
-}
-
-static ssize_t
-rear_flash_burning_store(struct device *dev,
-		struct device_attribute *attr, const char *buf, size_t size)
-{
-	/* Enable/Disable camera rear flash gpio directly */
-
 	if (buf[0] == '0') {
-		if (assistive_mode || eco_light) {
-			assistive_mode = 0;
-			eco_light = 0;
-			gpio_set_value(140, 0);
-		}
-
-		burning_mode = 0;
-			mmio_cam_flash_on_off(info, 3, 0);
+		assistive_mode = 0;
+		mmio_cam_flash_on_off(info, 3, 0);
+		#if defined(CONFIG_MACH_SEC_SKOMER)
+		printk(KERN_DEBUG "rear_flash_enable_store, Control Value = [0]\n");
+		#endif
 	} else {
-		if (assistive_mode || eco_light) {
-			assistive_mode = 0;
-			eco_light = 0;
-			gpio_set_value(140, 0);
-			
-			/* For safety */
-			msleep(1000);
-		}
-
-		burning_mode = 1;
+		assistive_mode = 1;
 #if defined CONFIG_MACH_GAVINI
-		mmio_cam_flash_on_off(info, 2, (100+8));
+		mmio_cam_flash_on_off(info, 2, (100+5));
 #else
-		mmio_cam_flash_on_off(info, 3, (100+8));
+		mmio_cam_flash_on_off(info, 3, (100+5));
+		#if defined(CONFIG_MACH_SEC_SKOMER)
+		printk(KERN_DEBUG "rear_flash_enable_store, Control Value = [100+3]\n");
+		#endif
 #endif
 	}
-
 	return size;
 }
-
-static ssize_t
-eco_light_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
-{
-	return sprintf(buf, "%d\n", eco_light);
-}
-
-static ssize_t
-eco_light_store(struct device *dev,
-		struct device_attribute *attr, const char *buf, size_t size)
-{
-	/* Enable/Disable camera rear flash gpio directly */
-
-	if (buf[0] == '0') {
-		if (assistive_mode || burning_mode) {
-			assistive_mode = 0;
-			burning_mode = 0;
-			gpio_set_value(140, 0);
-		}
-
-		eco_light = 0;
-			mmio_cam_flash_on_off(info, 3, 0);
-	} else {
-		if (assistive_mode || burning_mode) {
-			assistive_mode = 0;
-			burning_mode = 0;
-			gpio_set_value(140, 0);
-			
-			/* For safety */
-			msleep(1000);
-		}
-
-		eco_light = 1;
-		mmio_cam_flash_on_off(info, 3, (100+1));
-	}
-	return size;
-}
-
-static enum led_brightness st_mmio_led_get_brightness(struct led_classdev *led_cdev)
-{
-	if(assistive_mode) return LED_FULL;
-	else return LED_OFF;
-}
-
-static void st_mmio_led_set_brightness(struct led_classdev *led_cdev, enum led_brightness brightness)
-{
-	if((int)brightness)
-	{
-		toggle_rearcam_flash(true);
-	}
-	else
-	{
-		toggle_rearcam_flash(false);
-	}
-}
-
-static struct led_classdev st_mmio_led_classdev = {
-	.name		= "rearcam-flash",
-	.brightness	= 0,
-	.max_brightness = 255,
-	.flags		= 0,
-	.brightness_set = st_mmio_led_set_brightness,
-	.brightness_get = st_mmio_led_get_brightness,
-};
-
-static int st_mmio_bln_enable(int led_mask)
-{
-	st_mmio_led_set_brightness(&st_mmio_led_classdev, LED_FULL);
-	return 0;
-}
-
-static int st_mmio_bln_disable(int led_mask)
-{
-	st_mmio_led_set_brightness(&st_mmio_led_classdev, LED_OFF);
-	return 0;
-}
-
-static int st_mmio_bln_power_on(void)
-{
-	return 0;
-}
-
-static int st_mmio_bln_power_off(void)
-{
-	return 0;
-}
-
-
-static struct bln_implementation st_mmio_bln = {
-	.enable    = st_mmio_bln_enable,
-	.disable   = st_mmio_bln_disable,
-	.power_on  = st_mmio_bln_power_on,
-	.power_off = st_mmio_bln_power_off,
-	.led_count = 1
-};
 
 static ssize_t rear_vendor_id_store(struct device *dev, struct device_attribute *attr, char *buf)
 {
@@ -2467,12 +2300,10 @@ static ssize_t rear_vendor_id_store(struct device *dev, struct device_attribute 
 }
 
 static DEVICE_ATTR(camtype, 0440, rear_camera_type_show, NULL);
-static DEVICE_ATTR(enable, 0644, rear_flash_enable_show, rear_flash_enable_store);
+static DEVICE_ATTR(enable, 0220, NULL, rear_flash_enable_store);
 static DEVICE_ATTR(front_camtype, 0440, front_camera_type_show, NULL); // Front camera type attribute
 static DEVICE_ATTR(rear_camtype, 0440, rear_camera_type_show, NULL); // Rear camera type attribute
-static DEVICE_ATTR(rear_flash, 0644, rear_flash_enable_show, rear_flash_enable_store);
-static DEVICE_ATTR(burning_led, 0644, rear_flash_burning_show, rear_flash_burning_store);
-static DEVICE_ATTR(eco_light, 0644, eco_light_show, eco_light_store);
+static DEVICE_ATTR(rear_flash, 0220, NULL, rear_flash_enable_store);
 static DEVICE_ATTR(rear_vendorid, 0440, rear_vendor_id_store, NULL); // Rear camera vendor ID attribute
 
 void sec_cam_init(void)
@@ -2520,38 +2351,17 @@ void sec_cam_init(void)
 				__func__, dev_attr_rear_flash.attr.name);
     }
 
-	if (device_create_file(cam_dev_rear, &dev_attr_burning_led) < 0) {
-		printk(KERN_DEBUG "%s: failed to create device file, %s\n",
-				__func__, dev_attr_burning_led.attr.name);
-	}
-
-	if (device_create_file(cam_dev_rear, &dev_attr_eco_light) < 0) {
-		printk(KERN_DEBUG "%s: failed to create device file, %s\n",
-				__func__, dev_attr_eco_light.attr.name);
-	}
-
     if(device_create_file(cam_dev_rear, &dev_attr_rear_vendorid) <0){ // Vendor ID
         printk(KERN_DEBUG "%s: failed to create device file, %s\n", 
                 __func__, dev_attr_rear_vendorid.attr.name);
-    }
+    }	
 
     // Camera flash device
 	cam_dev_flash = device_create(camera_class, NULL, 0, NULL, "flash");
-
 	if (device_create_file(cam_dev_flash, &dev_attr_rear_flash) < 0) {
 		printk(KERN_DEBUG "%s: failed to create device file, %s\n",
 				__func__, dev_attr_rear_flash.attr.name);
     }
-
-	if (device_create_file(cam_dev_flash, &dev_attr_burning_led) < 0) {
-		printk(KERN_DEBUG "%s: failed to create device file, %s\n",
-				__func__, dev_attr_burning_led.attr.name);
-	}
-
-	if (device_create_file(cam_dev_flash, &dev_attr_eco_light) < 0) {
-		printk(KERN_DEBUG "%s: failed to create device file, %s\n",
-				__func__, dev_attr_eco_light.attr.name);
-	}
 }
 
 /**
@@ -2609,17 +2419,6 @@ static int __devinit mmio_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "Error %d registering misc dev!", err);
 		goto err_miscreg;
 	}
-	
-	/* Register flash leds class */
-	/*
-	 * Had trouble with getting bln to work with the torch when
-	 * going through the leds class so, just went directly to
-	 * bln.
-	 */
-	//led_classdev_register(flash_dev, &st_mmio_led_classdev);
-
-	/* Register flash BLN */
-	register_bln_implementation_flash(&st_mmio_bln);
 
 	/* Memory mapping */
 	info->siabase = ioremap(info->pdata->sia_base, SIA_ISP_MCU_SYS_SIZE);

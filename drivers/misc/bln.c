@@ -9,11 +9,9 @@
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  *
- * Blink modes:
+ * Blink mode:
  * 0 = no blinking
  * 1 = blink backlight only
- * 2 = blink backlight + rear cam flash
- * 3 = blink rear cam flash only
  */
 
 #include <linux/platform_device.h>
@@ -37,7 +35,6 @@ static unsigned int bln_blink_mode = 0;
 static int bln_blink_delay = 600; /* blink with 600msec delay by default */
 static bool bln_suspended = false; /* is system suspended */
 static struct bln_implementation *bln_imp = NULL;
-static struct bln_implementation *bln_imp_flash = NULL;
 
 static long unsigned int notification_led_mask = 0x0;
 
@@ -79,23 +76,15 @@ static void reset_bln_states(void)
 
 void bln_enable_backlights(int mask)
 {
-	if (bln_imp && bln_blink_mode != 3){
+	if (bln_imp && bln_blink_mode){
 		bln_imp->enable(mask);
-	}
-
-	if ((bln_blink_mode == 2 || bln_blink_mode == 3) && bln_imp_flash){
-		bln_imp_flash->enable(mask);
 	}
 }
 
 void bln_disable_backlights(int mask)
 {
-	if (bln_imp && bln_blink_mode != 3){
+	if (bln_imp && bln_blink_mode){
 		bln_imp->disable(mask);
-	}
-
-	if ((bln_blink_mode == 2 || bln_blink_mode == 3) && bln_imp_flash){
-		bln_imp_flash->disable(mask);
 	}
 }
 
@@ -558,16 +547,6 @@ void register_bln_implementation(struct bln_implementation *imp)
 	}
 }
 EXPORT_SYMBOL(register_bln_implementation);
-
-void register_bln_implementation_flash(struct bln_implementation *imp)
-{
-	//TODO: more checks
-	if(imp){
-		bln_imp_flash = imp;
-		printk(KERN_DEBUG "Registered BLN: rearcam-flash\n");
-	}
-}
-EXPORT_SYMBOL(register_bln_implementation_flash);
 
 /**
  *	bln_is_ongoing - check if a bln (led) notification is ongoing
