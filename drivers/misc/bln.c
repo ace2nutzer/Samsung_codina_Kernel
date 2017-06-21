@@ -11,7 +11,7 @@
  *
  * Blink mode:
  * 0 = no blinking
- * 1 = blink backlight only
+ * 1 = blinking
  */
 
 #include <linux/platform_device.h>
@@ -76,14 +76,14 @@ static void reset_bln_states(void)
 
 void bln_enable_backlights(int mask)
 {
-	if (bln_imp && bln_blink_mode){
+	if (bln_imp){
 		bln_imp->enable(mask);
 	}
 }
 
 void bln_disable_backlights(int mask)
 {
-	if (bln_imp && bln_blink_mode){
+	if (bln_imp){
 		bln_imp->disable(mask);
 	}
 }
