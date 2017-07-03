@@ -57,8 +57,6 @@ static int rtc_suspend(struct device *dev, pm_message_t mesg)
 
 #ifdef CONFIG_MACH_SAMSUNG_U8500
 	struct rtc_time         sys_tm;
-	struct rtc_time         aprtc_tm;
-	struct timespec         aprtc_ts;
 #endif /* CONFIG_MACH_SAMSUNG_U8500 */
 	if (strcmp(dev_name(&rtc->dev), CONFIG_RTC_HCTOSYS_DEVICE) != 0)
 		return 0;
@@ -68,13 +66,7 @@ static int rtc_suspend(struct device *dev, pm_message_t mesg)
 	rtc_tm_to_time(&tm, &oldtime);
 
 #ifdef CONFIG_MACH_SAMSUNG_U8500
-	read_persistent_clock(&aprtc_ts);
-	rtc_time_to_tm(aprtc_ts.tv_sec, &aprtc_tm);
 	rtc_time_to_tm(ts.tv_sec, &sys_tm);
-
-	pr_info("[%s] AP RTC TIME: %04d.%02d.%02d - %02d:%02d:%02d called\n",
-		__func__, aprtc_tm.tm_year+1900, aprtc_tm.tm_mon+1, aprtc_tm.tm_mday,
-		aprtc_tm.tm_hour, aprtc_tm.tm_min, aprtc_tm.tm_sec);
 
 	pr_info("[%s] PMIC RTC TIME: %04d.%02d.%02d - %02d:%02d:%02d called\n",
 		__func__, tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday,
@@ -105,16 +97,11 @@ static int rtc_resume(struct device *dev)
 	struct timespec		time;
 #ifdef CONFIG_MACH_SAMSUNG_U8500
 	struct rtc_time		sys_tm;
-	struct rtc_time		aprtc_tm;
-	struct timespec		aprtc_ts;
 #endif /* CONFIG_MACH_SAMSUNG_U8500 */
 
 	if (strcmp(dev_name(&rtc->dev), CONFIG_RTC_HCTOSYS_DEVICE) != 0)
 		return 0;
 
-#ifdef CONFIG_MACH_SAMSUNG_U8500
-	read_persistent_clock(&aprtc_ts);
-#endif /* CONFIG_MACH_SAMSUNG_U8500 */
 	rtc_read_time(rtc, &tm);
 	if (rtc_valid_tm(&tm) != 0) {
 		pr_debug("%s:  bogus resume time\n", dev_name(&rtc->dev));
@@ -138,11 +125,6 @@ static int rtc_resume(struct device *dev)
 	do_settimeofday(&time);
 #ifdef CONFIG_MACH_SAMSUNG_U8500
 	rtc_time_to_tm(time.tv_sec, &sys_tm);
-	rtc_time_to_tm(aprtc_ts.tv_sec, &aprtc_tm);
-	pr_info("[%s] AP RTC TIME: %04d.%02d.%02d - %02d:%02d:%02d called\n",
-		__func__,
-		aprtc_tm.tm_year+1900, aprtc_tm.tm_mon+1, aprtc_tm.tm_mday,
-		aprtc_tm.tm_hour, aprtc_tm.tm_min, aprtc_tm.tm_sec);
 
 	pr_info("[%s] PMIC RTC TIME: %04d.%02d.%02d - %02d:%02d:%02d called\n",
 		__func__, tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday,
