@@ -34,10 +34,6 @@ ifeq ($(CONFIG_FRAME_POINTER),y)
 KBUILD_CFLAGS  +=-fno-omit-frame-pointer -mapcs -mno-sched-prolog
 endif
 
-ifeq ($(CONFIG_CC_STACKPROTECTOR),y)
-KBUILD_CFLAGS	+=-fstack-protector
-endif
-
 ifeq ($(CONFIG_CPU_BIG_ENDIAN),y)
 KBUILD_CPPFLAGS	+= -mbig-endian
 AS		+= -EB
@@ -55,21 +51,10 @@ comma = ,
 # macro, but instead defines a whole series of macros which makes
 # testing for a specific architecture or later rather impossible.
 
-arch-$(CONFIG_CPU_32v7)                :=-D__LINUX_ARM_ARCH__=7 $(call cc-option,-march=armv7-a,-mcpu=cortex-a9,-mtune=cortex-a9)
+arch-$(CONFIG_ARCH_U8500)                :=-D__LINUX_ARM_ARCH__=7
 
 # Only override the compiler option if ARMv6. The ARMv6K extensions are
 # always available in ARMv7
-
-# Since 'cortex-a9' is a superset of the 'armv7-a' arch spec, we need to
-# explicitly redefine the arch options to not include '-march=armv7-a' when
-# generating code for U8500, which is compatible with the instruction set of the
-# Cortex-A9, because GCC will warn us about ambiguous ISA restrictions caused
-# by seemingly conflicting -march and -mcpu options.
-# If $(CC) does not support the -mcpu=cortex-a9 option, fall back on passing
-# -march=armv7-a to specify the ISA restriction, though this is suboptimal. To
-# keep things simpler, we don't bother with a fallback option if the compiler
-# doesn't even support -march=armv7-a, since in that situation we would have
-# bigger problems.
 
 ifeq ($(CONFIG_CPU_32v7),y)
 # Never want PIC in a 32-bit kernel, prevent breakage with GCC built

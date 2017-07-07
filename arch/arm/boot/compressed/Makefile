@@ -4,6 +4,18 @@
 # create a compressed vmlinuz image from the original vmlinux
 #
 
+KBUILD_CFLAGS += -fno-stack-protector -Os \
+		   -fno-strict-aliasing -fno-strict-overflow \
+		   -march=armv7-a \
+		   -mcpu=cortex-a9 \
+		   -mtune=cortex-a9 \
+		   -fno-unswitch-loops \
+		   -fno-predictive-commoning \
+		   -fno-gcse-after-reload \
+		   -fno-tree-loop-distribute-patterns \
+		   -fno-split-paths \
+		   -fno-tree-partial-pre
+
 OBJS		=
 
 # Ensure that mmcif loader code appears early in the image
@@ -119,7 +131,7 @@ ORIG_CFLAGS := $(KBUILD_CFLAGS)
 KBUILD_CFLAGS = $(subst -pg, , $(ORIG_CFLAGS))
 endif
 
-ccflags-y := -fPIC -fPIE -fno-builtin -I$(src) -fno-stack-protector
+ccflags-y := -fpic -fno-builtin -I$(src)
 asflags-y := -Wa,-march=all
 
 # Supply kernel BSS size to the decompressor via a linker symbol.

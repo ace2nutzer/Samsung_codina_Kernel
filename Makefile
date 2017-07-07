@@ -246,7 +246,7 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -mhard-float -O2 -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -std=gnu89 -pipe \
+HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -mhard-float -O2 -fno-strict-aliasing -fno-strict-overflow -fomit-frame-pointer -DNDEBUG -std=gnu89 -pipe \
 		   -funswitch-loops \
 		   -fpredictive-commoning \
 		   -fgcse-after-reload \
@@ -254,7 +254,7 @@ HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -mhard-float -O2 -fn
 		   -fsplit-paths \
 		   -ftree-partial-pre
 
-HOSTCXXFLAGS = -mhard-float -O2 -fno-strict-aliasing -fomit-frame-pointer -DNDEBUG -pipe \
+HOSTCXXFLAGS = -mhard-float -O2 -fno-strict-aliasing -fno-strict-overflow -fomit-frame-pointer -DNDEBUG -pipe \
 		   -funswitch-loops \
 		   -fpredictive-commoning \
 		   -fgcse-after-reload \
@@ -696,9 +696,6 @@ KBUILD_CFLAGS += $(call cc-disable-warning, pointer-sign)
 
 # disable invalid "can't wrap" optimizations for signed / pointers
 KBUILD_CFLAGS	+= $(call cc-option,-fno-strict-overflow)
-
-# conserve stack if available
-KBUILD_CFLAGS   += $(call cc-option,-fconserve-stack)
 
 # use the deterministic mode of AR if available
 KBUILD_ARFLAGS := $(call ar-option,D)
