@@ -7,14 +7,8 @@ config KERNELVERSION
 	option env="KERNELVERSION"
 
 config DEFCONFIG_LIST
-	string
+	string "defconfig list"
 	depends on !UML
-	option defconfig_list
-	default "/lib/modules/$UNAME_RELEASE/.config"
-	default "/etc/kernel-config"
-	default "/boot/config-$UNAME_RELEASE"
-	default "$ARCH_DEFCONFIG"
-	default "arch/$ARCH/defconfig"
 
 config CONSTRUCTORS
 	bool
