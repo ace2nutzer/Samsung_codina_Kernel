@@ -2048,6 +2048,7 @@ static int ux500_cryp_probe(struct platform_device *pdev)
 	if (cryp_disable_power(&pdev->dev, device_data, false))
 		dev_err(dev, "[%s]: cryp_disable_power() failed!", __func__);
 
+	dev_info(dev, "[%s] successfully probed\n", __func__);
 	return 0;
 
 out_power:
