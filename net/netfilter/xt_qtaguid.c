@@ -1411,14 +1411,9 @@ static void if_tag_stat_update(const char *ifname, uid_t uid,
 
 	iface_entry = get_iface_entry(ifname);
 	if (!iface_entry) {
-		pr_err_ratelimited("qtaguid: iface_stat: stat_update() "
-				   "%s not found\n", ifname);
 		return;
 	}
 	/* It is ok to process data when an iface_entry is inactive */
-
-	MT_DEBUG("qtaguid: iface_stat: stat_update() dev=%s entry=%p\n",
-		 ifname, iface_entry);
 
 	/*
 	 * Look for a tagged sock.
@@ -1434,9 +1429,6 @@ static void if_tag_stat_update(const char *ifname, uid_t uid,
 		tag = combine_atag_with_uid(acct_tag, uid);
 		uid_tag = make_tag_from_uid(uid);
 	}
-	MT_DEBUG("qtaguid: iface_stat: stat_update(): "
-		 " looking for tag=0x%llx (uid=%u) in ife=%p\n",
-		 tag, get_uid_from_tag(tag), iface_entry);
 	/* Loop over tag list under this interface for {acct_tag,uid_tag} */
 	spin_lock_bh(&iface_entry->tag_stat_list_lock);
 

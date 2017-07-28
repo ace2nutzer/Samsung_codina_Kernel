@@ -490,7 +490,7 @@ CONFIG_CC_STACKPROTECTOR_STRONG=y
 # CONFIG_USE_OF is not set
 CONFIG_ZBOOT_ROM_TEXT=0
 CONFIG_ZBOOT_ROM_BSS=0
-CONFIG_CMDLINE="cachepolicy=writeback mpcore_wdt.mpcore_margin=359 root=/dev/ram0 rw rootwait crash_reboot=yes crash_dump=no  init=init console=ttyAMA2 mem=96M@0 mem_mtrace=15M@96M mem_mshared=1M@111M mem_modem=16M@112M mem=128M@128M hwmem=84M@256M mem=43M@340M mem_issw=1M@383M mem_ram_console=1M@384M mem=383M@385M jig_smd=0 lpm_boot=0 checksum_pass=1 checksum_done=1 sec_debug.enable=0 sec_debug.enable_user=0 androidboot.serialno=0123456789ABCDEF board_id=12 startup_graphics=1 logo. sbl_copy=1 androidboot.selinux=permissive androidboot.selinuxtype=targeted"
+CONFIG_CMDLINE="cachepolicy=writeback mpcore_wdt.mpcore_margin=359 root=/dev/ram0 rw rootwait crash_reboot=yes crash_dump=no  init=init console=tty0 mem=96M@0 mem_mtrace=15M@96M mem_mshared=1M@111M mem_modem=16M@112M mem=128M@128M hwmem=84M@256M mem=43M@340M mem_issw=1M@383M mem_ram_console=1M@384M mem=383M@385M jig_smd=0 lpm_boot=0 checksum_pass=1 checksum_done=1 sec_debug.enable=0 sec_debug.enable_user=0 androidboot.serialno=0123456789ABCDEF board_id=12 startup_graphics=1 logo. sbl_copy=1 androidboot.selinux=permissive androidboot.selinuxtype=targeted"
 # CONFIG_CMDLINE_FROM_BOOTLOADER is not set
 # CONFIG_CMDLINE_EXTEND is not set
 CONFIG_CMDLINE_FORCE=y
@@ -1411,12 +1411,11 @@ CONFIG_UNIX98_PTYS=y
 #
 # CONFIG_SERIAL_AMBA_PL010 is not set
 CONFIG_SERIAL_AMBA_PL011=y
-CONFIG_SERIAL_AMBA_PL011_CONSOLE=y
+# CONFIG_SERIAL_AMBA_PL011_CONSOLE is not set
 CONFIG_SERIAL_AMBA_PL011_CLOCK_CONTROL=y
 # CONFIG_SERIAL_MAX3100 is not set
 # CONFIG_SERIAL_MAX3107 is not set
 CONFIG_SERIAL_CORE=y
-CONFIG_SERIAL_CORE_CONSOLE=y
 CONFIG_CONSOLE_POLL=y
 # CONFIG_SERIAL_TIMBERDALE is not set
 # CONFIG_SERIAL_ALTERA_JTAGUART is not set
@@ -1435,7 +1434,7 @@ CONFIG_MAX_RAW_DEVS=256
 # CONFIG_TCG_TPM is not set
 # CONFIG_DCC_TTY is not set
 # CONFIG_RAMOOPS is not set
-CONFIG_HWREG=y
+# CONFIG_HWREG is not set
 CONFIG_I2C=y
 CONFIG_I2C_BOARDINFO=y
 CONFIG_I2C_COMPAT=y
@@ -1604,7 +1603,7 @@ CONFIG_HWMON=y
 # Native drivers
 #
 CONFIG_SENSORS_AB8500=y
-CONFIG_SENSORS_DBX500=y
+# CONFIG_SENSORS_DBX500 is not set
 # CONFIG_SENSORS_AD7414 is not set
 # CONFIG_SENSORS_AD7418 is not set
 # CONFIG_SENSORS_ADCXX is not set
