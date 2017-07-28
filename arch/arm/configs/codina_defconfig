@@ -449,7 +449,7 @@ CONFIG_LOCAL_TIMERS=y
 # CONFIG_PREEMPT_VOLUNTARY is not set
 CONFIG_PREEMPT=y
 CONFIG_HZ=1000
-# CONFIG_THUMB2 is not set
+# CONFIG_THUMB2_KERNEL is not set
 CONFIG_AEABI=y
 # CONFIG_OABI_COMPAT is not set
 # CONFIG_ARCH_SPARSEMEM_DEFAULT is not set
@@ -464,7 +464,9 @@ CONFIG_FLAT_NODE_MEM_MAP=y
 CONFIG_HAVE_MEMBLOCK=y
 CONFIG_PAGEFLAGS_EXTENDED=y
 CONFIG_SPLIT_PTLOCK_CPUS=4
-# CONFIG_COMPACTION is not set
+CONFIG_COMPACTION=y
+# CONFIG_COMPACTION_RETRY is not set
+CONFIG_MIGRATION=y
 # CONFIG_PHYS_ADDR_T_64BIT is not set
 CONFIG_ZONE_DMA_FLAG=0
 CONFIG_VIRT_TO_BUS=y
@@ -490,7 +492,7 @@ CONFIG_CC_STACKPROTECTOR_STRONG=y
 # CONFIG_USE_OF is not set
 CONFIG_ZBOOT_ROM_TEXT=0
 CONFIG_ZBOOT_ROM_BSS=0
-CONFIG_CMDLINE="cachepolicy=writeback mpcore_wdt.mpcore_margin=359 root=/dev/ram0 rw rootwait crash_reboot=yes crash_dump=no  init=init console=tty0 mem=96M@0 mem_mtrace=15M@96M mem_mshared=1M@111M mem_modem=16M@112M mem=128M@128M hwmem=84M@256M mem=43M@340M mem_issw=1M@383M mem_ram_console=1M@384M mem=383M@385M jig_smd=0 lpm_boot=0 checksum_pass=1 checksum_done=1 sec_debug.enable=0 sec_debug.enable_user=0 androidboot.serialno=0123456789ABCDEF board_id=12 startup_graphics=1 logo. sbl_copy=1 androidboot.selinux=permissive androidboot.selinuxtype=targeted"
+CONFIG_CMDLINE="cachepolicy=writeback mpcore_wdt.mpcore_margin=359 root=/dev/ram0 rw rootwait crash_reboot=yes crash_dump=no init=init console='null' mem=96M@0 mem_mtrace=15M@96M mem_mshared=1M@111M mem_modem=16M@112M mem=128M@128M hwmem=84M@256M mem=43M@340M mem_issw=1M@383M mem_ram_console=1M@384M mem=383M@385M jig_smd=0 lpm_boot=0 checksum_pass=1 checksum_done=1 sec_debug.enable=0 sec_debug.enable_user=0 androidboot.serialno=0123456789ABCDEF board_id=12 startup_graphics=1 logo. sbl_copy=1 androidboot.selinux=permissive androidboot.selinuxtype=targeted"
 # CONFIG_CMDLINE_FROM_BOOTLOADER is not set
 # CONFIG_CMDLINE_EXTEND is not set
 CONFIG_CMDLINE_FORCE=y
@@ -977,8 +979,11 @@ CONFIG_RFKILL_PM=y
 CONFIG_RFKILL_INPUT=y
 CONFIG_RFKILL_REGULATOR=y
 CONFIG_RFKILL_GPIO=y
-# CONFIG_NET_9P is not set
-# CONFIG_CAIF is not set
+CONFIG_NET_9P=y
+# CONFIG_NET_9P_DEBUG is not set
+CONFIG_CAIF=y
+# CONFIG_CAIF_DEBUG is not set
+CONFIG_CAIF_NETDEV=y
 # CONFIG_CEPH_LIB is not set
 
 #
@@ -1225,6 +1230,9 @@ CONFIG_WLAN_REGION_CODE=100
 #
 # CAIF transport drivers
 #
+CONFIG_CAIF_TTY=y
+# CONFIG_CAIF_SPI_SLAVE is not set
+CONFIG_CAIF_HSI=y
 CONFIG_PPP=y
 # CONFIG_PPP_MULTILINK is not set
 # CONFIG_PPP_FILTER is not set
@@ -1514,7 +1522,7 @@ CONFIG_STE_HSI=y
 # HSI clients
 #
 CONFIG_HSI_CHAR=y
-# CONFIG_HSI_CAIF is not set
+CONFIG_HSI_CAIF=y
 
 #
 # PPS support
@@ -2514,6 +2522,8 @@ CONFIG_CIFS=y
 # CONFIG_NCP_FS is not set
 # CONFIG_CODA_FS is not set
 # CONFIG_AFS_FS is not set
+CONFIG_9P_FS=y
+# CONFIG_9P_FS_POSIX_ACL is not set
 
 #
 # Partition Types
@@ -2752,7 +2762,7 @@ CONFIG_CRYPTO_DEV_UX500_HASH=y
 # Library routines
 #
 CONFIG_BITREVERSE=y
-# CONFIG_CRC_CCITT is not set
+CONFIG_CRC_CCITT=y
 CONFIG_CRC16=y
 # CONFIG_CRC_T10DIF is not set
 # CONFIG_CRC_ITU_T is not set
