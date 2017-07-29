@@ -84,7 +84,7 @@ endif
 endif
 
 KBUILD_CFLAGS	+=$(CFLAGS_ABI) $(CFLAGS_THUMB2) $(arch-y) $(tune-y) $(call cc-option,-mshort-load-bytes,$(call cc-option,-malignment-traps,)) -mfpu=vfpv3 -fno-tree-vectorize
-KBUILD_AFLAGS	+=$(CFLAGS_ABI) $(CFLAGS_THUMB2) $(arch-y) $(tune-y) -include asm/unified.h -mfpu=vfpv3 -fno-tree-vectorize
+KBUILD_AFLAGS	+=$(CFLAGS_ABI) $(AFLAGS_THUMB2) $(arch-y) $(tune-y) -include asm/unified.h -mfpu=vfpv3 -fno-tree-vectorize
 
 CHECKFLAGS	+= -D__arm__
 

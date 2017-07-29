@@ -492,7 +492,7 @@ CONFIG_CC_STACKPROTECTOR_STRONG=y
 # CONFIG_USE_OF is not set
 CONFIG_ZBOOT_ROM_TEXT=0
 CONFIG_ZBOOT_ROM_BSS=0
-CONFIG_CMDLINE="cachepolicy=writeback mpcore_wdt.mpcore_margin=359 root=/dev/ram0 rw rootwait crash_reboot=yes crash_dump=no init=init console='null' mem=96M@0 mem_mtrace=15M@96M mem_mshared=1M@111M mem_modem=16M@112M mem=128M@128M hwmem=84M@256M mem=43M@340M mem_issw=1M@383M mem_ram_console=1M@384M mem=383M@385M jig_smd=0 lpm_boot=0 checksum_pass=1 checksum_done=1 sec_debug.enable=0 sec_debug.enable_user=0 androidboot.serialno=0123456789ABCDEF board_id=12 startup_graphics=1 logo. sbl_copy=1 androidboot.selinux=permissive androidboot.selinuxtype=targeted"
+CONFIG_CMDLINE="cachepolicy=writealloc mpcore_wdt.mpcore_margin=359 root=/dev/ram0 rw rootwait crash_reboot=yes crash_dump=no init=init console='null' mem=96M@0 mem_mtrace=15M@96M mem_mshared=1M@111M mem_modem=16M@112M mem=128M@128M hwmem=84M@256M mem=43M@340M mem_issw=1M@383M mem_ram_console=1M@384M mem=383M@385M jig_smd=0 lpm_boot=0 checksum_pass=1 checksum_done=1 sec_debug.enable=0 sec_debug.enable_user=0 androidboot.serialno=0123456789ABCDEF board_id=12 startup_graphics=1 logo. sbl_copy=1 androidboot.selinux=permissive androidboot.selinuxtype=targeted"
 # CONFIG_CMDLINE_FROM_BOOTLOADER is not set
 # CONFIG_CMDLINE_EXTEND is not set
 CONFIG_CMDLINE_FORCE=y
@@ -648,7 +648,7 @@ CONFIG_IPV6_MULTIPLE_TABLES=y
 # CONFIG_IPV6_MROUTE is not set
 CONFIG_ANDROID_PARANOID_NETWORK=y
 CONFIG_NET_ACTIVITY_STATS=y
-CONFIG_NETWORK_SECMARK=y
+# CONFIG_NETWORK_SECMARK is not set
 # CONFIG_NETWORK_PHY_TIMESTAMPING is not set
 CONFIG_NETFILTER=y
 # CONFIG_NETFILTER_DEBUG is not set
@@ -662,7 +662,6 @@ CONFIG_NETFILTER_NETLINK_QUEUE=y
 CONFIG_NETFILTER_NETLINK_LOG=y
 CONFIG_NF_CONNTRACK=y
 CONFIG_NF_CONNTRACK_MARK=y
-CONFIG_NF_CONNTRACK_SECMARK=y
 CONFIG_NF_CONNTRACK_EVENTS=y
 # CONFIG_NF_CONNTRACK_TIMESTAMP is not set
 CONFIG_NF_CT_PROTO_DCCP=y
@@ -696,7 +695,6 @@ CONFIG_NETFILTER_XT_CONNMARK=y
 # CONFIG_NETFILTER_XT_TARGET_CHECKSUM is not set
 CONFIG_NETFILTER_XT_TARGET_CLASSIFY=y
 CONFIG_NETFILTER_XT_TARGET_CONNMARK=y
-CONFIG_NETFILTER_XT_TARGET_CONNSECMARK=y
 # CONFIG_NETFILTER_XT_TARGET_CT is not set
 # CONFIG_NETFILTER_XT_TARGET_DSCP is not set
 # CONFIG_NETFILTER_XT_TARGET_HL is not set
@@ -709,7 +707,6 @@ CONFIG_NETFILTER_XT_TARGET_NFQUEUE=y
 # CONFIG_NETFILTER_XT_TARGET_TEE is not set
 CONFIG_NETFILTER_XT_TARGET_TPROXY=y
 CONFIG_NETFILTER_XT_TARGET_TRACE=y
-CONFIG_NETFILTER_XT_TARGET_SECMARK=y
 CONFIG_NETFILTER_XT_TARGET_TCPMSS=y
 # CONFIG_NETFILTER_XT_TARGET_TCPOPTSTRIP is not set
 
@@ -1258,7 +1255,7 @@ CONFIG_SLHC=y
 # Input device support
 #
 CONFIG_INPUT=y
-CONFIG_INPUT_FF_MEMLESS=y
+# CONFIG_INPUT_FF_MEMLESS is not set
 CONFIG_INPUT_POLLDEV=y
 # CONFIG_INPUT_SPARSEKMAP is not set
 
@@ -1301,31 +1298,7 @@ CONFIG_KEYBOARD_GPIO=y
 # CONFIG_KEYBOARD_TC360_TOUCHKEY is not set
 # CONFIG_KEYBOARD_CYPRESS_TOUCH is not set
 # CONFIG_INPUT_MOUSE is not set
-CONFIG_INPUT_JOYSTICK=y
-# CONFIG_JOYSTICK_ANALOG is not set
-# CONFIG_JOYSTICK_A3D is not set
-# CONFIG_JOYSTICK_ADI is not set
-# CONFIG_JOYSTICK_COBRA is not set
-# CONFIG_JOYSTICK_GF2K is not set
-# CONFIG_JOYSTICK_GRIP is not set
-# CONFIG_JOYSTICK_GRIP_MP is not set
-# CONFIG_JOYSTICK_GUILLEMOT is not set
-# CONFIG_JOYSTICK_INTERACT is not set
-# CONFIG_JOYSTICK_SIDEWINDER is not set
-# CONFIG_JOYSTICK_TMDC is not set
-# CONFIG_JOYSTICK_IFORCE is not set
-# CONFIG_JOYSTICK_WARRIOR is not set
-# CONFIG_JOYSTICK_MAGELLAN is not set
-# CONFIG_JOYSTICK_SPACEORB is not set
-# CONFIG_JOYSTICK_SPACEBALL is not set
-# CONFIG_JOYSTICK_STINGER is not set
-# CONFIG_JOYSTICK_TWIDJOY is not set
-# CONFIG_JOYSTICK_ZHENHUA is not set
-# CONFIG_JOYSTICK_AS5011 is not set
-# CONFIG_JOYSTICK_JOYDUMP is not set
-CONFIG_JOYSTICK_XPAD=y
-CONFIG_JOYSTICK_XPAD_FF=y
-CONFIG_JOYSTICK_XPAD_LEDS=y
+# CONFIG_INPUT_JOYSTICK is not set
 # CONFIG_INPUT_TABLET is not set
 CONFIG_INPUT_TOUCHSCREEN=y
 # CONFIG_TOUCHSCREEN_ADS7846 is not set

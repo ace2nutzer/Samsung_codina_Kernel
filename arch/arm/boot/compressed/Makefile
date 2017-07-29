@@ -4,17 +4,7 @@
 # create a compressed vmlinuz image from the original vmlinux
 #
 
-KBUILD_CFLAGS += -fno-stack-protector -Os \
-		   -fno-strict-aliasing -fno-strict-overflow \
-		   -march=armv7-a \
-		   -mcpu=cortex-a9 \
-		   -mtune=cortex-a9 \
-		   -fno-unswitch-loops \
-		   -fno-predictive-commoning \
-		   -fno-gcse-after-reload \
-		   -fno-tree-loop-distribute-patterns \
-		   -fno-split-paths \
-		   -fno-tree-partial-pre
+KBUILD_CFLAGS += -fno-stack-protector $(CFLAGS_OS)
 
 OBJS		=
 

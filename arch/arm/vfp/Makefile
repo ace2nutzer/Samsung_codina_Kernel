@@ -4,9 +4,6 @@
 # Copyright (C) 2001 ARM Limited
 #
 
-KBUILD_CFLAGS	+= -mfpu=neon -ftree-vectorize
-KBUILD_AFLAGS	+= -mfpu=neon -ftree-vectorize
-
 obj-y			+= vfp.o
 
 vfp-$(CONFIG_VFP)	+= vfpmodule.o entry.o vfphw.o vfpsingle.o vfpdouble.o

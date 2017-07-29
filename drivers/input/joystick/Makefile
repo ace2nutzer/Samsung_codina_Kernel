@@ -1,3 +1,5 @@
+KBUILD_CFLAGS += $(CFLAGS_OS)
+
 #
 # Makefile for the input core drivers.
 #

@@ -68,7 +68,7 @@
 #define SET_DEFAULT_PARAM		0	/* set default param */
 #define BATT_CAPACITY			0	/* set initial battery capacity */
 #define FLASH_LOCK_STATUS		FLASH_UNLOCK
-#define COMMAND_LINE_BASIC		"cachepolicy=writeback "\
+#define COMMAND_LINE_BASIC		"cachepolicy=writealloc "\
 					"mpcore_wdt.mpcore_margin=359 root=/dev/ram0 rw rootwait " \
 					"crash_reboot=yes crash_dump=no"
 

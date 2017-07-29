@@ -403,6 +403,15 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -DNDEBUG \
 		   -pipe
 
+CFLAGS_OS := -Os \
+		   -fno-unswitch-loops \
+		   -fno-predictive-commoning \
+		   -fno-gcse-after-reload \
+		   -fno-tree-loop-distribute-patterns \
+		   -fno-split-paths \
+		   -fno-tree-partial-pre
+
+AFLAGS_OS :=
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__ $(call cc-option,-fno-PIE) -marm -mfpu=neon -mfloat-abi=hard -ftree-vectorize -mvectorize-with-neon-quad
@@ -425,7 +434,7 @@ export KBUILD_CFLAGS CFLAGS_KERNEL CFLAGS_MODULE CFLAGS_GCOV
 export KBUILD_AFLAGS AFLAGS_KERNEL AFLAGS_MODULE
 export KBUILD_AFLAGS_MODULE KBUILD_CFLAGS_MODULE KBUILD_LDFLAGS_MODULE
 export KBUILD_AFLAGS_KERNEL KBUILD_CFLAGS_KERNEL
-export KBUILD_ARFLAGS
+export KBUILD_ARFLAGS CFLAGS_OS AFLAGS_OS
 
 # When compiling out-of-tree modules, put MODVERDIR in the module
 # tree rather than in the kernel tree. The kernel tree might
@@ -595,7 +604,7 @@ all: vmlinux
 KBUILD_CFLAGS	+= $(call cc-disable-warning,maybe-uninitialized,)
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS	+= -Os
+KBUILD_CFLAGS	+= $(CFLAGS_OS)
 else
 KBUILD_CFLAGS	+= -O2
 endif

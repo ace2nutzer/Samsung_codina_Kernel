@@ -1,3 +1,5 @@
+KBUILD_CFLAGS += $(CFLAGS_OS)
+
 #
 # Makefile for Linux CIFS VFS client 
 #
