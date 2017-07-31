@@ -74,7 +74,7 @@
 
 #define COMMAND_LINE_ROOTFS		COMMAND_LINE_BASIC" "
 
-#define COMMAND_LINE			COMMAND_LINE_ROOTFS" init=init console='null',115200n8"
+#define COMMAND_LINE			COMMAND_LINE_ROOTFS" init=init console=ttyAMA2 115200n8"
 #define NULL_CONSOLE			" console='null'"
 #define INIT				" init=init"
 #define PRODUCTION			COMMAND_LINE_ROOTFS INIT NULL_CONSOLE
