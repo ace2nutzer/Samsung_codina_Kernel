@@ -252,7 +252,8 @@ HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -mhard-float -O2 -fn
 		   -fgcse-after-reload \
 		   -ftree-loop-distribute-patterns \
 		   -fsplit-paths \
-		   -ftree-partial-pre
+		   -ftree-partial-pre \
+		   -fpeel-loops
 
 HOSTCXXFLAGS = -mhard-float -O2 -fno-strict-aliasing -fno-strict-overflow -fomit-frame-pointer -DNDEBUG -pipe \
 		   -funswitch-loops \
@@ -260,7 +261,8 @@ HOSTCXXFLAGS = -mhard-float -O2 -fno-strict-aliasing -fno-strict-overflow -fomit
 		   -fgcse-after-reload \
 		   -ftree-loop-distribute-patterns \
 		   -fsplit-paths \
-		   -ftree-partial-pre
+		   -ftree-partial-pre \
+		   -fpeel-loops
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -400,6 +402,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -ftree-loop-distribute-patterns \
 		   -fsplit-paths \
 		   -ftree-partial-pre \
+		   -fpeel-loops \
 		   -DNDEBUG \
 		   -pipe
 
@@ -409,7 +412,8 @@ CFLAGS_OS := -Os \
 		   -fno-gcse-after-reload \
 		   -fno-tree-loop-distribute-patterns \
 		   -fno-split-paths \
-		   -fno-tree-partial-pre
+		   -fno-tree-partial-pre \
+		   -fno-peel-loops
 
 AFLAGS_OS :=
 KBUILD_AFLAGS_KERNEL :=
