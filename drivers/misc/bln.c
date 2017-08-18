@@ -31,7 +31,7 @@
 static bool bln_enabled = false;
 static bool bln_ongoing = false; /* ongoing LED Notification */
 static int bln_blink_state = 1;
-static unsigned int bln_blink_mode = 0;
+static unsigned int bln_blink_mode = 1;
 static int bln_blink_delay = 600; /* blink with 600msec delay by default */
 static bool bln_suspended = false; /* is system suspended */
 static struct bln_implementation *bln_imp = NULL;
@@ -39,7 +39,7 @@ static struct bln_implementation *bln_imp = NULL;
 static long unsigned int notification_led_mask = 0x0;
 
 #ifdef CONFIG_GENERIC_BLN_USE_WAKELOCK
-static bool use_wakelock = false;
+static bool use_wakelock = true;
 static struct wake_lock bln_wake_lock;
 bool is_bln_wakelock_active(void) {
 	return wake_lock_active(&bln_wake_lock);
