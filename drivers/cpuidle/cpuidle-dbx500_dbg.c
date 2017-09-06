@@ -89,7 +89,7 @@ static DEFINE_PER_CPU(struct state_history, *state_history);
 static DEFINE_SPINLOCK(state_lock);
 
 static struct delayed_work cpuidle_work;
-static u32 dbg_console_enable = 1;
+static u32 dbg_console_enable = 0;
 static void __iomem *uart_base;
 static struct clk *uart_clk;
 
