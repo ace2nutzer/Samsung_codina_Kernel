@@ -354,9 +354,9 @@ static void update_target(int target, bool sem)
 		case 100:
 			/*
 			 * 9540 cross table matrix:set vsafe to 100% and
-			 * ARM  freq min to 150000
+			 * ARM  freq min to 200000
 			 */
-			__prcmu_qos_update_ddr_opp(150000, 100);
+			__prcmu_qos_update_ddr_opp(200000, 100);
 			op = DDR_100_OPP;
 			prcmu_set_ddr_opp(op);
 			pr_debug("prcmu qos: set ddr opp to 100%%\n");
@@ -420,11 +420,11 @@ static void update_target(int target, bool sem)
 			}
 			break;
 		case 100:
-			/* 9540 cross table matrix: set ARM min freq to 150000 */
+			/* 9540 cross table matrix: set ARM min freq to 200000 */
 			if (cpu_is_u9540()) {
 				__prcmu_qos_update_requirement(
 					PRCMU_QOS_ARM_KHZ, "cross_opp_ape",
-					150000, false);
+					200000, false);
 			}
 			op = APE_100_OPP;
 			pr_debug("prcmu qos: set ape opp to 100%%\n");

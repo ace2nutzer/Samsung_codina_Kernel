@@ -1115,7 +1115,7 @@ static int liveopp_start = 0;
 
 static struct liveopp_arm_table liveopp_arm[] = {
 //	| SHOW     | CLK    | PLL        | VDD  | VBB  | DDR | APE
-	{ 150000,  145920,  0x00050113,   0x1A,  0xDB,   25,   25},
+	{ 200000,  199680,  0x0005011A,   0x1A,  0xDB,   25,   25},
 	{ 800000,  798720,  0x00050168,   0x2A,  0xDB,  100,  100},
 	{1000000,  998400,  0x00050182,   0x34,  0xDB,  100,  100},
 	{1100000,  1098240, 0x0005018F,   0x37,  0x8F,  100,  100},
