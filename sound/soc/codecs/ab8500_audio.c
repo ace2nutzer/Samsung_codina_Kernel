@@ -841,56 +841,6 @@ static void abbamp_control_addiggain(void)
 	}
 }
 
-/* Low-power-audio playback in suspend */
-#define AB8500_VAPESEL1			0x0E
-#define AB8500_VAPESEL2			0x0F
-#define AB8500_VAPE_STEP_UV		12500
-#define AB8500_VAPE_MIN_UV		700000
-#define AB8500_VAPE_MAX_UV		1362500
-
-static int vape_voltage(u8 raw)
-{
-	if (raw <= 0x35) {
-		return (AB8500_VAPE_MIN_UV + (raw * AB8500_VAPE_STEP_UV));
-	} else {
-		return AB8500_VAPE_MAX_UV;
-	}
-}
-
-#define VAPE_SEL2_DEFAULT 	0x18
-
-static bool lpa_mode_enabled = 0;
-static u8 lpa_vape2 = 0x1B;
-
-static int abb_codec_lpa_mode(bool suspend)
-{
-	int ret;
-	u8 regval;
-
-	/*
-	 * We use LPA mode in suspend only.
-	 * Because Vape not only supplies to audio module,
-	 * but also supplies to SXA engines in running state.
-	 */
-	if (suspend) {
-		regval = lpa_vape2;
-		ret = prcmu_abb_write(AB8500_REGU_CTRL2,
-					      AB8500_VAPESEL2,
-					      &regval, 1);
-
-		return ret;
-
-		
-	} else {
-		regval = VAPE_SEL2_DEFAULT;
-		ret = prcmu_abb_write(AB8500_REGU_CTRL2,
-					      AB8500_VAPESEL2,
-					      &regval, 1);
-
-		return ret;
-	}
-}
-
 /* Reads an arbitrary register from the ab8500 chip.
 */
 static int ab850x_codec_read_reg(struct snd_soc_codec *codec,
@@ -1290,21 +1240,13 @@ static int if0_fifo_enable_control_put(struct snd_kcontrol *kcontrol,
 		set_mask = BMASK(REG_DIGIFCONF3_IF0BFIFOEN);
 
 		pr_debug("%s: IF0 FIFO disable: override APE OPP\n", __func__);
-		if (!lpa_mode_enabled) {
-			ret = prcmu_qos_lpa_override(true);
-		} else {
-			ret = abb_codec_lpa_mode(true);
-		}
+		ret = prcmu_qos_lpa_override(true);
 	} else {
 		clear_mask = BMASK(REG_DIGIFCONF3_IF0BFIFOEN);
 		set_mask = 0;
 
 		pr_debug("%s: IF0 FIFO disable: restore APE OPP\n", __func__);
-		if (!lpa_mode_enabled) {
-			ret = prcmu_qos_lpa_override(false);
-		} else {
-			ret = abb_codec_lpa_mode(false);
-		}
+		ret = prcmu_qos_lpa_override(false);
 	}
 	if (ret < 0) {
 		pr_err("%s: ERROR: Failed to modify APE OPP (%ld)!\n",
@@ -5788,45 +5730,6 @@ static ssize_t abb_codec_addiggain2_store(struct kobject *kobj,
 static struct kobj_attribute abb_codec_addiggain2_interface = __ATTR(addiggain2, 0644, 
 				abb_codec_addiggain2_show, abb_codec_addiggain2_store);
 
-static ssize_t abb_codec_lpamode_show(struct kobject *kobj, 
-		struct kobj_attribute *attr, char *buf)
-{
-	sprintf(buf,   "Low-power-audio Mode\n\n");
-	sprintf(buf, "%sEnable [%s]\n\n", buf, lpa_mode_enabled ? "*" : " ");
-	sprintf(buf, "%sLPA Vape: %u uV (%#04x)\n\n", buf, vape_voltage(lpa_vape2), lpa_vape2);
-
-	return strlen(buf);
-}
-
-static ssize_t abb_codec_lpamode_store(struct kobject *kobj, 
-		struct kobj_attribute *attr, const char *buf, size_t count)
-{
-	int val;
-
-	if (sysfs_streq(buf, "on")) {
-		lpa_mode_enabled = true;
-
-		return count;
-	}
-
-	if (sysfs_streq(buf, "off")) {
-		lpa_mode_enabled = false;
-
-		return count;
-	}
-
-	if (sscanf(buf, "vape=%x", &val)) {
-		lpa_vape2 = val;
-
-		return count;
-	}
-
-	return -EINVAL;
-}
-
-static struct kobj_attribute abb_codec_lpamode_interface = __ATTR(lpa_mode, 0644, 
-				abb_codec_lpamode_show, abb_codec_lpamode_store);
-
 static ssize_t abb_codec_chargepump_show(struct kobject *kobj, 
 		struct kobj_attribute *attr, char *buf)
 {
@@ -5879,7 +5782,6 @@ static struct attribute *abb_codec_attrs[] = {
 	&abb_codec_classdhpg_interface.attr, 
 	&abb_codec_classdwg_interface.attr, 
 	&abb_codec_addiggain2_interface.attr, 
-	&abb_codec_lpamode_interface.attr, 
 	&abb_codec_chargepump_interface.attr, 
 	NULL,
 };
