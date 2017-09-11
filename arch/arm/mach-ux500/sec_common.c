@@ -320,6 +320,7 @@ static int __sec_common_reboot_call(struct notifier_block *this,
 		{"lpm", REBOOT_MODE_CHARGING},
 		{"cp_crash", REBOOT_MODE_CP_CRASH},
 		{"download", REBOOT_MODE_DOWNLOAD},
+		{"bootloader", REBOOT_MODE_DOWNLOAD},
 		{"prerecovery_done", REBOOT_MODE_RECOVERY},
 		{"prerecovery", REBOOT_MODE_PRERECOVERY},
 	};
