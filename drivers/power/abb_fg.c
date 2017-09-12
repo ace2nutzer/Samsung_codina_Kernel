@@ -84,7 +84,7 @@
 #define OFF_CAPACITY_MASK		0x7F
 #define OFF_VOLTAGE_MASK		0x1FFF
 
-#define LOWBAT_TOLERANCE		0
+#define LOWBAT_TOLERANCE		50
 #define LOWBAT_ZERO_VOLTAGE		3300
 
 #define MAIN_CH_NO_OVERSHOOT_ENA_N	0x02
@@ -136,12 +136,12 @@ module_param(debug_mask, bool, 0644);
 
 static unsigned int lowbat_zerovolt = LOWBAT_ZERO_VOLTAGE;
 static unsigned int lowbat_tolerance_volt = LOWBAT_TOLERANCE;
-static bool use_lowbat_wakelock = 1;
+static bool use_lowbat_wakelock = 0;
 
 /* 
  * Voltage Threshold that decides when to power off.
  */
-static unsigned int pwroff_threshold = 3300;
+static unsigned int pwroff_threshold = 3250;
 
 /* Allow battery capacity goes up */
 static unsigned int battlvl_real = 1;
@@ -392,7 +392,7 @@ struct ab8500_fg {
 	int gpadc_vbat_offset;
 	int gpadc_vbat_ideal;
 	int smd_on;
-	int reenable_charing;
+	int reenable_charging;
 	int fg_res_dischg;
 	int fg_res_chg;
 	int input_curr_reg;
@@ -2267,10 +2267,10 @@ static int ab8500_fg_reenable_charging(struct ab8500_fg *di)
 			return ret;
 		}
 
-		if (di->reenable_charing > 2000)
-			di->reenable_charing = 1;
+		if (di->reenable_charging > 2000)
+			di->reenable_charging = 1;
 		else
-			di->reenable_charing++;
+			di->reenable_charging++;
 	}
 
 
@@ -2395,7 +2395,7 @@ static void ab8500_fg_algorithm(struct ab8500_fg *di)
 				di->max_cap_changed,
 				di->flags.chg_timed_out,
 				di->input_curr_reg,
-				di->reenable_charing);
+				di->reenable_charging);
 	}
 
 	if (cycle_charging) {
@@ -3426,7 +3426,7 @@ static struct kobj_attribute abb_fg_cycle_charging_interface = __ATTR(fg_cyc, 06
 
 static ssize_t abb_fg_pwroff_threshold_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	sprintf(buf, "%dmV\n\n* HW will shutdown at 3300mV\n", pwroff_threshold);
+	sprintf(buf, "%dmV", pwroff_threshold);
 
 	return strlen(buf);
 }
