@@ -389,8 +389,8 @@ static bool hslowpow_con = true;
 static bool hsdaclowpow_con = true;
 static bool hshpen_con = false;
 
-static int hslowpow_v = 0;
-static int hsdaclowpow_v = 0x00;
+static int hslowpow_v = 1;
+static int hsdaclowpow_v = 3;
 static int hshpen_v = 0;
 
 static void abbamp_control_hslowpow(void)
@@ -5216,9 +5216,9 @@ static ssize_t abb_codec_hsdaclowpow_show(struct kobject *kobj,
 		sprintf(buf, "%sMode(mem):\t%d (HP)\n", buf, mem);
 	}
 	if (hsdaclowpow_v) {
-		sprintf(buf, "%sMode(user):\t%d (LP)\n", buf, hslowpow_v);
+		sprintf(buf, "%sMode(user):\t%d (LP)\n", buf, hsdaclowpow_v);
 	} else {
-		sprintf(buf, "%sMode(user):\t%d (HP)\n", buf, hslowpow_v);
+		sprintf(buf, "%sMode(user):\t%d (HP)\n", buf, hsdaclowpow_v);
 	}
 
 	return strlen(buf);
