@@ -24,6 +24,7 @@
 #include <linux/workqueue.h>
 #include <linux/kobject.h>
 #include <linux/mfd/ab8500.h>
+#include <linux/mfd/dbx500-prcmu.h>
 #include <linux/mfd/abx500/ux500_chargalg.h>
 #include <linux/mfd/abx500/ab8500-bm.h>
 #include <linux/mfd/abx500/ab8500-gpadc.h>
@@ -75,11 +76,13 @@ static void ab8500_chargalg_early_suspend(struct early_suspend *h)
 	if (eoc_bln) {
 	bln_disable_backlights(gen_all_leds_mask());
 	}
+	prcmu_qos_vape_override(true);
 }
 
 static void ab8500_chargalg_late_resume(struct early_suspend *h)
 {
 	is_suspend = 0;
+	prcmu_qos_vape_override(false);
 }
 
 enum ab8500_chargers {

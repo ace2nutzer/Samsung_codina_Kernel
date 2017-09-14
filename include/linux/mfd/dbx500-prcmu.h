@@ -635,6 +635,7 @@ int prcmu_qos_remove_notifier(int prcmu_qos_class,
 			      struct notifier_block *notifier);
 void prcmu_qos_voice_call_override(bool enable);
 int prcmu_qos_lpa_override(bool enable);
+int prcmu_qos_vape_override(bool enable);
 
 #else
 
@@ -681,6 +682,11 @@ static inline int prcmu_qos_remove_notifier(int prcmu_qos_class,
 static inline void prcmu_qos_voice_call_override(bool enable) {}
 
 static inline int prcmu_qos_lpa_override(bool enable)
+{
+	return 0;
+}
+
+static inline int prcmu_qos_vape_override(bool enable)
 {
 	return 0;
 }

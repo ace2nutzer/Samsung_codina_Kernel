@@ -221,6 +221,9 @@ static bool prcmu_qos_cpufreq_init_done;
 static bool lpa_override_enabled;
 static u8 opp50_voltage_val;
 
+static bool vape_override_enabled;
+static u8 opp100_voltage_val;
+
 unsigned long prcmu_qos_get_cpufreq_opp_delay(void)
 {
 	return cpufreq_opp_delay;
@@ -502,6 +505,49 @@ int prcmu_qos_lpa_override(bool enable)
 					      &opp50_voltage_val, 1);
 
 			lpa_override_enabled = false;
+		}
+	}
+out:
+	mutex_unlock(&prcmu_qos_mutex);
+	return ret;
+}
+
+#define VAPE_OVERRIDE_VOLTAGE 0x1c /* 1.05V */
+
+int prcmu_qos_vape_override(bool enable)
+{
+	int ret = 0;
+
+	mutex_lock(&prcmu_qos_mutex);
+
+	if (enable) {
+		if (!vape_override_enabled) {
+			u8 vape_override_voltage_val;
+
+			/* Save the APE OPP 100% setting. */
+			ret = prcmu_abb_read(AB8500_REGU_CTRL2,
+					     AB8500_VAPESEL1_REG,
+					     &opp100_voltage_val, 1);
+			if (ret)
+				goto out;
+
+			vape_override_voltage_val = (u8)VAPE_OVERRIDE_VOLTAGE;
+
+			/* Use VAPE Override Voltage for APE OPP 100%. */
+			ret = prcmu_abb_write(AB8500_REGU_CTRL2,
+					      AB8500_VAPESEL1_REG,
+					      &vape_override_voltage_val, 1);
+
+			vape_override_enabled = true;
+		}
+	} else {
+		if (vape_override_enabled) {
+			/* Restore the original APE OPP 100% setting. */
+			ret = prcmu_abb_write(AB8500_REGU_CTRL2,
+					      AB8500_VAPESEL1_REG,
+					      &opp100_voltage_val, 1);
+
+			vape_override_enabled = false;
 		}
 	}
 out:
