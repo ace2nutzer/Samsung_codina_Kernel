@@ -47,9 +47,10 @@ void ux500_ci_dbg_set_deepest_state(int state);
 
 void ux500_ci_dbg_console(void);
 void ux500_ci_dbg_console_check_uart(void);
+#ifdef CONFIG_UX500_SUSPEND_DBG_WAKE_ON_UART
 void ux500_ci_dbg_console_handle_ape_resume(void);
 void ux500_ci_dbg_console_handle_ape_suspend(void);
-
+#endif
 void ux500_ci_dbg_plug(int cpu);
 void ux500_ci_dbg_unplug(int cpu);
 
@@ -92,9 +93,10 @@ static inline void ux500_ci_dbg_set_deepest_state(int state) { }
 
 static inline void ux500_ci_dbg_console(void) { }
 static inline void ux500_ci_dbg_console_check_uart(void) { }
+#ifdef CONFIG_UX500_SUSPEND_DBG_WAKE_ON_UART
 static inline void ux500_ci_dbg_console_handle_ape_resume(void) { }
 static inline void ux500_ci_dbg_console_handle_ape_suspend(void) { }
-
+#endif
 static inline void ux500_ci_dbg_plug(int cpu) { }
 static inline void ux500_ci_dbg_unplug(int cpu) { }
 

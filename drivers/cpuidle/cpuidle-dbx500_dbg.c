@@ -150,6 +150,7 @@ void ux500_ci_dbg_set_deepest_state(int state)
 	deepest_allowed_state = state;
 }
 
+#ifdef CONFIG_UX500_SUSPEND_DBG_WAKE_ON_UART
 void ux500_ci_dbg_console_handle_ape_suspend(void)
 {
 	if (!dbg_console_enable)
@@ -177,8 +178,8 @@ void ux500_ci_dbg_console_handle_ape_resume(void)
 
 	}
 	disable_irq_wake(GPIO_TO_IRQ(ux500_console_uart_gpio_pin));
-
 }
+#endif
 
 void ux500_ci_dbg_console_check_uart(void)
 {

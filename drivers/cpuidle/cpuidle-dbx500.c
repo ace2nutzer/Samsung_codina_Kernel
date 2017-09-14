@@ -222,7 +222,9 @@ static void restore_sequence(struct cpu_state *state)
 		/* Restore IO ring */
 		ux500_pm_prcmu_set_ioforce(false);
 
+#ifdef CONFIG_UX500_SUSPEND_DBG_WAKE_ON_UART
 		ux500_ci_dbg_console_handle_ape_resume();
+#endif
 
 		ux500_rtcrtt_off();
 
@@ -368,11 +370,9 @@ static int determine_sleep_state(u32 *sleep_time, int loc_idle_counter,
 
 	if (!ape) {
 		if (prcmu_is_mcdeclk_on()) {
-			ape++;
 			printk(KERN_ERR "cpuidle: wrong ape value because MCDE clk is on\n");
 		}
 		if (prcmu_is_mmcclk_on()) {
-			ape++;
 			printk(KERN_ERR "cpuidle: wrong ape value because MMC clk is on\n");
 		}
 	}
@@ -556,7 +556,10 @@ static int enter_sleep(struct cpuidle_device *dev,
 
 		context_vape_save();
 
+#ifdef CONFIG_UX500_SUSPEND_DBG_WAKE_ON_UART
 		ux500_ci_dbg_console_handle_ape_suspend();
+#endif
+
 		ux500_pm_prcmu_set_ioforce(true);
 
 		spin_lock(&cpuidle_lock);
