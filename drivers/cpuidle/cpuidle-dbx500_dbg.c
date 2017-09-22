@@ -1288,8 +1288,7 @@ void __init ux500_ci_dbg_init(void)
 	cstates = ux500_ci_get_cstates(&cstates_len);
 
 	if(jig_smd)
-		deepest_allowed_state = CONFIG_DBX500_CPUIDLE_DEEPEST_STATE - 1;
-
+		deepest_allowed_state = CONFIG_DBX500_CPUIDLE_DEEPEST_STATE;
 
 	if (deepest_allowed_state > cstates_len)
 		deepest_allowed_state = cstates_len;

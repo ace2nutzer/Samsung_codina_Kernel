@@ -4432,7 +4432,9 @@ out:
 }
 #endif
 
+#ifdef CONFIG_GENERIC_BLN_USE_WAKELOCK
 extern bool is_bln_wakelock_active(void);
+#endif
 extern bool is_s2w_wakelock_active(void);
 extern unsigned int is_charger_present;
 
@@ -4448,7 +4450,9 @@ inline bool break_suspend_early(bool suspend)
 	 bool ret;
 
 	 ret = prcmu_qos_requirement_is_active(PRCMU_QOS_APE_OPP, "sia")	||
+#ifdef CONFIG_GENERIC_BLN_USE_WAKELOCK
 		is_bln_wakelock_active()		||
+#endif
 		is_s2w_wakelock_active()		||
 		is_charger_present;
 
@@ -4501,7 +4505,9 @@ void should_break_suspend_early_check_fn(struct work_struct *work)
 {
 	should_break_suspend_early = 
 		prcmu_qos_requirement_is_active(PRCMU_QOS_APE_OPP, "sia")	||
+#ifdef CONFIG_GENERIC_BLN_USE_WAKELOCK
                 is_bln_wakelock_active()		||
+#endif
                 is_s2w_wakelock_active()		||
                 is_charger_present;
 

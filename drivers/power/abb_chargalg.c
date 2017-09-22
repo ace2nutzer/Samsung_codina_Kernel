@@ -995,17 +995,17 @@ static void ab8500_chargalg_end_of_charge(struct ab8500_chargalg *di)
 					di->full_charging_status_1st = true;
 					dev_dbg(di->dev,
 					 "Full charging status will be shown \
-in the UI, BUT NOT Real Full charging\n");
+					in the UI, BUT NOT Real Full charging\n");
 					power_supply_changed(&di->chargalg_psy);
 					eoc_first = 1;
-					if ((eoc_bln) && (is_suspend || is_lpm || is_recovery)) {
+					if ((eoc_bln & !bln_is_ongoing()) && (is_suspend || is_lpm || is_recovery)) {
 					/* enable BLN */
 					bln_enable_backlights(get_led_mask());
 					}
 				} else {
 					dev_dbg(di->dev,
 					"1st Full Charging EOC limit reached \
-for the %d time, out of %d before EOC\n",  di->eoc_cnt_1st, EOC_COND_CNT_1ST);
+					for the %d time, out of %d before EOC\n",  di->eoc_cnt_1st, EOC_COND_CNT_1ST);
 				}
 			}
 		} else {
