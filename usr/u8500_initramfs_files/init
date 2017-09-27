@@ -2,30 +2,38 @@
 _PATH="$PATH"
 export PATH=/stage1
 
-busybox cd /
-busybox date >>boot.txt
+cd /
+date >>boot.txt
 exec >>boot.txt 2>&1
-busybox rm init
-busybox mount -t proc proc /proc
-busybox mount -t sysfs sysfs /sys
+rm init
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
 
-busybox echo 200000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
-busybox echo 800000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+echo 200000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+echo 800000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
 
-busybox mount -t ext2 /dev/block/mmcblk0p9 /ramdisk
+mount -t ext2 /dev/block/mmcblk0p9 /ramdisk
+
+if ! grep -q bootmode=2 /proc/cmdline ; then
+if ! grep -q lpm_boot=1 /proc/cmdline ; then
+	if ! grep no /ramdisk/pllddr_oc_freq ; then
+	PATH=/stage1 sh /ramdisk/pllddr_oc.sh $(cat /ramdisk/pllddr_oc_freq)
+	fi
+fi
+fi
 
 load_image=/stage1/boot.cpio
 
-if busybox grep -q bootmode=2 /proc/cmdline ; then
+if grep -q bootmode=2 /proc/cmdline ; then
 	# recovery boot
 	load_image=/stage1/recovery.cpio
 fi
 
-busybox cpio -i < ${load_image}
+cpio -i < ${load_image}
 
-busybox umount /sys
-busybox umount /proc
-busybox date >>boot.txt
-busybox rm -fr /stage1 /dev/*
+umount /sys
+umount /proc
+date >>boot.txt
+rm -fr /stage1
 export PATH="${_PATH}"
 exec /init
