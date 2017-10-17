@@ -499,6 +499,8 @@ static ssize_t bln_blink_store(struct kobject *kobj, struct kobj_attribute *attr
 		return count;
 	}
 
+return count;
+
 }
 
 #ifdef CONFIG_GENERIC_BLN_USE_WAKELOCK
@@ -526,6 +528,9 @@ static ssize_t bln_wakelock_store(struct kobject *kobj, struct kobj_attribute *a
 
 		return count;
 	}
+
+return count;
+
 }
 #endif
 

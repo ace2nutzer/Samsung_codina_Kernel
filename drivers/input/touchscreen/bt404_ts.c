@@ -50,7 +50,6 @@
 #include <linux/wakelock.h>
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
 #include <linux/input/sweep2wake.h>
-extern bool s2w_use_wakelock;
 #endif
 #ifdef TSP_FACTORY
 #include <linux/list.h>
@@ -1488,11 +1487,15 @@ static void bt404_ts_report_touch_data(struct bt404_ts_data *data,
 	if (force_clear) {
 		for (i = 0; i < data->cap_info.max_finger; i++) {
 			if (prev->coord[i].sub_status & 0x1) {
-				// dev_info(&client->dev,
-				// 		"%4s[%1d]: %3d,%3d (%3d)\n",
-				// 		"up/f", i, cur->coord[i].x,
-				// 		cur->coord[i].x,
-				// 		cur->coord[i].width);
+#if !defined(CONFIG_SAMSUNG_PRODUCT_SHIP)
+#ifndef DISABLE_TOUCHSCREEN_SPAM
+				dev_info(&client->dev,
+					"%4s[%1d]: %3d,%3d (%3d)\n",
+					"up/f", i, cur->coord[i].x,
+					cur->coord[i].x,
+					cur->coord[i].width);
+#endif
+#endif
 				prev->coord[i].sub_status &= ~(0x01);
 			}
 
@@ -1523,7 +1526,6 @@ static void bt404_ts_report_touch_data(struct bt404_ts_data *data,
 
 	for (i = 0; i < data->cap_info.max_finger; i++) {
 		bool prev_exist = prev->coord[i].sub_status & 0x1;
-		bool cur_exist = cur->coord[i].sub_status & 0x1;
 		bool cur_up = (cur->coord[i].sub_status >> 3) & 0x1;
 		bool cur_move = (cur->coord[i].sub_status >> 2) & 0x1;
 		bool cur_down = (cur->coord[i].sub_status >> 1) & 0x1;
@@ -1630,9 +1632,6 @@ static irqreturn_t bt404_ts_interrupt(int irq, void *dev_id)
 	struct bt404_ts_data *data = dev_id;
 	struct i2c_client *client = data->client;
 	int ret;
-	s16 *s16data;
-	s16 data_checksum;
-	s16 check_value;
 #ifdef TSP_VERBOSE_DEBUG
 	int i;
 #endif
@@ -1856,13 +1855,6 @@ out_esd_start:
 	}
 #endif
 
-out:
-	udelay(DELAY_FOR_SIGNAL_DELAY);
-
-	if (data->work_state == NORMAL)
-		data->work_state = NOTHING;
-
-	up(&data->work_lock);
 	return IRQ_HANDLED;
 }
 
@@ -4230,7 +4222,6 @@ static int bt404_ts_resume_device(struct bt404_ts_data *data)
 	struct i2c_client *client = data->client;
 	int ret;
 	int i;
-	u16 reg_val;
 
 	bt404_ts_sw_reset(data);
 
@@ -4326,8 +4317,9 @@ err_i2c:
 	return ret;
 }
 
-static int last_suspend_skipped = 0, last_resume_skipped = 0;
-bool break_suspend_early(bool);
+static bool is_suspend = false;
+static bool is_awaken = false;
+static bool is_sleep = false;
 
 #if defined(CONFIG_PM) || defined(CONFIG_HAS_EARLYSUSPEND)
 static int bt404_ts_suspend(struct device *dev)
@@ -4343,10 +4335,8 @@ static int bt404_ts_suspend(struct device *dev)
 	}
 
         if (s2w_switch) {
-                 if (break_suspend_early(true)) {
                         pr_err("%s: skipped\n", __func__);
-                        goto out;
-                }
+		goto out;
         }
 
 	disable_irq(data->irq);
@@ -4396,12 +4386,8 @@ static int bt404_ts_resume(struct device *dev)
 	}
 
         if (s2w_switch) {
-                if (break_suspend_early(false)) {
-                        if (last_suspend_skipped) {
                                 pr_err("%s: skipped\n", __func__);
-                                goto out;
-                        }
-                }
+		goto out;
         }
 
 	data->pdata->int_set_pull(true);
@@ -4432,128 +4418,47 @@ out:
 }
 #endif
 
-#ifdef CONFIG_GENERIC_BLN_USE_WAKELOCK
-extern bool is_bln_wakelock_active(void);
-#endif
-extern bool is_s2w_wakelock_active(void);
-extern unsigned int is_charger_present;
-
-static bool is_suspend = false;
-static bool should_break_suspend_early = false; // flag, that determines whether suspend/resume of bt404
-			                          // should be skipped
-static bool is_awaken = false; // two flags, that protects suspend/resume
-static bool is_sleep = false; // against race conditions
-static int should_break_suspend_early_check_delay = 10000;// check state of should_break_suspend_early
-			                                    // each 10 seconds
-inline bool break_suspend_early(bool suspend)
-{
-	 bool ret;
-
-	 ret = prcmu_qos_requirement_is_active(PRCMU_QOS_APE_OPP, "sia")	||
-#ifdef CONFIG_GENERIC_BLN_USE_WAKELOCK
-		is_bln_wakelock_active()		||
-#endif
-		is_s2w_wakelock_active()		||
-		is_charger_present;
-
-	 if (suspend) {
-		 last_suspend_skipped = ret;
-	 } else {
-		 /* only skip resume if last suspend was skipped */
-		 if (ret && !last_suspend_skipped) {
-			  pr_err("[bt404_ts] not skipping resume because suspend was not skipped\n");
-		 }
-		 ret = ret && last_suspend_skipped;
-		 last_resume_skipped = ret;
-	 }
-
-	 return ret;
-}
-
-/*
- * early_suspend_: returns true if suspended, or false otherwise
- */
-
 static inline bool early_suspend_(void)
 {
-	if (!is_sleep) {
-		 is_awaken = false;
-		 is_sleep = true;
-		 bt404_ts_suspend(&data_->client->dev);
-	}
+        if (!is_sleep) {
+                is_sleep = true;
+                is_awaken = false;
+                bt404_ts_suspend(&data_->client->dev);
+	}	
 
-	return !is_sleep;
+       return !is_sleep;
 }
 
-static inline void late_resume_(void)
+static inline bool late_resume_(void)
 {
-	 if (!is_awaken) {
-		 bt404_ts_resume(&data_->client->dev);
-		 is_sleep = false;
-		 is_awaken = true;
-	 }
+        if (!is_awaken) {
+                bt404_ts_resume(&data_->client->dev);
+                is_awaken = true;
+                is_sleep = false;
+        }
 
-	return !is_awaken;
-}
-
-static unsigned int debug = 0;
-module_param_named(debug, debug, uint, 0644);
-
-void should_break_suspend_early_check_fn(struct work_struct *work);
-DECLARE_DELAYED_WORK(should_break_suspend_early_check_work, should_break_suspend_early_check_fn);
-void should_break_suspend_early_check_fn(struct work_struct *work)
-{
-	should_break_suspend_early = 
-		prcmu_qos_requirement_is_active(PRCMU_QOS_APE_OPP, "sia")	||
-#ifdef CONFIG_GENERIC_BLN_USE_WAKELOCK
-                is_bln_wakelock_active()		||
-#endif
-                is_s2w_wakelock_active()		||
-                is_charger_present;
-
-
-	if (s2w_switch) {
-		// we're in suspend, and we skipped it,
-		// but should_break_suspend_early now == false
-		if (is_suspend && last_suspend_skipped && !should_break_suspend_early) {
-			// now put the driver into suspend
-			if (debug && data_->enabled) {
-				pr_err("%s: put bt404 driver to suspend\n", __func__);
-			}
-
-			if (data_->enabled)
-				bt404_ts_suspend(&data_->client->dev);
-		}
-
-		schedule_delayed_work(&should_break_suspend_early_check_work, 
-			msecs_to_jiffies(should_break_suspend_early_check_delay));
-	}
-}
-
-void should_break_suspend_check_init_work(void) {
-	pr_err("%s: started\n", __func__);
-	schedule_delayed_work(&should_break_suspend_early_check_work, 0);
+       return !is_awaken;
 }
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
 static void bt404_ts_late_resume(struct early_suspend *h)
 {
-	is_suspend = false;
+       is_suspend = false;
 
-	if (s2w_switch) {
-		s2w_set_scr_suspended(is_suspend);
-	}
+       if (s2w_switch) {
+               s2w_set_scr_suspended(is_suspend);
+       }
 
 	late_resume_();
 }
 
 static void bt404_ts_early_suspend(struct early_suspend *h)
 {
-	is_suspend = true;
+       is_suspend = true;
 
-	if (s2w_switch) {
-		 s2w_set_scr_suspended(is_suspend);
-	 }
+       if (s2w_switch) {
+                s2w_set_scr_suspended(is_suspend);
+       }
 
 	early_suspend_();
 }

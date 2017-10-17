@@ -52,7 +52,7 @@ static struct wake_lock s2w_wake_lock;
 bool is_s2w_wakelock_active(void) {
         return wake_lock_active(&s2w_wake_lock);
 }
-bool s2w_use_wakelock;
+static bool s2w_use_wakelock = true;
 #endif
 
 /* Read cmdline for s2w */
@@ -195,9 +195,6 @@ void s2w_set_scr_suspended(bool suspended)
 	scr_suspended = suspended;
 	s2w_reset();
 }
-#ifdef CONFIG_TOUCHSCREEN_ZINITIX_BT404
-extern void should_break_suspend_check_init_work(void);
-#endif
 
 static int set_enable(const char *val, struct kernel_param *kp)
 {
@@ -222,9 +219,6 @@ static int set_enable(const char *val, struct kernel_param *kp)
 	}
 	if(strcmp(val, "1") >= 0 || strcmp(val, "true") >= 0){
 		s2w_switch = 1;
-#ifdef CONFIG_TOUCHSCREEN_ZINITIX_BT404
-		should_break_suspend_check_init_work();
-#endif
 		if(DEBUG)
 			printk("s2w: enabled\n");
 

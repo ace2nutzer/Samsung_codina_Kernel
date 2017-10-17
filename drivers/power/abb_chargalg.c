@@ -73,9 +73,12 @@ static bool is_suspend = 0;
 static void ab8500_chargalg_early_suspend(struct early_suspend *h)
 {
 	is_suspend = 1;
+
 	if (eoc_bln) {
 	bln_disable_backlights(gen_all_leds_mask());
 	}
+
+	/* use lower vape on suspend */
 	prcmu_qos_vape_override(true);
 }
 

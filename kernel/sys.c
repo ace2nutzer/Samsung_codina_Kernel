@@ -422,6 +422,7 @@ static int reboot_timer_setup(unsigned long cmd)
 	task = kthread_create(reboot_timer_expired, cmd, "reboot_rescue1");
 	kthread_bind(task, 1);
 	wake_up_process(task);
+	return 0;
 }
 
 /*
