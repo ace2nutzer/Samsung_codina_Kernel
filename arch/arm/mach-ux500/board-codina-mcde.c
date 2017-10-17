@@ -93,13 +93,13 @@ static struct mcde_port port0 = {
 	.phy = {
 		.dpi = {
 			.tv_mode = false,
-			.clock_div = 1,
+			.clock_div = 2,
 			.polarity =
 				DPI_ACT_LOW_VSYNC |
 				DPI_ACT_LOW_HSYNC |
 				/* DPI_ACT_LOW_DATA_ENABLE | */
 				DPI_ACT_ON_FALLING_EDGE,
-			.lcd_freq = PRCMU_DPI_CLK_SHARP_FREQ
+			.lcd_freq = PRCMU_DPI_CLK_SMD_FREQ
 		},
 	},
 };
@@ -154,8 +154,7 @@ struct ssg_dpi_display_platform_data codina_dpi_pri_display_info = {
 	 * setup elsewhere. But the pixclock value is visible in user
 	 * space.
 	 */
-
-	.video_mode.pixclock = (int)(1e+12 * (1.0 / PRCMU_DPI_CLK_SHARP_FREQ)),
+	.video_mode.pixclock = (int)(1e+12 * (1.0 / PRCMU_DPI_CLK_SMD_FREQ)),
 
 	.reset		= pri_display_reset,
 	.lcd_pwr_setup = pri_lcd_pwr_setup,	
@@ -199,7 +198,7 @@ static int pri_display_power_on(struct ssg_dpi_display_platform_data *pd,
 
 		if (vreg_lcd_1v8_regulator == NULL) {
 			printk(KERN_ERR "%s: no regulator\n", __func__);
-			return;
+			return res;
 		}
 
 		if (enable)
@@ -301,7 +300,7 @@ static int display_postregistered_callback(struct notifier_block *nb,
 {
 	struct mcde_display_device *ddev = dev;
 	u16 width, height;
-	u16 virtual_width, virtual_height;
+	u16 virtual_height;
 	struct fb_info *fbi;
 #if defined(CONFIG_COMPDEV)
 	struct mcde_fb *mfb;
@@ -314,13 +313,12 @@ static int display_postregistered_callback(struct notifier_block *nb,
 		return 0;
 
 	mcde_dss_get_native_resolution(ddev, &width, &height);
-	virtual_width = width;
-	virtual_height = height * 2;
+	virtual_height = height * 3;
 
 
 	/* Create frame buffer */
-	fbi = mcde_fb_create(ddev, width, height, virtual_width, virtual_height,
-				ddev->default_pixel_format, FB_ROTATE_UR);
+	fbi = mcde_fb_create(ddev, width, height, width, virtual_height,
+	ddev->default_pixel_format, FB_ROTATE_UR);
 
 	if (IS_ERR(fbi)) {
 		dev_warn(&ddev->dev,
@@ -433,9 +431,9 @@ int __init init_codina_display_devices(void)
 		codina_dpi_pri_display_info.video_mode.vfp = 8;
 		codina_dpi_pri_display_info.sleep_in_delay = 120;
 		codina_dpi_pri_display_info.sleep_out_delay = 50;
-	}
 
-	if (lcd_type == LCD_PANEL_TYPE_S6D27A1) {
+	} else {
+
 		generic_display0.name = LCD_DRIVER_NAME_S6D27A1;
 		codina_dpi_pri_display_info.video_mode.vsw = 6;
 		codina_dpi_pri_display_info.video_mode.vbp = 6;
