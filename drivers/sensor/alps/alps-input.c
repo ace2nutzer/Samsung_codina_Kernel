@@ -67,7 +67,9 @@ static long alps_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 			}
 			mutex_lock(&data->alps_lock);
 			data->flgM = tmpval;
+#ifdef CONFIG_SENSORS_HSCD
 			hscd_activate(1, tmpval, data->delay);
+#endif
 			mutex_unlock(&data->alps_lock);
 			break;
 	case ALPSIO_SET_ACCACTIVATE:
@@ -103,8 +105,10 @@ static long alps_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 			mutex_lock(&data->alps_lock);
 			data->delay = tmpval;
 
+#ifdef CONFIG_SENSORS_HSCD
 			if (data->flgM)
 				hscd_activate(1, data->flgM, data->delay);
+#endif
 
 			if (data->flgA)	{
 				if (system_rev >= CODINA_TMO_R0_1)	{
@@ -171,6 +175,7 @@ static void accsns_poll(struct input_dev *idev)
 	}
 }
 
+#ifdef CONFIG_SENSORS_HSCD
 static void hscd_poll(struct input_dev *idev)
 {
 	int xyz[3];
@@ -183,6 +188,7 @@ static void hscd_poll(struct input_dev *idev)
 		input_event(idev, EV_SYN, SYN_REPORT, 2);
 	}
 }
+#endif
 
 static void alps_poll(struct input_polled_dev *dev)
 {
@@ -192,8 +198,11 @@ static void alps_poll(struct input_polled_dev *dev)
 		mutex_lock(&data->alps_lock);
 		data->alps_idev->poll_interval = data->delay;
 
+#ifdef CONFIG_SENSORS_HSCD
 	if (data->flgM)
 			hscd_poll(data->alps_idev->input);
+#endif
+
 	if (data->flgA)
 			accsns_poll(data->alps_idev->input);
 	mutex_unlock(&data->alps_lock);
