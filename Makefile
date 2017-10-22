@@ -246,23 +246,16 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -mhard-float -O2 -fno-strict-aliasing -fno-strict-overflow -fomit-frame-pointer -DNDEBUG -std=gnu89 -pipe \
-		   -funswitch-loops \
-		   -fpredictive-commoning \
-		   -fgcse-after-reload \
-		   -ftree-loop-distribute-patterns \
-		   -fsplit-paths \
-		   -ftree-partial-pre \
-		   -fpeel-loops
+HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -Werror=return-type -mhard-float -fno-strict-aliasing -fno-strict-overflow -fomit-frame-pointer -DNDEBUG -std=gnu89 -pipe
+HOSTCXXFLAGS = -Werror=return-type -mhard-float -fno-strict-aliasing -fno-strict-overflow -fomit-frame-pointer -DNDEBUG -pipe
 
-HOSTCXXFLAGS = -mhard-float -O2 -fno-strict-aliasing -fno-strict-overflow -fomit-frame-pointer -DNDEBUG -pipe \
-		   -funswitch-loops \
-		   -fpredictive-commoning \
-		   -fgcse-after-reload \
-		   -ftree-loop-distribute-patterns \
-		   -fsplit-paths \
-		   -ftree-partial-pre \
-		   -fpeel-loops
+ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
+HOSTCFLAGS	+= $(CFLAGS_OS) $(call cc-disable-warning,maybe-uninitialized,)
+HOSTCXXFLAGS  += $(CFLAGS_OS) $(call cc-disable-warning,maybe-uninitialized,)
+else
+HOSTCFLAGS	+= $(CFLAGS_O2)
+HOSTCXXFLAGS  += $(CFLAGS_O2)
+endif
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -384,6 +377,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
+		   -Werror=return-type \
 		   -std=gnu89 $(call cc-option,-fno-PIE) \
 		   -fno-delete-null-pointer-checks \
 		   -D_FORTIFY_SOURCE=1 \
@@ -396,15 +390,17 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -mno-thumb-interwork \
 		   -ftree-vectorize \
 		   -mvectorize-with-neon-quad \
+		   -DNDEBUG \
+		   -pipe
+
+CFLAGS_O2 := -O2 \
 		   -funswitch-loops \
 		   -fpredictive-commoning \
 		   -fgcse-after-reload \
 		   -ftree-loop-distribute-patterns \
 		   -fsplit-paths \
 		   -ftree-partial-pre \
-		   -fpeel-loops \
-		   -DNDEBUG \
-		   -pipe
+		   -fpeel-loops
 
 CFLAGS_OS := -Os \
 		   -fno-unswitch-loops \
@@ -415,6 +411,7 @@ CFLAGS_OS := -Os \
 		   -fno-tree-partial-pre \
 		   -fno-peel-loops
 
+AFLAGS_O2 :=
 AFLAGS_OS :=
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
@@ -438,7 +435,7 @@ export KBUILD_CFLAGS CFLAGS_KERNEL CFLAGS_MODULE CFLAGS_GCOV
 export KBUILD_AFLAGS AFLAGS_KERNEL AFLAGS_MODULE
 export KBUILD_AFLAGS_MODULE KBUILD_CFLAGS_MODULE KBUILD_LDFLAGS_MODULE
 export KBUILD_AFLAGS_KERNEL KBUILD_CFLAGS_KERNEL
-export KBUILD_ARFLAGS CFLAGS_OS AFLAGS_OS
+export KBUILD_ARFLAGS CFLAGS_OS AFLAGS_OS CFLAGS_O2 AFLAGS_O2
 
 # When compiling out-of-tree modules, put MODVERDIR in the module
 # tree rather than in the kernel tree. The kernel tree might
@@ -610,7 +607,7 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning,maybe-uninitialized,)
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= $(CFLAGS_OS)
 else
-KBUILD_CFLAGS	+= -O2
+KBUILD_CFLAGS	+= $(CFLAGS_O2)
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
