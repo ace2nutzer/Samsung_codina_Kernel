@@ -2052,7 +2052,10 @@ int mcde_debugfs_enable_format_filter(
 		return -EINVAL;
 
 	oi->format_filter |= 1 << format_index;
+
+return 0;
 }
+
 int mcde_debugfs_disable_format_filter(
 	u8 chnl_id,
 	u8 ovly_id,
@@ -2071,7 +2074,10 @@ int mcde_debugfs_disable_format_filter(
 		return -EINVAL;
 
 	oi->format_filter &= ~(1 << format_index);
+
+return 0;
 }
+
 int mcde_debugfs_disable_all_format_filters(u8 chnl_id, u8 ovly_id)
 {
 	struct channel_info *ci = find_chnl(chnl_id);
@@ -2081,7 +2087,10 @@ int mcde_debugfs_disable_all_format_filters(u8 chnl_id, u8 ovly_id)
 		return -EINVAL;
 
 	oi->format_filter = 0;
+
+return 0;
 }
+
 int mcde_debugfs_enable_all_format_filters(u8 chnl_id, u8 ovly_id)
 {
 	struct channel_info *ci = find_chnl(chnl_id);
@@ -2091,4 +2100,6 @@ int mcde_debugfs_enable_all_format_filters(u8 chnl_id, u8 ovly_id)
 		return -EINVAL;
 
 	oi->format_filter = 0xFFFFFFFF;
+
+return 0;
 }

@@ -443,6 +443,7 @@ static u32 ethtool_get_feature_mask(u32 eth_cmd)
 	default:
 		BUG();
 	}
+return 0;
 }
 
 static void *__ethtool_get_one_feature_actor(struct net_device *dev, u32 ethcmd)

@@ -586,6 +586,7 @@ static const char *rfkill_get_type_str(enum rfkill_type type)
 	default:
 		BUG();
 	}
+return 0;
 }
 
 static ssize_t rfkill_type_show(struct device *dev,

@@ -689,11 +689,6 @@ static void __exit pllddr_oc_end(void)
 	kobject_put(pllddr_kobject);
 }
 
-/* Dummy functions to avoid linker complaints */
-void __aeabi_unwind_cpp_pr0(void)
-{
-};
-
 module_init(pllddr_oc_start);
 module_exit(pllddr_oc_end);
 
