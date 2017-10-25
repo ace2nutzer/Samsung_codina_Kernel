@@ -1276,12 +1276,7 @@ static int ab8500_charger_set_main_in_curr(struct ab8500_charger *di, int ich_in
 
 		min_value = min(di->bat->usb_chg_current_input, ich_in);
 
-	/* cocafe: Skip the loweset current limit */
-	if(!bCurrentControl) {
 		input_curr_index = ab8500_main_in_curr_to_regval(min_value);
-	} else {
-		input_curr_index = ab8500_main_in_curr_to_regval(vChargeCurrent);
-	}
 
 	if (input_curr_index < 0) {
 		pr_err("[ABB-Charger] MAIN input current limit too high, %d\n",

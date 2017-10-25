@@ -114,7 +114,7 @@ CONFIG_INITRAMFS_COMPRESSION_NONE=y
 # CONFIG_CC_OPTIMIZE_FOR_SIZE is not set
 CONFIG_SYSCTL=y
 CONFIG_ANON_INODES=y
-CONFIG_PANIC_TIMEOUT=5
+CONFIG_PANIC_TIMEOUT=0
 CONFIG_EXPERT=y
 CONFIG_UID16=y
 CONFIG_SYSCTL_SYSCALL=y
@@ -143,7 +143,7 @@ CONFIG_PERF_EVENTS=y
 # CONFIG_PERF_COUNTERS is not set
 # CONFIG_VM_EVENT_COUNTERS is not set
 # CONFIG_SLUB_DEBUG is not set
-CONFIG_COMPAT_BRK=y
+# CONFIG_COMPAT_BRK is not set
 # CONFIG_SLAB is not set
 CONFIG_SLUB=y
 # CONFIG_SLOB is not set
@@ -438,10 +438,10 @@ CONFIG_ARM_CPU_TOPOLOGY=y
 # CONFIG_SCHED_SMT is not set
 CONFIG_HAVE_ARM_SCU=y
 CONFIG_HAVE_ARM_TWD=y
-# CONFIG_VMSPLIT_3G is not set
-CONFIG_VMSPLIT_2G=y
+CONFIG_VMSPLIT_3G=y
+# CONFIG_VMSPLIT_2G is not set
 # CONFIG_VMSPLIT_1G is not set
-CONFIG_PAGE_OFFSET=0x80000000
+CONFIG_PAGE_OFFSET=0xC0000000
 CONFIG_NR_CPUS=2
 CONFIG_HOTPLUG_CPU=y
 CONFIG_LOCAL_TIMERS=y
@@ -493,7 +493,7 @@ CONFIG_CC_STACKPROTECTOR_STRONG=y
 # CONFIG_USE_OF is not set
 CONFIG_ZBOOT_ROM_TEXT=0
 CONFIG_ZBOOT_ROM_BSS=0
-CONFIG_CMDLINE="mpcore_wdt.mpcore_margin=359 root=/dev/ram0 rw rootwait crash_reboot=yes crash_dump=no init=init console='null' mem=96M@0 mem_mtrace=15M@96M mem_mshared=1M@111M mem_modem=16M@112M mem=128M@128M hwmem=84M@256M mem=43M@340M mem_issw=1M@383M mem_ram_console=1M@384M mem=383M@385M jig_smd=0 checksum_pass=1 checksum_done=1 sec_debug.enable=0 sec_debug.enable_user=0 androidboot.serialno=0123456789ABCDEF board_id=12 startup_graphics=1 logo. sbl_copy=1 androidboot.selinux=permissive"
+CONFIG_CMDLINE="mpcore_wdt.mpcore_margin=359 root=/dev/ram0 rw rootwait crash_reboot=yes crash_dump=no init=init console='null' mem=96M@0 mem_mtrace=15M@96M mem_mshared=1M@111M mem_modem=16M@112M mem=128M@128M hwmem=84M@256M mem=43M@340M mem_issw=1M@383M mem_ram_console=1M@384M mem=383M@385M vmalloc=0M jig_smd=0 checksum_pass=1 checksum_done=1 sec_debug.enable=0 sec_debug.enable_user=0 androidboot.serialno=0123456789ABCDEF board_id=12 startup_graphics=1 logo. sbl_copy=1 androidboot.selinux=permissive"
 # CONFIG_CMDLINE_FROM_BOOTLOADER is not set
 # CONFIG_CMDLINE_EXTEND is not set
 CONFIG_CMDLINE_FORCE=y
@@ -610,7 +610,7 @@ CONFIG_NET_IPGRE=y
 # CONFIG_NET_IPGRE_BROADCAST is not set
 # CONFIG_IP_MROUTE is not set
 # CONFIG_ARPD is not set
-# CONFIG_SYN_COOKIES is not set
+CONFIG_SYN_COOKIES=y
 CONFIG_INET_AH=y
 CONFIG_INET_ESP=y
 CONFIG_INET_IPCOMP=y
@@ -620,8 +620,7 @@ CONFIG_INET_XFRM_MODE_TRANSPORT=y
 CONFIG_INET_XFRM_MODE_TUNNEL=y
 CONFIG_INET_XFRM_MODE_BEET=y
 # CONFIG_INET_LRO is not set
-CONFIG_INET_DIAG=y
-CONFIG_INET_TCP_DIAG=y
+# CONFIG_INET_DIAG is not set
 # CONFIG_TCP_CONG_ADVANCED is not set
 CONFIG_TCP_CONG_CUBIC=y
 CONFIG_DEFAULT_TCP_CONG="cubic"
