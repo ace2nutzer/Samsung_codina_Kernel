@@ -328,11 +328,26 @@ PUBLIC t_cm_error cm_DM_DestroyDomains(const t_nmf_client_id client)
 {
     t_cm_domain_id handle;
     t_cm_error error, status=CM_OK;
+    t_cm_domain_id phandle[MAX_USER_DOMAIN_NB];	//parent domain IDs
+    int pcount;	//Count for parent domains
 
-    for (handle=0; handle<MAX_USER_DOMAIN_NB; handle++) {
-        if ((domainDesc[handle].client == client)
-            && ((error=cm_DM_DestroyDomain(handle)) != CM_OK)) {
+    for (handle=0,pcount=0; handle<MAX_USER_DOMAIN_NB; handle++) {
+        if (domainDesc[handle].client == client){
+            if(domainDesc[handle].type ==DOMAIN_SCRATCH_PARENT){
+                phandle[pcount++] = handle;
+            }
+            else{
+                if((error=cm_DM_DestroyDomain(handle)) != CM_OK) {
             LOG_INTERNAL(0, "Error (%d) destroying remaining domainId %d for client %u\n", error, handle, client, 0, 0, 0);
+                status = error;
+                }
+            }
+        }
+    }
+    for(pcount -= 1; pcount >= 0; pcount--){
+        if ((domainDesc[phandle[pcount]].client == client)
+            && ((error=cm_DM_DestroyDomain(phandle[pcount])) != CM_OK)) {
+            LOG_INTERNAL(0, "Error (%d) destroying remaining parent domainId %d for client %u\n", error, phandle[pcount], client, 0, 0, 0);
             status = error;
         }
     }
@@ -560,20 +575,26 @@ PUBLIC t_cm_error cm_DM_GetDomainAbsAdresses(t_cm_domain_id domainId, t_cm_domai
         return error;
     }
 
-    cm_DSP_GetDspBaseAddress(coreId, SDRAM_CODE,  &info->sdramCode);
-    cm_DSP_GetDspBaseAddress(coreId, ESRAM_CODE,  &info->esramCode);
-    cm_DSP_GetDspBaseAddress(coreId, SDRAM_EXT24, &info->sdramData);
-    cm_DSP_GetDspBaseAddress(coreId, ESRAM_EXT24, &info->esramData);
-
+if(cm_DSP_GetDspBaseAddress(coreId, SDRAM_CODE,  &info->sdramCode)==CM_OK)
+    {
     info->sdramCode.physical += domainDesc[domainId].domain.sdramCode.offset;
     info->sdramCode.logical  += domainDesc[domainId].domain.sdramCode.offset;
+    }
+    if(cm_DSP_GetDspBaseAddress(coreId, ESRAM_CODE,  &info->esramCode)==CM_OK)
+    {
     info->esramCode.physical += domainDesc[domainId].domain.esramCode.offset;
     info->esramCode.logical  += domainDesc[domainId].domain.esramCode.offset;
+    }
+    if(cm_DSP_GetDspBaseAddress(coreId, SDRAM_EXT24, &info->sdramData)==CM_OK)
+    {
     info->sdramData.physical += domainDesc[domainId].domain.sdramData.offset;
     info->sdramData.logical  += domainDesc[domainId].domain.sdramData.offset;
+    }
+    if(cm_DSP_GetDspBaseAddress(coreId, ESRAM_EXT24, &info->esramData)==CM_OK)
+    {
     info->esramData.physical += domainDesc[domainId].domain.esramData.offset;
     info->esramData.logical  += domainDesc[domainId].domain.esramData.offset;
-
+    }
     return CM_OK;
 }
 

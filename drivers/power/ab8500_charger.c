@@ -840,13 +840,25 @@ static int ab8500_charger_detect_chargers(struct ab8500_charger *di)
 		dev_dbg(di->dev, "No cable type, VBUS detected. Charging "
 			"enabled\n");
 	case	EXTERNAL_DEDICATED_CHARGER:
-	case	EXTERNAL_CAR_KIT:
 	case	EXTERNAL_USB_CHARGER:
 		dev_dbg(di->dev,"%s: TA is inserted\n", __func__);
 		wake_lock(&di->ab8500_vbus_wake_lock);
 		di->cable_type = POWER_SUPPLY_TYPE_MAINS;
 		result = AC_PW_CONN ;
 		break ;
+
+	case	EXTERNAL_AV_CABLE:
+		if(vbus_state){
+		wake_lock(&di->ab8500_vbus_wake_lock);
+		dev_info(di_dev,"%s:Desk dock is inserted\n ",__func__);
+		di->cable_type = POWER_SUPPLY_TYPE_MAINS ;
+		}
+		else {
+		dev_info(di-dev,"%s: Desk Dock is connected ,but there is no VBUS\n",__func__);
+		di->cable_type=POWER_SUPPLY_TYPE_BATTERY ;
+		result =NO_PW_CONN ;
+		}
+		break;
 
 	case	EXTERNAL_JIG_USB_OFF:
 	case	EXTERNAL_USB:
@@ -856,7 +868,9 @@ static int ab8500_charger_detect_chargers(struct ab8500_charger *di)
 		result = USB_PW_CONN ;
 		break ;
 
+
 	case	EXTERNAL_JIG_UART_OFF:
+	case	EXTERNAL_CAR_KIT:
 		if (vbus_state) {
 			/* This case is provided for Reliabilty group to test fuelguage.*/
 			wake_lock(&di->ab8500_vbus_wake_lock);
@@ -874,7 +888,6 @@ static int ab8500_charger_detect_chargers(struct ab8500_charger *di)
 	case	EXTERNAL_USB_OTG:
 	case	EXTERNAL_DEVICE_UNKNOWN:
 	case	EXTERNAL_UART:
-	case	EXTERNAL_AV_CABLE:
 	case	EXTERNAL_PHONE_POWERED_DEVICE:
 	case	EXTERNAL_TTY:
 	case	EXTERNAL_AUDIO_1:

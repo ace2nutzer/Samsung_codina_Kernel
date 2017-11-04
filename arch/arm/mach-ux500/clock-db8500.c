@@ -579,7 +579,7 @@ static int clkout0_enable(struct clk *clk)
 	r = regulator_enable(clk->regulator);
 	if (r)
 		goto regulator_failed;
-#if defined(CONFIG_MACH_JANICE) || defined(CONFIG_MACH_GAVINI)
+#if defined(CONFIG_MACH_JANICE) || defined(CONFIG_MACH_GAVINI) || defined (CONFIG_MACH_CODINA)
 	r = prcmu_config_clkout(0, PRCMU_CLKSRC_ACLK, 8);
 #else
 	r = prcmu_config_clkout(0, PRCMU_CLKSRC_CLK38M, 4);
@@ -592,7 +592,7 @@ static int clkout0_enable(struct clk *clk)
 	return r;
 
 gpio_failed:
-#if defined(CONFIG_MACH_JANICE) || defined(CONFIG_MACH_GAVINI)
+#if defined(CONFIG_MACH_JANICE) || defined(CONFIG_MACH_GAVINI)|| defined (CONFIG_MACH_CODINA)
 	(void)prcmu_config_clkout(0, PRCMU_CLKSRC_ACLK, 0);
 #else
 	(void)prcmu_config_clkout(0, PRCMU_CLKSRC_CLK38M, 0);
@@ -610,7 +610,7 @@ static void clkout0_disable(struct clk *clk)
 	r = nmk_config_pin((GPIO227_GPIO | PIN_OUTPUT_LOW), false);
 	if (r)
 		goto disable_failed;
-#if defined(CONFIG_MACH_JANICE) || defined(CONFIG_MACH_GAVINI)
+#if defined(CONFIG_MACH_JANICE) || defined(CONFIG_MACH_GAVINI) || defined (CONFIG_MACH_CODINA)
 	(void)prcmu_config_clkout(0, PRCMU_CLKSRC_ACLK, 0);
 #else
 	(void)prcmu_config_clkout(0, PRCMU_CLKSRC_CLK38M, 0);

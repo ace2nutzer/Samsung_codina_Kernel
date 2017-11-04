@@ -79,7 +79,9 @@ struct taos_data {
 	int irq;
 	/* Auto Calibration */
 	u8 offset_value;
+#ifndef CONFIG_MACH_CODINA_EURO
 	u8 initial_offset;
+#endif
 	int cal_result;
 	int threshold_high;
 	int threshold_low;
@@ -349,6 +351,15 @@ void taos_chip_on(struct taos_data *taos)
 		fail_num++;
 	}
 
+#if defined (CONFIG_MACH_CODINA_EURO)
+	value = PRX_GAIN_OFFSET;
+	err = opt_i2c_write(taos, (CMD_REG | PRX_OFFSET), &value);
+	if (err < 0) {
+		pr_err("%s: prox gain reg failed\n", __func__);
+		fail_num++;
+	}
+#endif
+
 	prox_int_thresh[0] = 0;
 	prox_int_thresh[1] = 0;
 	prox_int_thresh[2] = (taos->threshold_high) & 0xFF;
@@ -454,6 +465,8 @@ static ssize_t proximity_enable_store(struct device *dev,
 #if 0
 		taos_poweron(taos);
 #endif
+
+#ifndef CONFIG_MACH_CODINA_EURO
 		ret = proximity_open_offset(taos);
 			if (ret < 0 && ret != -ENOENT)
 				pr_err("%s: proximity_open_offset() failed\n",
@@ -467,7 +480,7 @@ static ssize_t proximity_enable_store(struct device *dev,
 			pr_err("%s: hi= %d, low= %d, off= %d\n", __func__,
 				taos->threshold_high, taos->threshold_low,
 				taos->offset_value);
-
+#endif
 			i2c_smbus_write_byte(taos->client,
 			(CMD_REG | CMD_SPL_FN
 				| CMD_PROX_INTCLR));
@@ -485,6 +498,7 @@ static ssize_t proximity_enable_store(struct device *dev,
 	return size;
 }
 
+#ifndef CONFIG_MACH_CODINA_EURO
 static void set_prox_offset(struct taos_data *taos, u8 offset)
 {
 	int ret = 0;
@@ -494,6 +508,7 @@ static void set_prox_offset(struct taos_data *taos, u8 offset)
 		pr_info("%s: opt_i2c_write to prx offset reg failed\n"
 			, __func__);
 }
+#endif
 
 static void taos_thresh_set(struct taos_data *taos)
 {
@@ -556,7 +571,7 @@ static int proximity_adc_read(struct taos_data *taos)
 	return avg;
 }
 
-
+#ifndef CONFIG_MACH_CODINA_EURO
 static int proximity_open_offset(struct taos_data *data)
 {
 	struct file *offset_filp = NULL;
@@ -592,7 +607,9 @@ static int proximity_open_offset(struct taos_data *data)
 
 	return err;
 }
+#endif
 
+#ifndef CONFIG_MACH_CODINA_EURO
 static int proximity_store_offset(struct device *dev, bool do_calib)
 {
 	struct taos_data *taos = dev_get_drvdata(dev);
@@ -688,6 +705,7 @@ static int proximity_store_offset(struct device *dev, bool do_calib)
 	pr_err("%s: return %d\n", __func__, err);
 	return err;
 }
+#endif
 
 static ssize_t proximity_cal_store(struct device *dev,
 					  struct device_attribute *attr,
@@ -704,12 +722,13 @@ static ssize_t proximity_cal_store(struct device *dev,
 		return -EINVAL;
 	}
 
+#ifndef CONFIG_MACH_CODINA_EURO
 	err = proximity_store_offset(dev, do_calib);
 	if (err < 0) {
 		pr_err("%s: proximity_store_offset() failed\n", __func__);
 		return err;
 	}
-
+#endif
 	return size;
 }
 
@@ -852,6 +871,7 @@ static struct attribute_group proximity_attribute_group = {
 	.attrs = proximity_sysfs_attrs,
 };
 
+#ifndef CONFIG_MACH_CODINA_EURO
 static int taos_get_initial_offset(struct taos_data *taos)
 {
 	int ret = 0;
@@ -867,6 +887,7 @@ static int taos_get_initial_offset(struct taos_data *taos)
 
 	return p_offset;
 }
+#endif
 
 static int taos_opt_probe(struct i2c_client *client,
 				  const struct i2c_device_id *id)
@@ -903,8 +924,10 @@ static int taos_opt_probe(struct i2c_client *client,
 	i2c_set_clientdata(client, taos);
 	taos->threshold_high = PRX_THRSH_HI_PARAM;
 	taos->threshold_low = PRX_THRSH_LO_PARAM;
+#ifndef CONFIG_MACH_CODINA_EURO
 	taos->initial_offset = taos_get_initial_offset(taos);
 	taos->offset_value = taos->initial_offset;
+#endif
 
 	if (pdata->hw_setup) {
 		err = pdata->hw_setup();

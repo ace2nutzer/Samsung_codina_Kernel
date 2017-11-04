@@ -19,6 +19,9 @@
 #define TSP_FACTORY
 #define TSK_FACTORY
 
+#define TOUCH_BOOSTER
+
+
 #include <linux/completion.h>
 #include <linux/delay.h>
 #include <linux/earlysuspend.h>
@@ -38,6 +41,9 @@
 #include <linux/uaccess.h>
 #ifdef TSP_FACTORY
 #include <linux/list.h>
+#endif
+#if defined(TOUCH_BOOSTER)
+#include <linux/mfd/dbx500-prcmu.h>
 #endif
 
 #define MAX_FINGERS		5
@@ -189,6 +195,10 @@ struct mms_ts_info {
 #ifdef TSK_FACTORY
 	struct device			*dev_tk;
 	bool				*key_pressed;
+#endif
+
+#if defined(TOUCH_BOOSTER)
+	u8				finger_cnt;
 #endif
 
 #ifdef TSP_FACTORY
@@ -397,11 +407,47 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 				input_mt_report_slot_state(info->input_dev_ts,
 						   MT_TOOL_FINGER, false);
 				info->finger_state[id] = 0;
+		#if defined(TOUCH_BOOSTER)
+				if (info->finger_cnt > 0)
+					info->finger_cnt--;
 
+				if (info->finger_cnt == 0) {
+					prcmu_qos_update_requirement(
+						PRCMU_QOS_APE_OPP,
+						(char *)info->client->name,
+						PRCMU_QOS_DEFAULT_VALUE);
+					prcmu_qos_update_requirement(
+						PRCMU_QOS_DDR_OPP,
+						(char *)info->client->name,
+						PRCMU_QOS_DEFAULT_VALUE);
+					prcmu_qos_update_requirement(
+						PRCMU_QOS_ARM_KHZ,
+						(char *)info->client->name,
+						PRCMU_QOS_DEFAULT_VALUE);
+				}
+		#endif
 				continue;
 			}
 
 			if (info->finger_state[id] == 0) {
+			#if defined(TOUCH_BOOSTER)
+				if (info->finger_cnt == 0) {
+					prcmu_qos_update_requirement(
+						PRCMU_QOS_APE_OPP,
+						(char *)info->client->name,
+						PRCMU_QOS_APE_OPP_MAX);
+					prcmu_qos_update_requirement(
+						PRCMU_QOS_DDR_OPP,
+						(char *)info->client->name,
+						PRCMU_QOS_DDR_OPP_MAX);
+					prcmu_qos_update_requirement(
+						PRCMU_QOS_ARM_KHZ,
+						(char *)info->client->name,
+						800000);
+				}
+
+				info->finger_cnt++;
+			#endif		
 				info->finger_state[id] = 1;
 				dev_info(&client->dev,
 					"%4s[%d]: %3d, %3d (%3d,%3d)\n",
@@ -1371,7 +1417,7 @@ static int mms_ts_read_raw_data_all(struct mms_ts_info *info, u8 mode,
 	ret = 0;
 out:
 	hw_reboot_normal(info);
-	return ret;
+		return ret;
 }
 
 static int mms_ts_read_raw_data_one(struct mms_ts_info *info, u8 mode,
@@ -2787,7 +2833,15 @@ static int __devinit mms_ts_probe(struct i2c_client *client,
 			"failed to initialize device (%d)\n", ret);
 		goto err_init_device;
 	}
-
+#if defined(TOUCH_BOOSTER)
+	prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP, (char *)client->name,
+				  PRCMU_QOS_DEFAULT_VALUE);
+	prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP, (char *)client->name,
+				  PRCMU_QOS_DEFAULT_VALUE);
+	prcmu_qos_add_requirement(PRCMU_QOS_ARM_KHZ, (char *)client->name,
+				  PRCMU_QOS_DEFAULT_VALUE);
+	dev_info(&client->dev, "add_prcmu_qos is added\n");
+#endif
 	ret = request_threaded_irq(client->irq, NULL, mms_ts_interrupt,
 				   IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
 				   "mms_ts", info);
