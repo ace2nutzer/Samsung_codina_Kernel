@@ -28,6 +28,8 @@
 #include <linux/mfd/abx500/ux500_chargalg.h>
 #include <linux/mfd/abx500/ab8500-bm.h>
 #include <linux/mfd/abx500/ab8500-gpadc.h>
+#include <linux/input/bt404_ts.h>
+#include <linux/input/sweep2wake.h>
 
 /* Watchdog kick interval */
 #define CHG_WD_INTERVAL			(60 * HZ)
@@ -68,7 +70,7 @@ static int charging_stats = CHARGING_STOPPED;
 
 static bool eoc_first = 0;
 static bool eoc_real = 0;
-static bool is_suspend = 0;
+bool is_suspend = 0;
 
 static void ab8500_chargalg_early_suspend(struct early_suspend *h)
 {
@@ -1236,10 +1238,23 @@ static int ab8500_chargalg_get_ext_psy_data(struct device *dev, void *data)
                                 (di->chg_info.conn_chg & AC_CHG || di->chg_info.conn_chg & USB_CHG);
 			if (!ret.intval && is_charger) {
 				is_charger_present = false;
+
 				/* disable BLN */
 				bln_disable_backlights(gen_all_leds_mask());
+
+				/* disable touch driver for sweep2wake */
+				if (!s2w_switch && is_suspend) {
+					early_suspend_bt404_ts();
+				}
+
 			} else if (ret.intval && is_charger) {
 				is_charger_present = true;
+
+				/* enable touch driver for sweep2wake */
+				if (!s2w_switch && is_suspend) {
+					late_resume_bt404_ts();
+				}
+
 			}
 			switch (ext->type) {
 			case POWER_SUPPLY_TYPE_BATTERY:

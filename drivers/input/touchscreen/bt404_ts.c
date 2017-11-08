@@ -4317,9 +4317,9 @@ err_i2c:
 	return ret;
 }
 
-static bool is_suspend = false;
 static bool is_awaken = false;
 static bool is_sleep = false;
+extern unsigned int is_charger_present;
 
 #if defined(CONFIG_PM) || defined(CONFIG_HAS_EARLYSUSPEND)
 static int bt404_ts_suspend(struct device *dev)
@@ -4334,7 +4334,7 @@ static int bt404_ts_suspend(struct device *dev)
 		goto out;
 	}
 
-        if (s2w_switch) {
+        if (s2w_switch || is_charger_present) {
                         pr_err("%s: skipped\n", __func__);
 		goto out;
         }
@@ -4385,11 +4385,6 @@ static int bt404_ts_resume(struct device *dev)
 		goto out;
 	}
 
-        if (s2w_switch) {
-                                pr_err("%s: skipped\n", __func__);
-		goto out;
-        }
-
 	data->pdata->int_set_pull(true);
 	data->enabled = true;
 
@@ -4418,49 +4413,37 @@ out:
 }
 #endif
 
-static inline bool early_suspend_(void)
+inline bool early_suspend_bt404_ts(void)
 {
-        if (!is_sleep) {
-                is_sleep = true;
-                is_awaken = false;
-                bt404_ts_suspend(&data_->client->dev);
-	}	
-
-       return !is_sleep;
+	if (!is_sleep) {
+		is_sleep = true;
+		is_awaken = false;
+		bt404_ts_suspend(&data_->client->dev);
+	}       
+ 
+	return !is_sleep;
 }
 
-static inline bool late_resume_(void)
+inline bool late_resume_bt404_ts(void)
 {
-        if (!is_awaken) {
-                bt404_ts_resume(&data_->client->dev);
-                is_awaken = true;
-                is_sleep = false;
-        }
-
-       return !is_awaken;
+	if (!is_awaken) {
+		bt404_ts_resume(&data_->client->dev);
+		is_sleep = false;
+		is_awaken = true;
+	}
+ 
+	return !is_awaken;
 }
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
 static void bt404_ts_late_resume(struct early_suspend *h)
 {
-       is_suspend = false;
-
-       if (s2w_switch) {
-               s2w_set_scr_suspended(is_suspend);
-       }
-
-	late_resume_();
+	late_resume_bt404_ts();
 }
 
 static void bt404_ts_early_suspend(struct early_suspend *h)
 {
-       is_suspend = true;
-
-       if (s2w_switch) {
-                s2w_set_scr_suspended(is_suspend);
-       }
-
-	early_suspend_();
+	early_suspend_bt404_ts();
 }
 
 #endif	/* CONFIG_HAS_EARLYSUSPEND */

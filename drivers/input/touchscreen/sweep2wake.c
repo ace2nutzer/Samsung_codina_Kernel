@@ -31,7 +31,6 @@
 #endif
 
 /* Tuneables */
-#define S2W_DEFAULT	0		/* enable/disable S2W by default */
 #define DEBUG                   0
 #define S2W_Y_LIMIT             800 /* screen height */
 #define S2W_X_MAX               480 /* screen width */
@@ -41,9 +40,11 @@
 #define S2W_PWRKEY_DUR          60  /* Milliseconds to "press" power key */
 
 /* Resources */
-int s2w_switch = S2W_DEFAULT;
-static bool scr_suspended = false, exec_count = true;
-static bool scr_on_touch = false, barrier[2] = {false, false};
+int s2w_switch = 0;
+extern unsigned int is_charger_present;
+extern bool is_suspend;
+static bool exec_count = true;
+static bool barrier[2] = {false, false};
 static struct input_dev * sweep2wake_pwrdev;
 static DEFINE_MUTEX(pwrkeyworklock);
 
@@ -54,22 +55,6 @@ bool is_s2w_wakelock_active(void) {
 }
 static bool s2w_use_wakelock = true;
 #endif
-
-/* Read cmdline for s2w */
-static int __init read_s2w_cmdline(char *s2w)
-{
-	if (strcmp(s2w, "1") == 0) {
-		printk(KERN_INFO "[cmdline_s2w]: Sweep2Wake enabled. | s2w='%s'", s2w);
-		s2w_switch = 1;
-	} else if (strcmp(s2w, "0") == 0) {
-		printk(KERN_INFO "[cmdline_s2w]: Sweep2Wake disabled. | s2w='%s'", s2w);
-		s2w_switch = 0;
-	} else {
-		printk(KERN_INFO "[cmdline_s2w]: No valid input found. Going with default: | s2w='%u'", s2w_switch);
-	}
-	return 1;
-}
-__setup("s2w=", read_s2w_cmdline);
 
 /* PowerKey setter */
 void sweep2wake_setdev(struct input_dev * input_device) {
@@ -106,7 +91,6 @@ void s2w_reset(void)
 	exec_count = true;
 }
 
-
 static unsigned int is_lpm = 0;
 module_param_named(is_lpm, is_lpm, uint, 0644);
 
@@ -125,7 +109,7 @@ void detect_sweep2wake(int x, int y, bool st)
                 x, y, (single_touch) ? "true" : "false");
 #endif
 	//left->right
-	if ((single_touch) && (scr_suspended || is_lpm) && (s2w_switch > 0)) {
+	if ((single_touch) && (is_suspend || is_lpm) && (s2w_switch > 0 || is_charger_present)) {
 		prevx = 0;
 		nextx = S2W_X_B1;
 		if ((barrier[0] == true) ||
@@ -153,36 +137,6 @@ void detect_sweep2wake(int x, int y, bool st)
 				}
 			}
 		}
-	//right->left
-	} else if ((single_touch) && (scr_suspended == false) && (s2w_switch > 0)) {
-		scr_on_touch=true;
-		prevx = (S2W_X_MAX - S2W_X_FINAL);
-		nextx = S2W_X_B2;
-		if ((barrier[0] == true) ||
-		   ((x < prevx) &&
-		    (x > nextx) &&
-		    (y > S2W_Y_LIMIT))) {
-			prevx = nextx;
-			nextx = S2W_X_B1;
-			barrier[0] = true;
-			if ((barrier[1] == true) ||
-			   ((x < prevx) &&
-			    (x > nextx) &&
-			    (y > S2W_Y_LIMIT))) {
-				prevx = nextx;
-				barrier[1] = true;
-				if ((x < prevx) &&
-				    (y > S2W_Y_LIMIT)) {
-					if (x < S2W_X_FINAL) {
-						if (exec_count) {
-							printk(KERN_INFO "[sweep2wake]: OFF");
-							sweep2wake_pwrtrigger();
-							exec_count = false;
-						}
-					}
-				}
-			}
-		}
 	}
 }
 
@@ -190,29 +144,13 @@ void detect_sweep2wake(int x, int y, bool st)
  * INIT / EXIT stuff below here
  */
 
-void s2w_set_scr_suspended(bool suspended)
-{
-	scr_suspended = suspended;
-	s2w_reset();
-}
-
 static int set_enable(const char *val, struct kernel_param *kp)
 {
 	int max_tries = 10; 
 	int tries = 0;
-	if(scr_suspended){
-		/*
-		 * Meticulus:
-		 * We can't change the "enable" while the screen is off because
-		 * it causes unbalanced irq enable/disable requests. So
-		 * I'm waking the screen and then setting it.
-		 */
-		if(DEBUG)	
-			printk("s2w: cant enable/disable while screen is off! Waking...\n");
+	if(is_suspend){
 
-		sweep2wake_pwrtrigger();
-
-		while(scr_suspended && tries <= max_tries){
+		while(is_suspend && tries <= max_tries){
 			msleep(200);
 			tries = tries + 1;
 		}
