@@ -193,7 +193,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
 export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH		?=arm
-CROSS_COMPILE	?=/home/ace2nutzer/codinap/android_tools/gcc-linaro-7.1.1-2017.08-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-
+CROSS_COMPILE	?=/home/ace2nutzer/codinap/android_tools/gcc-linaro-4.9.4-2017.01-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-
 
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
@@ -390,25 +390,22 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -ftree-vectorize \
 		   -mvectorize-with-neon-quad \
 		   -DNDEBUG \
-		   -pipe
+		   -pipe \
+		   -fdiagnostics-color=auto
 
 CFLAGS_O2 := -O2 \
 		   -funswitch-loops \
 		   -fpredictive-commoning \
 		   -fgcse-after-reload \
 		   -ftree-loop-distribute-patterns \
-		   -fsplit-paths \
-		   -ftree-partial-pre \
-		   -fpeel-loops
+		   -ftree-partial-pre
 
 CFLAGS_OS := -Os \
 		   -fno-unswitch-loops \
 		   -fno-predictive-commoning \
 		   -fno-gcse-after-reload \
 		   -fno-tree-loop-distribute-patterns \
-		   -fno-split-paths \
-		   -fno-tree-partial-pre \
-		   -fno-peel-loops
+		   -fno-tree-partial-pre
 
 AFLAGS_O2 :=
 AFLAGS_OS :=
