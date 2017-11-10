@@ -140,3 +140,6 @@ scripts/selinux/mdp/mdp
 security/selinux/av_permissions.h
 security/selinux/flask.h
 clean
+build_kernel_sdcard_only.sh
+edit_kernel.sh
+clean.sh
