@@ -16,7 +16,7 @@ USING_HWMEM ?= 1
 USING_OS_MEMORY ?= 1
 USING_GPU_UTILIZATION ?= 1
 
-ifeq ($(CONFIG_GPU_MALI_DEBUG),y)
+ifeq ($(CONFIG_MALI400_DEBUG),y)
 BUILD ?= debug
 else
 BUILD ?= release

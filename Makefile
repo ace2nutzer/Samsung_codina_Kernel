@@ -245,16 +245,14 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS = -Wall -Wmissing-prototypes -Wstrict-prototypes -Werror=return-type -mhard-float -fno-strict-aliasing -fno-strict-overflow -fomit-frame-pointer -DNDEBUG -std=gnu89 -pipe
-HOSTCXXFLAGS = -Werror=return-type -mhard-float -fno-strict-aliasing -fno-strict-overflow -fomit-frame-pointer -DNDEBUG -pipe
+HOSTCFLAGS   := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 \
+		-fomit-frame-pointer -std=gnu89 -m64 -mfpmath=387 \
+		-Werror=return-type -fno-strict-aliasing -fno-strict-overflow \
+		-DNDEBUG -pipe -march=core2 -mtune=core2 -mhard-float
 
-ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-HOSTCFLAGS	+= $(CFLAGS_OS) $(call cc-disable-warning,maybe-uninitialized,)
-HOSTCXXFLAGS  += $(CFLAGS_OS) $(call cc-disable-warning,maybe-uninitialized,)
-else
-HOSTCFLAGS	+= $(CFLAGS_O2)
-HOSTCXXFLAGS  += $(CFLAGS_O2)
-endif
+HOSTCXXFLAGS := -O2 -fomit-frame-pointer -mfpmath=387 \
+		-Werror=return-type -fno-strict-aliasing -fno-strict-overflow \
+		-DNDEBUG -pipe -m64 -march=core2 -mtune=core2 -mhard-float
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -376,45 +374,24 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
-		   -Werror=return-type \
-		   -std=gnu89 $(call cc-option,-fno-PIE) \
 		   -fno-delete-null-pointer-checks \
+		   -std=gnu89 -fno-PIE -fno-PIC \
+		   -Werror=return-type \
 		   -D_FORTIFY_SOURCE=1 \
 		   -march=armv7-a \
 		   -mcpu=cortex-a9 \
 		   -mtune=cortex-a9 \
-		   -mfpu=neon \
+		   -mfpu=vfpv3 \
 		   -mfloat-abi=hard \
 		   -marm \
 		   -mno-thumb-interwork \
-		   -ftree-vectorize \
-		   -mvectorize-with-neon-quad \
+		   -mstructure-size-boundary=32 \
 		   -DNDEBUG \
 		   -pipe
 
-CFLAGS_O2 := -O2 \
-		   -funswitch-loops \
-		   -fpredictive-commoning \
-		   -fgcse-after-reload \
-		   -ftree-loop-distribute-patterns \
-		   -fsplit-paths \
-		   -ftree-partial-pre \
-		   -fpeel-loops
-
-CFLAGS_OS := -Os \
-		   -fno-unswitch-loops \
-		   -fno-predictive-commoning \
-		   -fno-gcse-after-reload \
-		   -fno-tree-loop-distribute-patterns \
-		   -fno-split-paths \
-		   -fno-tree-partial-pre \
-		   -fno-peel-loops
-
-AFLAGS_O2 :=
-AFLAGS_OS :=
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
-KBUILD_AFLAGS   := -D__ASSEMBLY__ $(call cc-option,-fno-PIE) -marm -mfpu=neon -mfloat-abi=hard -ftree-vectorize -mvectorize-with-neon-quad
+KBUILD_AFLAGS   := -D__ASSEMBLY__ -fno-PIE -fno-PIC -marm -mfpu=vfpv3 -mfloat-abi=hard -mno-thumb-interwork -march=armv7-a -mcpu=cortex-a9 -mtune=cortex-a9
 KBUILD_AFLAGS_MODULE  := -DMODULE
 KBUILD_CFLAGS_MODULE  := -DMODULE
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
@@ -434,7 +411,7 @@ export KBUILD_CFLAGS CFLAGS_KERNEL CFLAGS_MODULE CFLAGS_GCOV
 export KBUILD_AFLAGS AFLAGS_KERNEL AFLAGS_MODULE
 export KBUILD_AFLAGS_MODULE KBUILD_CFLAGS_MODULE KBUILD_LDFLAGS_MODULE
 export KBUILD_AFLAGS_KERNEL KBUILD_CFLAGS_KERNEL
-export KBUILD_ARFLAGS CFLAGS_OS AFLAGS_OS CFLAGS_O2 AFLAGS_O2
+export KBUILD_ARFLAGS
 
 # When compiling out-of-tree modules, put MODVERDIR in the module
 # tree rather than in the kernel tree. The kernel tree might
@@ -601,12 +578,10 @@ endif # $(dot-config)
 # Defaults to vmlinux, but the arch makefile usually adds further targets
 all: vmlinux
 
-KBUILD_CFLAGS	+= $(call cc-disable-warning,maybe-uninitialized,)
-
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS	+= $(CFLAGS_OS)
+KBUILD_CFLAGS	+= -Os
 else
-KBUILD_CFLAGS	+= $(CFLAGS_O2)
+KBUILD_CFLAGS	+= -O2
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile

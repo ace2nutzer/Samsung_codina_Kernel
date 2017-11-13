@@ -31,7 +31,7 @@ MMUEXT		:= -nommu
 endif
 
 ifeq ($(CONFIG_FRAME_POINTER),y)
-KBUILD_CFLAGS  +=-fno-omit-frame-pointer -mapcs -mno-sched-prolog
+KBUILD_CFLAGS	+=-fno-omit-frame-pointer -mapcs -mno-sched-prolog
 endif
 
 ifeq ($(CONFIG_CPU_BIG_ENDIAN),y)
@@ -50,17 +50,17 @@ comma = ,
 # Note that GCC does not numerically define an architecture version
 # macro, but instead defines a whole series of macros which makes
 # testing for a specific architecture or later rather impossible.
-
-arch-$(CONFIG_ARCH_U8500)                :=-D__LINUX_ARM_ARCH__=7
-
+arch-$(CONFIG_CPU_32v7)		:=-D__LINUX_ARM_ARCH__=7
+arch-$(CONFIG_CPU_32v6)		:=-D__LINUX_ARM_ARCH__=6
 # Only override the compiler option if ARMv6. The ARMv6K extensions are
 # always available in ARMv7
-
-ifeq ($(CONFIG_CPU_32v7),y)
-# Never want PIC in a 32-bit kernel, prevent breakage with GCC built
-# with nonstandard options
-KBUILD_CFLAGS += -fno-pic
+ifeq ($(CONFIG_CPU_32v6),y)
+arch-$(CONFIG_CPU_32v6K)	:=-D__LINUX_ARM_ARCH__=6
 endif
+arch-$(CONFIG_CPU_32v5)		:=-D__LINUX_ARM_ARCH__=5
+arch-$(CONFIG_CPU_32v4T)	:=-D__LINUX_ARM_ARCH__=4
+arch-$(CONFIG_CPU_32v4)		:=-D__LINUX_ARM_ARCH__=4
+arch-$(CONFIG_CPU_32v3)		:=-D__LINUX_ARM_ARCH__=3
 
 ifeq ($(CONFIG_AEABI),y)
 CFLAGS_ABI	:=-mabi=aapcs-linux
@@ -83,8 +83,9 @@ CFLAGS_MODULE	+=-fno-optimize-sibling-calls
 endif
 endif
 
-KBUILD_CFLAGS	+=$(CFLAGS_ABI) $(CFLAGS_THUMB2) $(arch-y) $(tune-y) $(call cc-option,-mshort-load-bytes,$(call cc-option,-malignment-traps,)) -mfpu=vfpv3 -fno-tree-vectorize
-KBUILD_AFLAGS	+=$(CFLAGS_ABI) $(AFLAGS_THUMB2) $(arch-y) $(tune-y) -include asm/unified.h -mfpu=vfpv3 -fno-tree-vectorize
+# Need -Uarm for gcc < 3.x
+KBUILD_CFLAGS	+=$(CFLAGS_ABI) $(CFLAGS_THUMB2) $(arch-y) $(tune-y) $(call cc-option,-mshort-load-bytes,$(call cc-option,-malignment-traps,))
+KBUILD_AFLAGS	+=$(CFLAGS_ABI) $(AFLAGS_THUMB2) $(arch-y) $(tune-y) -include asm/unified.h
 
 CHECKFLAGS	+= -D__arm__
 
@@ -169,7 +170,6 @@ machine-$(CONFIG_MACH_SPEAR600)		:= spear6xx
 
 # Platform directory name.  This list is sorted alphanumerically
 # by CONFIG_* macro name.
-mach-$(CONFIG_ARCH_U8500)		:= ux500
 plat-$(CONFIG_ARCH_MXC)		:= mxc
 plat-$(CONFIG_ARCH_OMAP)	:= omap
 plat-$(CONFIG_ARCH_S3C64XX)	:= samsung
