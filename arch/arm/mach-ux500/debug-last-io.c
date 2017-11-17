@@ -33,6 +33,7 @@ void ux500_debug_last_io_save(void *pc, void __iomem *vaddr)
 		ux500_last_io[index].jiffies = jiffies_64;
 	}
 }
+EXPORT_SYMBOL_GPL(ux500_debug_last_io_save);
 
 static int __init ux500_debug_last_io_init(void)
 {
