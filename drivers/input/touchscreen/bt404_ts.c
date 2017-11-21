@@ -4331,8 +4331,9 @@ static int bt404_ts_suspend(struct device *dev)
         if (s2w_switch || is_charger_present) {
                         pr_err("%s: skipped\n", __func__);
 		goto out;
+        }
 
-        } else if (!data->enabled) {
+	if (!data->enabled) {
 		dev_err(dev, "%s, already disabled\n", __func__);
 		ret = -1;
 		goto out;
@@ -4381,8 +4382,9 @@ static int bt404_ts_resume(struct device *dev)
         if (s2w_switch) {
                         pr_err("%s: skipped\n", __func__);
 		goto out;
+        }
 
-        } else if (data->enabled) {
+	if (data->enabled) {
 		dev_err(dev, "%s, already enabled\n", __func__);
 		ret = -1;
 		goto out;
@@ -4430,9 +4432,9 @@ inline bool early_suspend_bt404_ts(void)
 inline bool late_resume_bt404_ts(void)
 {
 	if (!is_awaken) {
+		bt404_ts_resume(&data_->client->dev);
 		is_sleep = false;
 		is_awaken = true;
-		bt404_ts_resume(&data_->client->dev);
 	}
  
 	return !is_awaken;
