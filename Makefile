@@ -193,7 +193,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
 export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH		?=arm
-CROSS_COMPILE	?=/home/ace2nutzer/codinap/android_tools/gcc-linaro-7.1.1-2017.08-x86_64_arm-eabi/bin/arm-eabi-
+CROSS_COMPILE	?=/home/ace2nutzer/codinap/android_tools/gcc-linaro-4.9.4-2017.01-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-
 
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
@@ -387,7 +387,8 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -mno-thumb-interwork \
 		   -mstructure-size-boundary=32 \
 		   -DNDEBUG \
-		   -pipe
+		   -pipe \
+		   -fdiagnostics-color=auto
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
