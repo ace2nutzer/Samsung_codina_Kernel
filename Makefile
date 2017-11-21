@@ -385,7 +385,6 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -mfloat-abi=hard \
 		   -marm \
 		   -mno-thumb-interwork \
-		   -mstructure-size-boundary=32 \
 		   -DNDEBUG \
 		   -pipe \
 		   -fdiagnostics-color=auto
