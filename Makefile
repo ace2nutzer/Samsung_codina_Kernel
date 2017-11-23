@@ -246,13 +246,15 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 HOSTCC       = gcc
 HOSTCXX      = g++
 HOSTCFLAGS   := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 \
-		-fomit-frame-pointer -std=gnu89 -m64 -mfpmath=387 \
+		-fomit-frame-pointer -std=gnu89 -m64 -mfpmath=sse \
 		-Werror=return-type -fno-strict-aliasing -fno-strict-overflow \
-		-DNDEBUG -pipe -march=core2 -mtune=core2 -mhard-float
+		-DNDEBUG -pipe -march=core2 -mtune=core2 -mhard-float \
+		-ftree-vectorize
 
-HOSTCXXFLAGS := -O2 -fomit-frame-pointer -mfpmath=387 \
+HOSTCXXFLAGS := -O2 -fomit-frame-pointer -mfpmath=sse \
 		-Werror=return-type -fno-strict-aliasing -fno-strict-overflow \
-		-DNDEBUG -pipe -m64 -march=core2 -mtune=core2 -mhard-float
+		-DNDEBUG -pipe -m64 -march=core2 -mtune=core2 -mhard-float \
+		-ftree-vectorize
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -381,17 +383,19 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -march=armv7-a \
 		   -mcpu=cortex-a9 \
 		   -mtune=cortex-a9 \
-		   -mfpu=vfpv3 \
+		   -mfpu=neon \
 		   -mfloat-abi=hard \
 		   -marm \
 		   -mno-thumb-interwork \
+		   -ftree-vectorize \
+		   -mvectorize-with-neon-quad \
 		   -DNDEBUG \
 		   -pipe \
 		   -fdiagnostics-color=auto
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
-KBUILD_AFLAGS   := -D__ASSEMBLY__ -fno-PIE -fno-PIC -marm -mfpu=vfpv3 -mfloat-abi=hard -mno-thumb-interwork -march=armv7-a -mcpu=cortex-a9 -mtune=cortex-a9
+KBUILD_AFLAGS   := -D__ASSEMBLY__
 KBUILD_AFLAGS_MODULE  := -DMODULE
 KBUILD_CFLAGS_MODULE  := -DMODULE
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
