@@ -4,7 +4,7 @@
 # create a compressed vmlinuz image from the original vmlinux
 #
 
-KBUILD_CFLAGS += -fno-stack-protector -fPIC -fPIE
+KBUILD_CFLAGS += -fno-stack-protector
 
 OBJS		=
 
@@ -114,7 +114,7 @@ ORIG_CFLAGS := $(KBUILD_CFLAGS)
 KBUILD_CFLAGS = $(subst -pg, , $(ORIG_CFLAGS))
 endif
 
-ccflags-y := -fpic -fpie -fno-builtin -I$(src)
+ccflags-y := -fpic -fno-builtin -I$(src)
 
 # Supply kernel BSS size to the decompressor via a linker symbol.
 KBSS_SZ = $(shell size $(obj)/../../../../vmlinux | awk 'END{print $$3}')

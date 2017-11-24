@@ -377,7 +377,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
-		   -std=gnu89 -fno-PIE -fno-PIC \
+		   -std=gnu89 \
 		   -Werror=return-type \
 		   -D_FORTIFY_SOURCE=1 \
 		   -march=armv7-a \
