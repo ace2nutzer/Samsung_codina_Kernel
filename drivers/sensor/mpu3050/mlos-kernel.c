@@ -80,8 +80,7 @@ void MLOSFClose(FILE *fp)
 
 void MLOSSleep(int mSecs)
 {
-	/* msleep(mSecs); */
-	mdelay(mSecs);
+	msleep(mSecs);
 }
 
 unsigned long MLOSGetTickCount(void)
