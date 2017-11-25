@@ -1208,7 +1208,7 @@ static void est_test_timer_func(unsigned long data)
 }
 #endif
 #endif
-static int __devinit ws2401_dpi_spi_probe(struct spi_device *spi)
+static int __init ws2401_dpi_spi_probe(struct spi_device *spi)
 {
 	int ret = 0;
 	struct ws2401_dpi *lcd = container_of(spi->dev.driver,
@@ -1579,7 +1579,7 @@ static void ws2401_dpi_mcde_late_resume(
 }
 #endif
 
-static struct mcde_display_driver ws2401_dpi_mcde __refdata = {
+static struct mcde_display_driver ws2401_dpi_mcde = {
 	.probe          = ws2401_dpi_mcde_probe,
 	.remove         = ws2401_dpi_mcde_remove,
 	.shutdown	= ws2401_dpi_mcde_shutdown,
