@@ -2304,7 +2304,7 @@ static int ab8500_chargalg_get_property(struct power_supply *psy,
 
 		/* Send the charge status of the battery*/
 		val->intval = di->charge_status;
-//		pr_info("%s: status (%d)\n", __func__, val->intval);
+		pr_info("%s: status (%d)\n", __func__, val->intval);
 		break;
 
 	case POWER_SUPPLY_PROP_HEALTH:
