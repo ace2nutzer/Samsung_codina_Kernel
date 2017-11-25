@@ -240,6 +240,7 @@ static void mali_boost_init(void)
 static _mali_osk_errcode_t mali_platform_powerdown(void)
 {
 	if (is_running) {
+		last_utilization = 0;
 		mali_utilization_function(NULL);
 
 #if CONFIG_HAS_WAKELOCK
@@ -263,6 +264,7 @@ static _mali_osk_errcode_t mali_platform_powerdown(void)
 static _mali_osk_errcode_t mali_platform_powerup(void)
 {
 	if (!is_running) {
+		last_utilization = 255;
 		mali_utilization_function(NULL);
 		int ret = regulator_enable(regulator);
 		if (ret < 0) {
