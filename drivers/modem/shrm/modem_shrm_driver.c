@@ -355,6 +355,9 @@ static int common_receive(struct shrm_dev *shrm, void *data,
 			tasklet_schedule(&ipcdata_rcv_tasklet);
 	}
 
+#ifdef CONFIG_U8500_KERNEL_CLIENT
+exit:
+#endif
 	dev_dbg(shrm->dev, "%s OUT\n", __func__);
 	return ret;
 }
@@ -553,9 +556,6 @@ void do_phonet_rcv_tasklet(unsigned long unused)
 			break;
 		}
 	}
-#ifdef CONFIG_U8500_KERNEL_CLIENT
-exit:
-#endif
 	dev_dbg(shrm->dev, "%s OUT\n", __func__);
 }
 #endif
