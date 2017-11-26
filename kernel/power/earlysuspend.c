@@ -20,10 +20,13 @@
 #include <linux/syscalls.h> /* sys_sync */
 #include <linux/wakelock.h>
 #include <linux/workqueue.h>
+#ifdef CONFIG_ZRAM_FOR_ANDROID
+#include <asm/atomic.h>
+#endif /* CONFIG_ZRAM_FOR_ANDROID */
 
 #include "power.h"
 
-int deepest_allowed_cstate = CONFIG_DBX500_CPUIDLE_DEEPEST_STATE;
+extern int deepest_allowed_state;
 
 enum {
 	DEBUG_USER_STATE = 1U << 0,
@@ -31,6 +34,11 @@ enum {
 	DEBUG_VERBOSE = 1U << 3,
 };
 static int debug_mask = DEBUG_USER_STATE;
+#ifdef CONFIG_ZRAM_FOR_ANDROID
+atomic_t optimize_comp_on = ATOMIC_INIT(0);
+EXPORT_SYMBOL(optimize_comp_on);
+#endif /* CONFIG_ZRAM_FOR_ANDROID */
+
 module_param_named(debug_mask, debug_mask, int, S_IRUGO | S_IWUSR | S_IWGRP);
 
 static DEFINE_MUTEX(early_suspend_lock);
@@ -81,6 +89,9 @@ static void early_suspend(struct work_struct *work)
 
 	mutex_lock(&early_suspend_lock);
 	spin_lock_irqsave(&state_lock, irqflags);
+#ifdef CONFIG_ZRAM_FOR_ANDROID
+	atomic_set(&optimize_comp_on, 1);
+#endif /* CONFIG_ZRAM_FOR_ANDROID */
 	if (state == SUSPEND_REQUESTED)
 		state |= SUSPENDED;
 	else
@@ -124,6 +135,9 @@ static void late_resume(struct work_struct *work)
 
 	mutex_lock(&early_suspend_lock);
 	spin_lock_irqsave(&state_lock, irqflags);
+#ifdef CONFIG_ZRAM_FOR_ANDROID
+	atomic_set(&optimize_comp_on, 0);
+#endif /* CONFIG_ZRAM_FOR_ANDROID */
 	if (state == SUSPENDED)
 		state &= ~SUSPENDED;
 	else
@@ -166,7 +180,6 @@ void request_suspend_state(suspend_state_t new_state)
 		getnstimeofday(&ts);
 		rtc_time_to_tm(ts.tv_sec, &tm);
 		pm_suspend_state = (int) new_state;
-
 		pr_info("request_suspend_state: %s (%d->%d) at %lld "
 			"(%d-%02d-%02d %02d:%02d:%02d.%09lu UTC)\n",
 			new_state != PM_SUSPEND_ON ? "sleep" : "wakeup",
@@ -189,12 +202,12 @@ void request_suspend_state(suspend_state_t new_state)
 
 static int set_goto_suspend(const char *val, struct kernel_param *kp)
 {
-	if (sysfs_streq(val, "0"))
-		request_suspend_state(0);
-	else
-		request_suspend_state(deepest_allowed_cstate);
+       if (sysfs_streq(val, "0"))
+               request_suspend_state(0);
+       else
+               request_suspend_state(deepest_allowed_state);
 
-	return 0;
+       return 0;
 }
 
 module_param_call(goto_suspend, set_goto_suspend, param_get_int, &pm_suspend_state, 0644);
