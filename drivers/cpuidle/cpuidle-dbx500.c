@@ -30,6 +30,8 @@
 #include "cpuidle-dbx500.h"
 #include "cpuidle-dbx500_dbg.h"
 
+extern int deepest_allowed_state;
+
 /*
  * All measurements are with two cpus online (worst case) and at
  * 200 MHz (worst case)
@@ -357,7 +359,7 @@ static int determine_sleep_state(u32 *sleep_time, int loc_idle_counter,
 	 * Never go deeper than the governor recommends even though it might be
 	 * possible from a scheduled wake up point of view
 	 */
-	max_depth = ux500_ci_dbg_deepest_state();
+	max_depth = deepest_allowed_state;
 
 	for_each_online_cpu(cpu) {
 		if (max_depth > per_cpu(cpu_state, cpu)->gov_cstate)
@@ -440,8 +442,8 @@ static int enter_sleep(struct cpuidle_device *dev,
 	/* Retrive the cstate that the governor recommends for this CPU */
 	state->gov_cstate = (int) cpuidle_get_statedata(ci_state);
 
-	if (state->gov_cstate > ux500_ci_dbg_deepest_state())
-		state->gov_cstate = ux500_ci_dbg_deepest_state();
+	if (state->gov_cstate > deepest_allowed_state)
+		state->gov_cstate = deepest_allowed_state;
 
 	if (cstates[state->gov_cstate].ARM != ARM_ON)
 		migrate_timer = true;

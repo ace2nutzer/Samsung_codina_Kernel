@@ -10,7 +10,6 @@
 #define __DBX500_CPUIDLE_DBG_H
 
 #include <linux/ktime.h>
-#include <linux/bln.h>
 
 #ifndef CONFIG_DBX500_CPUIDLE_DEEPEST_STATE
 #define CONFIG_DBX500_CPUIDLE_DEEPEST_STATE 1
@@ -43,8 +42,7 @@ void ux500_ci_dbg_register_reason(int idx,
 				  u32 max_depth);
 
 bool ux500_ci_dbg_force_ape_on(void);
-int ux500_ci_dbg_deepest_state(void);
-void ux500_ci_dbg_set_deepest_state(int state);
+void ux500_ci_dbg_deepest_state(void);
 
 void ux500_ci_dbg_console(void);
 void ux500_ci_dbg_console_check_uart(void);
@@ -84,19 +82,6 @@ static inline bool ux500_ci_dbg_force_ape_on(void)
 {
 	return false;
 }
-
-static inline int ux500_ci_dbg_deepest_state(void)
-{
-	/* BLN Fix */
-	if (bln_is_ongoing()) {
-	return 2;
-	} else {
-
-	return CONFIG_DBX500_CPUIDLE_DEEPEST_STATE;
-	}
-}
-
-static inline void ux500_ci_dbg_set_deepest_state(int state) { }
 
 static inline void ux500_ci_dbg_console(void) { }
 static inline void ux500_ci_dbg_console_check_uart(void) { }
