@@ -2300,11 +2300,11 @@ static int ab8500_chargalg_get_property(struct power_supply *psy,
 
 	switch (psp) {
 	case POWER_SUPPLY_PROP_STATUS:
-		//val->intval = convert_state_and_status_to_usr_status(di) ;
+		val->intval = convert_state_and_status_to_usr_status(di) ;
 
 		/* Send the charge status of the battery*/
-		val->intval = di->charge_status;
-		pr_info("%s: status (%d)\n", __func__, val->intval);
+		//val->intval = di->charge_status;
+		//pr_info("%s: status (%d)\n", __func__, val->intval);
 		break;
 
 	case POWER_SUPPLY_PROP_HEALTH:
