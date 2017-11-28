@@ -89,7 +89,7 @@ static DEFINE_PER_CPU(struct state_history, *state_history);
 static DEFINE_SPINLOCK(state_lock);
 
 static struct delayed_work cpuidle_work;
-static u32 dbg_console_enable = 0;
+static u32 dbg_console_enable = 1;
 static void __iomem *uart_base;
 static struct clk *uart_clk;
 
@@ -491,8 +491,7 @@ void ux500_ci_dbg_log_post_mortem(int ctarget,
 void ux500_ci_dbg_wake_time(ktime_t time_wake)
 {
 }
-void ux500_ci_dbg_log_post_mortem(int ctarget,
-				ktime_t enter_time, ktime_t est_wake_common,
+void ux500_ci_dbg_log_post_mortem(ktime_t enter_time, ktime_t est_wake_common,
 				ktime_t est_wake, int sleep, bool is_last)
 {
 }
@@ -1288,7 +1287,7 @@ void __init ux500_ci_dbg_init(void)
 	cstates = ux500_ci_get_cstates(&cstates_len);
 
 	if(jig_smd)
-		deepest_allowed_state = CONFIG_DBX500_CPUIDLE_DEEPEST_STATE;
+		deepest_allowed_state = CONFIG_DBX500_CPUIDLE_DEEPEST_STATE - 1;
 
 	if (deepest_allowed_state > cstates_len)
 		deepest_allowed_state = cstates_len;

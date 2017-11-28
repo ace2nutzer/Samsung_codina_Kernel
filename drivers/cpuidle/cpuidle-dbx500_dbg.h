@@ -10,6 +10,7 @@
 #define __DBX500_CPUIDLE_DBG_H
 
 #include <linux/ktime.h>
+#include <linux/bln.h>
 
 #ifndef CONFIG_DBX500_CPUIDLE_DEEPEST_STATE
 #define CONFIG_DBX500_CPUIDLE_DEEPEST_STATE 1
@@ -86,7 +87,13 @@ static inline bool ux500_ci_dbg_force_ape_on(void)
 
 static inline int ux500_ci_dbg_deepest_state(void)
 {
+	/* BLN Fix */
+	if (bln_is_ongoing()) {
+	return 2;
+	} else {
+
 	return CONFIG_DBX500_CPUIDLE_DEEPEST_STATE;
+	}
 }
 
 static inline void ux500_ci_dbg_set_deepest_state(int state) { }

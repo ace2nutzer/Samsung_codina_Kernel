@@ -19,7 +19,6 @@
 #include <linux/mfd/dbx500-prcmu.h>
 #include <linux/regulator/db8500-prcmu.h>
 #include <linux/cpuidle-dbx500.h>
-#include <linux/bln.h>
 
 #include <mach/pm.h>
 #include <mach/pm-timer.h>
@@ -354,18 +353,11 @@ static int determine_sleep_state(u32 *sleep_time, int loc_idle_counter,
 
 	if (((*sleep_time) == UINT_MAX) || ((*sleep_time) == 0))
 		return CI_WFI;
-
-	/* BLN Fix */
-	if (bln_is_ongoing()) {
-	max_depth = 2;
-	} else {
-
 	/*
 	 * Never go deeper than the governor recommends even though it might be
 	 * possible from a scheduled wake up point of view
 	 */
 	max_depth = ux500_ci_dbg_deepest_state();
-	}
 
 	for_each_online_cpu(cpu) {
 		if (max_depth > per_cpu(cpu_state, cpu)->gov_cstate)
