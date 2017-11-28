@@ -2714,7 +2714,7 @@ static int ab8500_fg_get_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_CAPACITY_RAW:
 
 		val->intval = (di->bat_cap.mah  * 1000) / di->bat_cap.max_mah ;
-		printk("raw soc = %d",val->intval);
+		//printk("raw soc = %d",val->intval);
 		break;
 
 #endif
