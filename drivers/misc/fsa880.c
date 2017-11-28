@@ -553,8 +553,9 @@ static unsigned long get_current_connection_mask(struct FSA9480_instance *instan
 
 	printk(KERN_INFO "%s entered\n", __func__);
 	read_FSA9480_register(instance, FSA9490_INTERRUPT_1_REGISTER, &c);
-	printk(KERN_INFO "%s : Read Interrupt 1 Register: %#x\n", __func__, c);
 
+
+	printk(KERN_INFO "%s : Read Interrupt 1 Register: %#x\n", __func__, c);
 	event |= (c & FSA9490_ATTACH_MASK_BIT) ? USB_SWITCH_CONNECTION_EVENT : 0;
 	event |= (c & FSA9490_DETACH_MASK_BIT) ? USB_SWITCH_DISCONNECTION_EVENT : 0;
 
@@ -607,6 +608,7 @@ static void usb_switch_notify_clients(struct work_struct *work)
 	read_FSA9480_register(instance, FSA9490_DEVICE_ID_REGISTER, &id);
 
 	/* Check Device */
+
 	instance->prev_event = instance->last_event;
 	instance->last_event = get_current_connection_mask(instance);
 
@@ -628,14 +630,27 @@ static void usb_switch_notify_clients(struct work_struct *work)
 			read_FSA9480_register(instance, FSA9490_CONTROL_REGISTER, &c);
 			c &= ~CON_MANUAL_SW & ~CON_RAW_DATA;
 			write_FSA9480_register(instance, FSA9490_CONTROL_REGISTER, c);
-		}	
+		}
 		switch_set_state(&switch_dock, 1);
-	} else 
+	} else
 #endif
-
     if (instance->last_event == USB_SWITCH_DISCONNECTION_EVENT &&
 			instance->prev_event == (USB_SWITCH_CONNECTION_EVENT | EXTERNAL_AV_CABLE)) {
-		if (id == FC_9485) {	
+		if (id == FC_9485) {
+			printk(KERN_INFO "%s: GPIO #200 Value : %x\n", __func__, gpio_get_value(200));
+
+			write_FSA9480_register(instance, FSA9490_MANUAL_SWITCH_1_REGISTER, 0x00);
+			read_FSA9480_register(instance, FSA9490_CONTROL_REGISTER, &c);
+			c |= CON_MANUAL_SW | CON_RAW_DATA;
+			write_FSA9480_register(instance, FSA9490_CONTROL_REGISTER, c);
+		}
+		switch_set_state(&switch_dock, 0);
+		if (id == TI_6111)
+			TI_SWreset(instance);
+	}
+	else if (instance->last_event == USB_SWITCH_DISCONNECTION_EVENT &&
+			instance->prev_event == EXTERNAL_AV_CABLE){
+		if (id == FC_9485) {
 			printk(KERN_INFO "%s: GPIO #200 Value : %x\n", __func__, gpio_get_value(200));
 
 			write_FSA9480_register(instance, FSA9490_MANUAL_SWITCH_1_REGISTER, 0x00);
@@ -825,7 +840,11 @@ static int init_driver_instance(struct FSA9480_instance *instance, struct i2c_cl
 	/* Read Control register of MUIC */
 	read_FSA9480_register(instance, FSA9490_CONTROL_REGISTER, &c);
 	printk(KERN_INFO "microUSB switch IC's Control register : 0x%02x, bootmode : %d\n", c, sec_bootmode);
- 
+
+	read_FSA9480_register(instance, FSA9490_INTERRUPT_1_REGISTER, &c);
+	if (instance->current_switch->valid_registers[FSA9490_INTERRUPT_2_REGISTER])
+	read_FSA9480_register(instance, FSA9490_INTERRUPT_2_REGISTER, &c);
+
 	gpio_request(instance->current_switch->connection_changed_interrupt_gpio, instance->current_switch->name);
 	nmk_gpio_set_pull(instance->current_switch->connection_changed_interrupt_gpio, NMK_GPIO_PULL_UP);
 	gpio_direction_input(instance->current_switch->connection_changed_interrupt_gpio);
@@ -879,9 +898,22 @@ static int init_driver_instance(struct FSA9480_instance *instance, struct i2c_cl
 	instance->started = 1;
 
 	switch_dock_init();
+	if (instance->last_event == (USB_SWITCH_CONNECTION_EVENT | EXTERNAL_AV_CABLE)){
+		switch_set_state(&switch_dock, 1);
+	}
+
+	if (instance->last_event == EXTERNAL_AV_CABLE)
+	{
+		switch_set_state(&switch_dock, 1);
+	}
 	i2c_set_clientdata(client, instance);
-	
-#if defined(FSA_DELAYED_WORK)
+
+#if defined(FSA_DELAYED_WORK) && defined(CONFIG_MACH_GAVINI)
+	ret = request_threaded_irq(instance->irq_bit, NULL, FSA9480_irq_thread_fn,
+			IRQF_NO_SUSPEND | IRQF_ONESHOT,
+			instance->current_switch->name, instance);	
+
+#elif defined(FSA_DELAYED_WORK)
 	ret = request_threaded_irq(instance->irq_bit, NULL, FSA9480_irq_thread_fn,
 			IRQF_TRIGGER_FALLING | IRQF_NO_SUSPEND | IRQF_ONESHOT,
 			instance->current_switch->name, instance);

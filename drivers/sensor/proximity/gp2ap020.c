@@ -1011,8 +1011,7 @@ static int light_input_init(struct gp2a_data *data)
 		return -ENOMEM;
 	}
 
-	input_set_capability(dev, EV_ABS, ABS_MISC);
-	input_set_abs_params(dev, ABS_MISC, 0, 1, 0, 0);
+	input_set_capability(dev, EV_REL, REL_MISC);
 
 	dev->name = "light_sensor";
 	input_set_drvdata(dev, data);
@@ -1262,7 +1261,10 @@ static void gp2a_work_func_light(struct work_struct *work)
 
 	if (data->light_buffer == i) {
 		if (data->light_count++ == LIGHT_BUFFER_NUM) {
-			input_report_abs(data->light_input_dev, ABS_MISC, adc);
+			if (adc == 0)
+				adc = 1;
+
+			input_report_rel(data->light_input_dev, REL_MISC, adc);
 			input_sync(data->light_input_dev);
 			data->light_count = 0;
 		}
@@ -1645,7 +1647,11 @@ static void gp2a_opt_shutdown(struct platform_device *pdev)
 			kfree(gp2a->proximity_input_dev);
 	}
 
+#ifdef CONFIG_MACH_GAVINI_CHN
+	cancel_delayed_work_sync(&gp2a->light_work);
+#else 
 	cancel_delayed_work(&gp2a->light_work);
+#endif
 	flush_scheduled_work();
 	mutex_destroy(&gp2a->ligt_mutex);
 

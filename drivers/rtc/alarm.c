@@ -592,18 +592,18 @@ static int alarm_resume(struct platform_device *pdev)
 	rtc_tm_to_time(&alarm.time, &now);
 	rtc_time_to_tm(now + 300, &alarm.time);
 
-	alarm.enabled = 0;
 
 #if defined(CONFIG_MACH_SEC_GOLDEN_CHN) || defined(CONFIG_MACH_JANICE_CHN) || defined(CONFIG_MACH_CODINA_CHN) || defined (CONFIG_MACH_GAVINI_CHN)
 	if (alarm_en_exit) {
+		alarm=autoboot_alm;
 		pr_info("%s, [%d] %d/%d/%d %d:%d:%d\n", __func__,
 			alarm.enabled, alarm.time.tm_year-100,
 			alarm.time.tm_mon+1, alarm.time.tm_mday,
 			alarm.time.tm_hour, alarm.time.tm_min,
 			alarm.time.tm_sec);
-		alarm.time.tm_min--;
-		alarm.enabled = 1;
 	}
+#else
+	alarm.enabled = 0;
 #endif
 
 	/* Write back value */

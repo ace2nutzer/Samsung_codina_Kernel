@@ -539,7 +539,7 @@ static struct usb_switch fsa880_data =	{
 		.connection_changed_interrupt_gpio	=	95	,
 		.charger_detect_gpio			=	0xffff 	, /*no charger detect gpio for this device*/
 		.valid_device_register_1_bits		=	0x74	,
-		.valid_device_register_2_bits		=	0x8F	,	
+		.valid_device_register_2_bits		=	0xFF	,	
 		.valid_registers			=	{0,1,1,1,1,0,0,1,0,0,1,1,0,0,0,0, 0, 0, 0, 1, 1  },
 };
 #endif

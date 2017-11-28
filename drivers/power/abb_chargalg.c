@@ -2238,8 +2238,15 @@ static int convert_state_to_usr_health(struct ab8500_chargalg *di )
 
 	case	STATE_HW_TEMP_PROTECT_INIT:
 	case	STATE_HW_TEMP_PROTECT:
-		ret = POWER_SUPPLY_HEALTH_OVERHEAT ;
-		break ;
+			if (ab8500_temp_too_low(di))
+				ret= POWER_SUPPLY_HEALTH_COLD;
+			else if (ab8500_temp_too_high(di))
+				ret= POWER_SUPPLY_HEALTH_OVERHEAT;
+			else if ((di->batt_data.temp <  di->bat->temp_high) && (di->batt_data.temp >  di->bat->temp_low))
+				ret= POWER_SUPPLY_HEALTH_GOOD;
+			else
+				ret= POWER_SUPPLY_HEALTH_OVERHEAT;
+			break ;
 
 	case	STATE_CHG_NOT_OK_INIT:	
 	case	STATE_CHG_NOT_OK:
@@ -2293,9 +2300,11 @@ static int ab8500_chargalg_get_property(struct power_supply *psy,
 
 	switch (psp) {
 	case POWER_SUPPLY_PROP_STATUS:
-		val->intval = convert_state_and_status_to_usr_status(di) ;
-		//val->intval = di->charge_status;
-		//pr_info("%s: status (%d)\n", __func__, val->intval);
+		//val->intval = convert_state_and_status_to_usr_status(di) ;
+
+		/* Send the charge status of the battery*/
+		val->intval = di->charge_status;
+		pr_info("%s: status (%d)\n", __func__, val->intval);
 		break;
 
 	case POWER_SUPPLY_PROP_HEALTH:

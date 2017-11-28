@@ -172,6 +172,19 @@ void ux500_rtcrtt_next(u32 time_us)
 {
 	writel(US_TO_TICKS(time_us), rtc_base + RTC_TLR1);
 }
+#if defined(CONFIG_MACH_SEC_GOLDEN_CHN)||defined(CONFIG_MACH_JANICE_CHN) || defined(CONFIG_MACH_CODINA_CHN) || defined(CONFIG_MACH_GAVINI_CHN)
+void ux500_rtcrtt_next_seconds(u32 sec)
+{
+	const unsigned int max_value = UINT_MAX/32768;
+	if (sec > max_value) {
+		pr_err("timer-rtt: %s : To large value %u s, "
+			"timer set to max value %u s!\n"
+			, __func__, sec, max_value);
+			sec = max_value;
+	}
+	writel(sec * 32768, rtc_base + RTC_TLR1);
+}
+#endif
 
 static irqreturn_t rtcrtt_interrupt(int irq, void *data)
 {

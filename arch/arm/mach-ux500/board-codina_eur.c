@@ -822,7 +822,7 @@ static int __init bt404_ts_init(void)
 	}
 	gpio_direction_input(TSP_INT_CODINA_R0_0);
 
-	bt404_ts_pdata.panel_type = (board_id >= 12) ?
+	bt404_ts_pdata.panel_type = (board_id >= 9) ?
 						GFF_PANEL : EX_CLEAR_PANEL;
 
 	printk(KERN_INFO "bt404: initialize pins\n");

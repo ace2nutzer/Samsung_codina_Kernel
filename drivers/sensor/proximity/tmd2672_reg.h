@@ -80,7 +80,7 @@
 #define GAIN_TRIM_PARAM   512
 #define GAIN_PARAM   1
 
-#ifdef CONFIG_MACH_CODINA
+#ifdef CONFIG_MACH_CODINA_EURO
    #define PRX_THRSH_HI_PARAM	 640
    #define PRX_THRSH_LO_PARAM	 460
 #else
@@ -88,15 +88,20 @@
    #define PRX_THRSH_LO_PARAM	450
 #endif
 
+#ifdef CONFIG_MACH_CODINA_EURO
+#define PRX_THRSH_HI_CALPARAM	640
+#define PRX_THRSH_LO_CALPARAM	460
+#else
 #define PRX_THRSH_HI_CALPARAM	500
 #define PRX_THRSH_LO_CALPARAM	400
+#endif
 
 #define PRX_ADC_TIME_PARAM  0xFF	/* [HSS] Original value : 0XEE */
 #define PRX_WAIT_TIME_PARAM  0xFF	/* 2.73ms */
 #define INTR_FILTER_PARAM  0x30
 #define PRX_CONFIG_PARAM  0x00
 
-#ifdef CONFIG_MACH_CODINA
+#ifdef CONFIG_MACH_CODINA_EURO
     #define PRX_PULSE_CNT_PARAM  0x06
 #else
     #define PRX_PULSE_CNT_PARAM  0x08

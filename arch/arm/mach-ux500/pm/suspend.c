@@ -40,6 +40,16 @@ void suspend_set_pins_force_fn(void (*force)(void), void (*force_mux)(void))
 	pins_suspend_force_mux = force_mux;
 }
 
+#if defined(CONFIG_MACH_SEC_GOLDEN_CHN)||defined(CONFIG_MACH_JANICE_CHN) || defined(CONFIG_MACH_CODINA_CHN) || defined(CONFIG_MACH_GAVINI_CHN)
+u32 alarm_sec;
+void suspend_set_alarm(u32 s)
+{
+	alarm_sec = s;
+}
+void ux500_rtcrtt_next_seconds(u32 sec);
+void ux500_rtcrtt_off(void);
+#endif
+
 static atomic_t block_sleep = ATOMIC_INIT(0);
 
 bool is_suspend_ongoing(void)
@@ -61,6 +71,7 @@ bool suspend_sleep_is_blocked(void)
 {
 	return (atomic_read(&block_sleep) != 0);
 }
+
 
 static int suspend(bool do_deepsleep)
 {
@@ -86,7 +97,9 @@ static int suspend(bool do_deepsleep)
 
 	/* configure the prcm for a sleep wakeup */
 	prcmu_enable_wakeups(suspend_wakeups);
-
+#if defined(CONFIG_MACH_SEC_GOLDEN_CHN)||defined(CONFIG_MACH_JANICE_CHN) || defined(CONFIG_MACH_CODINA_CHN) || defined(CONFIG_MACH_GAVINI_CHN)
+    ux500_rtcrtt_next_seconds(alarm_sec);
+#endif
 	ux500_suspend_dbg_test_set_wakeup();
 
 	context_vape_save();
@@ -183,6 +196,9 @@ exit:
 		context_gpio_mux_safe_switch(false);
 		context_gpio_restore();
 	}
+#if defined(CONFIG_MACH_SEC_GOLDEN_CHN)||defined(CONFIG_MACH_JANICE_CHN) || defined(CONFIG_MACH_CODINA_CHN) || defined(CONFIG_MACH_GAVINI_CHN)
+    ux500_rtcrtt_off();
+#endif
 
 	/* Configure the prcmu with the wake-ups that cpuidle needs */
 	prcmu_enable_wakeups(running_wakeups);

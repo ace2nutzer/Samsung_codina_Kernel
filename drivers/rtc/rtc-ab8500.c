@@ -56,6 +56,8 @@
 
 #if defined(CONFIG_MACH_SEC_GOLDEN_CHN)
 #define AB8500_RTC_EPOCH		2000
+#elif defined(CONFIG_MACH_JANICE_CHN) || defined(CONFIG_MACH_CODINA_CHN) || defined(CONFIG_MACH_GAVINI_CHN) 
+#define AB8500_RTC_EPOCH		2012
 #else
 #define AB8500_RTC_EPOCH		1999
 #endif
@@ -247,7 +249,9 @@ static int ab8500_rtc_irq_enable(struct device *dev, unsigned int enabled)
 		AB8500_RTC_STAT_REG, RTC_ALARM_ENA,
 		enabled ? RTC_ALARM_ENA : 0);
 }
-
+#if defined(CONFIG_MACH_SEC_GOLDEN_CHN)||defined(CONFIG_MACH_JANICE_CHN) || defined(CONFIG_MACH_CODINA_CHN) || defined(CONFIG_MACH_GAVINI_CHN)
+void suspend_set_alarm(u32 s);
+#endif
 static int ab8500_rtc_set_alarm(struct device *dev, struct rtc_wkalrm *alarm)
 {
 	int retval, i;
@@ -274,7 +278,9 @@ static int ab8500_rtc_set_alarm(struct device *dev, struct rtc_wkalrm *alarm)
 		return retval;
 
 	rtc_tm_to_time(&tm, &secs_now);
-
+#if defined(CONFIG_MACH_SEC_GOLDEN_CHN)||defined(CONFIG_MACH_JANICE_CHN) || defined(CONFIG_MACH_CODINA_CHN) || defined(CONFIG_MACH_GAVINI_CHN)
+	suspend_set_alarm(secs - secs_now);
+#endif
 	/*
 	 * Convert it to the number of seconds since 01-01-2000 00:00:00, since
 	 * we only have a small counter in the RTC.
@@ -452,6 +458,9 @@ static irqreturn_t rtc_60s_handler(int irq, void* data)
 
 	if (!mutex_trylock(&alarm_setrtc_mutex))
 		return IRQ_HANDLED;
+
+	if(!_rtc)
+		goto fail;
 
 	if (ab8500_rtc_read_time(_rtc->dev.parent, &rtc_tm))
 		goto fail;
