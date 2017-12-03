@@ -21,7 +21,6 @@
 #include <linux/seq_file.h>
 #include <linux/amba/serial.h>
 #include <linux/mfd/dbx500-prcmu.h>
-#include <linux/bln.h>
 
 #include <mach/pm.h>
 #include <mach/pm-timer.h>
@@ -97,7 +96,7 @@ static struct clk *uart_clk;
 /* Blocks ApSleep and ApDeepSleep */
 static bool force_APE_on;
 static bool reset_timer;
-int deepest_allowed_state;
+int deepest_allowed_state = CONFIG_DBX500_CPUIDLE_DEEPEST_STATE;
 static u32 measure_latency;
 static bool wake_latency;
 static int verbose;
@@ -141,15 +140,9 @@ bool ux500_ci_dbg_force_ape_on(void)
 	return force_APE_on;
 }
 
-inline void ux500_ci_dbg_deepest_state(void)
+int ux500_ci_dbg_deepest_state(void)
 {
-	/* BLN Fix */
-	if (bln_is_ongoing()) {
-	deepest_allowed_state = 2;
-	} else {
-
-	deepest_allowed_state = CONFIG_DBX500_CPUIDLE_DEEPEST_STATE;
-	}
+	return deepest_allowed_state;
 }
 
 void ux500_ci_dbg_set_deepest_state(int state)
@@ -157,7 +150,6 @@ void ux500_ci_dbg_set_deepest_state(int state)
 	deepest_allowed_state = state;
 }
 
-#ifdef CONFIG_UX500_SUSPEND_DBG_WAKE_ON_UART
 void ux500_ci_dbg_console_handle_ape_suspend(void)
 {
 	if (!dbg_console_enable)
@@ -185,8 +177,8 @@ void ux500_ci_dbg_console_handle_ape_resume(void)
 
 	}
 	disable_irq_wake(GPIO_TO_IRQ(ux500_console_uart_gpio_pin));
+
 }
-#endif
 
 void ux500_ci_dbg_console_check_uart(void)
 {
@@ -499,8 +491,8 @@ void ux500_ci_dbg_wake_time(ktime_t time_wake)
 {
 }
 void ux500_ci_dbg_log_post_mortem(int ctarget,
-				  ktime_t enter_time, ktime_t est_wake_common,
-				  ktime_t est_wake, int sleep, bool is_last)
+				ktime_t enter_time, ktime_t est_wake_common,
+				ktime_t est_wake, int sleep, bool is_last)
 {
 }
 #endif
@@ -1298,6 +1290,8 @@ void __init ux500_ci_dbg_init(void)
         if(jig_smd)
                 deepest_allowed_state = CONFIG_DBX500_CPUIDLE_DEEPEST_STATE - 1;
 	#endif
+				deepest_allowed_state = CONFIG_DBX500_CPUIDLE_DEEPEST_STATE;
+
 
 	if (deepest_allowed_state > cstates_len)
 		deepest_allowed_state = cstates_len;
