@@ -446,7 +446,7 @@ static struct miscdevice bln_device = {
 static ssize_t bln_blink_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
 	sprintf(buf, "blink status: %s\n", bln_blink_mode ? "on" : "off");
-	sprintf(buf, "%sblink on delay: %d mscec\n", buf, bln_blinkon_delay);
+	sprintf(buf, "%sblink on delay: %d msec\n", buf, bln_blinkon_delay);
 	sprintf(buf, "%sblink off delay: %d msec\n", buf, bln_blinkoff_delay);
 
 	return strlen(buf);

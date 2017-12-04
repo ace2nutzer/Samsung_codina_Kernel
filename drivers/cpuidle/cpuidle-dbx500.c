@@ -46,7 +46,7 @@
  * from clock programming timeout.
  *
  */
-#define DEEP_SLEEP_WAKE_UP_LATENCY 8500
+#define DEEP_SLEEP_WAKE_UP_LATENCY 10000
 /* Wake latency from ApSleep is measured to be around 1.0 to 1.5 ms */
 #define MIN_SLEEP_WAKE_UP_LATENCY 1000
 #define MAX_SLEEP_WAKE_UP_LATENCY 1500
@@ -135,8 +135,8 @@ static struct cstate cstates[] = {
 #ifdef CONFIG_UX500_CPUIDLE_APDEEPIDLE
 	{
 		.enter_latency = 400,
-		.exit_latency = DEEP_SLEEP_WAKE_UP_LATENCY + 400,
-		.threshold = DEEP_SLEEP_WAKE_UP_LATENCY + 400 + 400,
+		.exit_latency = DEEP_SLEEP_WAKE_UP_LATENCY,
+		.threshold = DEEP_SLEEP_WAKE_UP_LATENCY + 400,
 		.power_usage = 2,
 		.APE = APE_ON,
 		.ARM = ARM_OFF,
@@ -150,8 +150,8 @@ static struct cstate cstates[] = {
 #endif
 	{
 		.enter_latency = 410,
-		.exit_latency = DEEP_SLEEP_WAKE_UP_LATENCY + 420,
-		.threshold = DEEP_SLEEP_WAKE_UP_LATENCY + 410 + 420,
+		.exit_latency = DEEP_SLEEP_WAKE_UP_LATENCY,
+		.threshold = DEEP_SLEEP_WAKE_UP_LATENCY + 410,
 		.power_usage = 1,
 		.APE = APE_OFF,
 		.ARM = ARM_OFF,
@@ -368,6 +368,7 @@ static int determine_sleep_state(u32 *sleep_time, int loc_idle_counter,
 
 	if (((*sleep_time) == UINT_MAX) || ((*sleep_time) == 0))
 		return CI_WFI;
+
 	/*
 	 * Never go deeper than the governor recommends even though it might be
 	 * possible from a scheduled wake up point of view
@@ -407,13 +408,6 @@ static int determine_sleep_state(u32 *sleep_time, int loc_idle_counter,
 
 		/* OK state */
 		break;
-	}
-
-	/* temporary preventing pwr transition during charging */
-	{
-		extern bool vbus_state;
-		if (vbus_state)
-			i = CI_WFI;
 	}
 
 	ux500_ci_dbg_register_reason(i, ape, modem, uart,

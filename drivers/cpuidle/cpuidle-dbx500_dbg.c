@@ -21,6 +21,7 @@
 #include <linux/seq_file.h>
 #include <linux/amba/serial.h>
 #include <linux/mfd/dbx500-prcmu.h>
+#include <linux/bln.h>
 
 #include <mach/pm.h>
 #include <mach/pm-timer.h>
@@ -96,7 +97,7 @@ static struct clk *uart_clk;
 /* Blocks ApSleep and ApDeepSleep */
 static bool force_APE_on;
 static bool reset_timer;
-int deepest_allowed_state = CONFIG_DBX500_CPUIDLE_DEEPEST_STATE;
+int deepest_allowed_state;
 static u32 measure_latency;
 static bool wake_latency;
 static int verbose;
@@ -142,7 +143,12 @@ bool ux500_ci_dbg_force_ape_on(void)
 
 int ux500_ci_dbg_deepest_state(void)
 {
-	return deepest_allowed_state;
+	/* BLN Fix */
+	if (bln_is_ongoing()) {
+	return deepest_allowed_state = 3;
+	} else {
+	return deepest_allowed_state = CONFIG_DBX500_CPUIDLE_DEEPEST_STATE;
+	}
 }
 
 void ux500_ci_dbg_set_deepest_state(int state)
@@ -1290,8 +1296,6 @@ void __init ux500_ci_dbg_init(void)
         if(jig_smd)
                 deepest_allowed_state = CONFIG_DBX500_CPUIDLE_DEEPEST_STATE - 1;
 	#endif
-				deepest_allowed_state = CONFIG_DBX500_CPUIDLE_DEEPEST_STATE;
-
 
 	if (deepest_allowed_state > cstates_len)
 		deepest_allowed_state = cstates_len;
