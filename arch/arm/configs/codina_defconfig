@@ -449,7 +449,8 @@ CONFIG_AEABI=y
 # CONFIG_ARCH_SPARSEMEM_DEFAULT is not set
 # CONFIG_ARCH_SELECT_MEMORY_MODEL is not set
 CONFIG_HAVE_ARCH_PFN_VALID=y
-# CONFIG_HIGHMEM is not set
+CONFIG_HIGHMEM=y
+CONFIG_HIGHPTE=y
 CONFIG_HW_PERF_EVENTS=y
 CONFIG_SELECT_MEMORY_MODEL=y
 CONFIG_FLATMEM_MANUAL=y
@@ -464,6 +465,7 @@ CONFIG_COMPACTION_RETRY=y
 CONFIG_MIGRATION=y
 # CONFIG_PHYS_ADDR_T_64BIT is not set
 CONFIG_ZONE_DMA_FLAG=0
+CONFIG_BOUNCE=y
 CONFIG_VIRT_TO_BUS=y
 # CONFIG_KSM is not set
 CONFIG_DEFAULT_MMAP_MIN_ADDR=32768
@@ -486,7 +488,7 @@ CONFIG_CC_STACKPROTECTOR_STRONG=y
 # CONFIG_USE_OF is not set
 CONFIG_ZBOOT_ROM_TEXT=0
 CONFIG_ZBOOT_ROM_BSS=0
-CONFIG_CMDLINE="mpcore_wdt.mpcore_margin=359 root=/dev/ram0 rw rootwait crash_reboot=yes crash_dump=no init=init console='null' mem=96M@0 mem_mtrace=15M@96M mem_mshared=1M@111M mem_modem=16M@112M mem=128M@128M hwmem=84M@256M mem=43M@340M mem_issw=1M@383M mem_ram_console=1M@384M mem=383M@385M vmalloc=0M jig_smd=0 checksum_pass=1 checksum_done=1 sec_debug.enable=0 sec_debug.enable_user=0 androidboot.serialno=0123456789ABCDEF board_id=12 startup_graphics=1 logo. sbl_copy=1"
+CONFIG_CMDLINE="mpcore_wdt.mpcore_margin=359 root=/dev/ram0 rw rootwait crash_reboot=yes crash_dump=no init=init console='null' mem=96M@0 mem_mtrace=15M@96M mem_mshared=1M@111M mem_modem=16M@112M mem=128M@128M hwmem=84M@256M mem=43M@340M mem_issw=1M@383M mem_ram_console=1M@384M mem=383M@385M vmalloc=264M jig_smd=0 lpm_boot=0 checksum_pass=1 checksum_done=1 sec_debug.enable=0 sec_debug.enable_user=0 androidboot.serialno=0123456789ABCDEF board_id=12 startup_graphics=1 logo. sbl_copy=1"
 # CONFIG_CMDLINE_FROM_BOOTLOADER is not set
 # CONFIG_CMDLINE_EXTEND is not set
 CONFIG_CMDLINE_FORCE=y
@@ -1740,26 +1742,20 @@ CONFIG_MEDIA_SUPPORT=y
 # Multimedia core support
 #
 # CONFIG_MEDIA_CONTROLLER is not set
-CONFIG_VIDEO_DEV=y
-CONFIG_VIDEO_V4L2_COMMON=y
+# CONFIG_VIDEO_DEV is not set
 # CONFIG_DVB_CORE is not set
-CONFIG_VIDEO_MEDIA=y
+# CONFIG_VIDEO_MEDIA is not set
 
 #
 # Multimedia drivers
 #
 # CONFIG_RC_CORE is not set
-# CONFIG_MEDIA_ATTACH is not set
-# CONFIG_MEDIA_TUNER is not set
-CONFIG_VIDEO_V4L2=y
-# CONFIG_VIDEO_CAPTURE_DRIVERS is not set
-# CONFIG_V4L_MEM2MEM_DRIVERS is not set
-# CONFIG_RADIO_ADAPTERS is not set
 
 #
 # Graphics support
 #
-# CONFIG_DRM is not set
+CONFIG_DRM=y
+# CONFIG_DRM_NOVA is not set
 CONFIG_ION=y
 CONFIG_GPU_MALI=y
 CONFIG_MALI400=y
@@ -1822,7 +1818,7 @@ CONFIG_LCD_CLASS_DEVICE=y
 # CONFIG_LCD_LTV350QV is not set
 # CONFIG_LCD_TDO24M is not set
 # CONFIG_LCD_VGG2432A4 is not set
-CONFIG_LCD_PLATFORM=y
+# CONFIG_LCD_PLATFORM is not set
 # CONFIG_LCD_S6E63M0 is not set
 # CONFIG_LCD_LD9040 is not set
 CONFIG_BACKLIGHT_CLASS_DEVICE=y
@@ -2065,7 +2061,6 @@ CONFIG_USB_G_ANDROID=y
 # CONFIG_USB_G_MULTI is not set
 # CONFIG_USB_G_HID is not set
 # CONFIG_USB_G_DBGP is not set
-# CONFIG_USB_G_WEBCAM is not set
 # CONFIG_USB_OTG_20 is not set
 
 #
@@ -2098,7 +2093,6 @@ CONFIG_MMC_BLOCK_BOUNCE=y
 #
 CONFIG_MMC_ARMMMCI=y
 # CONFIG_MMC_SDHCI is not set
-# CONFIG_MMC_SPI is not set
 # CONFIG_MMC_DW is not set
 # CONFIG_MMC_VUB300 is not set
 # CONFIG_MMC_USHC is not set
@@ -2264,7 +2258,6 @@ CONFIG_ZRAM=m
 # CONFIG_ZRAM_DEBUG is not set
 CONFIG_ZRAM_FOR_ANDROID=y
 # CONFIG_FB_SM7XX is not set
-# CONFIG_EASYCAP is not set
 CONFIG_MACH_NO_WESTBRIDGE=y
 # CONFIG_ATH6K_LEGACY is not set
 # CONFIG_USB_ENESTORAGE is not set
