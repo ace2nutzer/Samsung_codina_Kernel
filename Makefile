@@ -246,15 +246,15 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 HOSTCC       = gcc
 HOSTCXX      = g++
 HOSTCFLAGS   := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 \
-		-fomit-frame-pointer -std=gnu89 -m64 -mfpmath=sse \
+		-fomit-frame-pointer -std=gnu89 -m64 \
 		-Werror=return-type -fno-strict-aliasing -fno-strict-overflow \
 		-DNDEBUG -pipe -march=core2 -mtune=core2 -mhard-float \
-		-ftree-vectorize
+		-mfpmath=sse -ftree-vectorize
 
-HOSTCXXFLAGS := -O2 -fomit-frame-pointer -mfpmath=sse \
+HOSTCXXFLAGS := -O2 -fomit-frame-pointer \
 		-Werror=return-type -fno-strict-aliasing -fno-strict-overflow \
 		-DNDEBUG -pipe -m64 -march=core2 -mtune=core2 -mhard-float \
-		-ftree-vectorize
+		-mfpmath=sse -ftree-vectorize
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -581,6 +581,10 @@ endif # $(dot-config)
 # This allow a user to issue only 'make' to build a kernel including modules
 # Defaults to vmlinux, but the arch makefile usually adds further targets
 all: vmlinux
+
+KBUILD_CFLAGS	+= $(call cc-disable-warning,maybe-uninitialized,)
+KBUILD_CFLAGS	+= $(call cc-option,-fno-PIE,-fno-PIC)
+KBUILD_AFLAGS	+= $(call cc-option,-fno-PIE,-fno-PIC)
 
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os

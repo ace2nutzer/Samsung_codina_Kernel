@@ -6,6 +6,9 @@
 
 KBUILD_CFLAGS += -fno-stack-protector
 
+KBUILD_CFLAGS += -fPIC
+KBUILD_AFLAGS += -fPIC
+
 OBJS		=
 
 # Ensure that mmcif loader code appears early in the image
@@ -111,7 +114,7 @@ extra-y       += piggy.gzip piggy.lzo piggy.lzma lib1funcs.S $(libfdt) $(libfdt_
 
 ifeq ($(CONFIG_FUNCTION_TRACER),y)
 ORIG_CFLAGS := $(KBUILD_CFLAGS)
-KBUILD_CFLAGS = $(subst -pg, , $(ORIG_CFLAGS))
+KBUILD_CFLAGS += $(subst -pg, , $(ORIG_CFLAGS))
 endif
 
 ccflags-y := -fpic -fno-builtin -I$(src)
