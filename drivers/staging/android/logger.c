@@ -554,14 +554,14 @@ static int logger_release(struct inode *inode, struct file *file)
 	if (file->f_mode & FMODE_READ) {
 		struct logger_reader *reader = file->private_data;
 		struct logger_log *log;
-		unsigned long start = jiffies;
+//		unsigned long start = jiffies;
 		log = get_log_from_minor(MINOR(inode->i_rdev));
 		mutex_lock(&log->mutex);
 		list_del(&reader->list);
 		mutex_unlock(&log->mutex);
 		kfree(reader);
-		pr_info("%s: took %d msec\n", __func__,
-			jiffies_to_msecs(jiffies - start));
+//		pr_info("%s: took %d msec\n", __func__,
+//			jiffies_to_msecs(jiffies - start));
 	}
 
 	return 0;
