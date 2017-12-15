@@ -79,7 +79,7 @@ $(warning OS_MEMORY $(USING_OS_MEMORY))
 endif
 
 # Set up build config
-export CONFIG_MALI400=m
+export CONFIG_MALI400=y
 
 ifeq ($(USING_GPU_UTILIZATION),1)
 export EXTRA_DEFINES += -DCONFIG_MALI400_GPU_UTILIZATION=1
