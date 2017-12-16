@@ -1365,7 +1365,7 @@ ret = device_create_file(&(ddev->dev), &dev_attr_mcde_chnl);
 	//when screen is on, DDR_OPP 25 sometimes messes it up
 	//TODO change these to add/update/remove
 	if (prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
-			"codina_lcd_dpi", 25)) {
+			"codina_lcd_dpi", 100)) {
 		pr_info("pcrm_qos_add APE failed\n");
 	}
 	if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
@@ -1489,7 +1489,7 @@ static void s6d27a1_dpi_mcde_late_resume(
 						earlysuspend);
 
 	if (prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
-			"codina_lcd_dpi", 25)) {
+			"codina_lcd_dpi", 100)) {
 		pr_info("pcrm_qos_add APE failed\n");
 	}
 	if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,

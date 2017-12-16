@@ -10,9 +10,9 @@ nod /dev/block/mmcblk0p5 600 0 0 b 179 5
 nod /dev/block/mmcblk0p6 600 0 0 b 179 6
 nod /dev/block/mmcblk0p7 600 0 0 b 179 7
 nod /dev/block/mmcblk0p8 600 0 0 b 179 8
-# nod /dev/block/mmcblk0p9 600 0 0 b 179 9
+nod /dev/block/mmcblk0p9 600 0 0 b 179 9
 nod /dev/block/mmcblk0p10 600 0 0 b 179 10
-# nod /dev/block/mmcblk0p11 600 0 0 b 179 11
+nod /dev/block/mmcblk0p11 600 0 0 b 179 11
 nod /dev/block/mmcblk0p12 600 0 0 b 179 12
 nod /dev/block/mmcblk0p13 600 0 0 b 179 13
 nod /dev/block/mmcblk0p14 600 0 0 b 179 14
@@ -30,7 +30,6 @@ dir /sys 755 0 0
 dir /mnt 755 0 0
 dir /mnt/.lfs 755 0 0
 file /stage1/boot.cpio usr/u8500_initramfs_files/boot.cpio 644 0 0
-file /stage1/recovery.cpio usr/u8500_initramfs_files/recovery.cpio 644 0 0
 dir /ramdisk 755 0 0
 slink /stage1/[ /stage1/busybox 777 0 0
 slink /stage1/[[ /stage1/busybox 777 0 0
