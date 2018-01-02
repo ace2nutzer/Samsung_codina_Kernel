@@ -118,12 +118,6 @@ config CPU_FREQ_DEFAULT_GOV_DYNAMIC
 	  loading your cpufreq low-level hardware driver, using the
 	  'dynamic' governor for latency-sensitive workloads.
 
-config CPU_FREQ_DEFAULT_GOV_ABYSSPLUG
-	bool "abyssplug"
-	select CPU_FREQ_GOV_ABYSSPLUG
-	help
-          Use the CPUFreq governor 'abyssplug' as default.
-
 endchoice
 
 config CPU_FREQ_GOV_PERFORMANCE

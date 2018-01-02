@@ -55,13 +55,12 @@ static inline int ux500_regulator_debug_init(struct platform_device *pdev,
 			     struct dbx500_regulator_info *regulator_info,
 			     int num_regulators)
 {
-	return 0;
+       return 0;
 }
 
 static inline int ux500_regulator_debug_exit(void)
 {
-	return 0;
+       return 0;
 }
-
 #endif
 #endif
