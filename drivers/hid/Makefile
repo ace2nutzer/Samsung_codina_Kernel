@@ -1,7 +1,6 @@
 #
 # Makefile for the HID driver
 #
-
 hid-y			:= hid-core.o hid-input.o
 
 ifdef CONFIG_DEBUG_FS
@@ -9,7 +8,6 @@ ifdef CONFIG_DEBUG_FS
 endif
 
 obj-$(CONFIG_HID)		+= hid.o
-obj-$(CONFIG_UHID)		+= uhid.o
 
 hid-$(CONFIG_HIDRAW)		+= hidraw.o
 

@@ -1,5 +1,3 @@
-KBUILD_CFLAGS += $(CFLAGS_OS)
-
 #
 # Makefile for the Linux nfs filesystem routines.
 #

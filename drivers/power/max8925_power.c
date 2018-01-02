@@ -404,7 +404,7 @@ static __devinit int max8925_init_charger(struct max8925_chip *chip,
 	/* set charging current in charge topoff mode */
 	max8925_set_bits(info->gpm, MAX8925_CHG_CNTL1, 3 << 5,
 			 info->topoff_threshold << 5);
-	/* set charging current in fast charge mode */
+	/* set charing current in fast charge mode */
 	max8925_set_bits(info->gpm, MAX8925_CHG_CNTL1, 7, info->fast_charge);
 
 	return 0;

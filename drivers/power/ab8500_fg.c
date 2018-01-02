@@ -412,7 +412,7 @@ struct ab8500_fg {
 	int gpadc_vbat_offset;
 	int gpadc_vbat_ideal;
 	int smd_on;
-	int reenable_charging;
+	int reenable_charing;
 	int fg_res_dischg;
 	int fg_res_chg;
 	bool initial_capacity_calib;
@@ -2683,10 +2683,10 @@ static int ab8500_fg_reenable_charging(struct ab8500_fg *di)
 			return ret;
 		}
 
-		if (di->reenable_charging > 2000)
-			di->reenable_charging = 1;
+		if (di->reenable_charing > 2000)
+			di->reenable_charing = 1;
 		else
-			di->reenable_charging++;
+			di->reenable_charing++;
 	}
 
 	return 0;
@@ -2760,7 +2760,7 @@ static void ab8500_fg_algorithm(struct ab8500_fg *di)
 			di->smd_on,
 			di->max_cap_changed,
 			di->flags.chg_timed_out,
-			di->reenable_charging);
+			di->reenable_charing);
 #else
 	dev_dbg(di->dev, "[FG_DATA] %d %d %d %d %d %d %d %d %d "
 		"%d %d %d %d %d %d %d\n",
