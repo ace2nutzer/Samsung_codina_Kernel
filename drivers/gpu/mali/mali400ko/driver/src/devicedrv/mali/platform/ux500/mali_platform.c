@@ -54,7 +54,7 @@
 #define AB8500_VAPE_SEL2	 	0x0F
 #define AB8500_VAPE_STEP_UV		12500
 #define AB8500_VAPE_MIN_UV		700000
-#define AB8500_VAPE_MAX_UV		1487500
+#define AB8500_VAPE_MAX_UV		1387500
 
 #define MALI_CLOCK_DEFLO		249600
 #define MALI_CLOCK_DEFHI		399360
@@ -67,12 +67,12 @@ struct mali_dvfs_data
 };
 
 static struct mali_dvfs_data mali_dvfs[] = {
-	{798720, 0x010501D0, 0x3F},
-	{748800, 0x010501C3, 0x3F},
-	{698880, 0x010501B6, 0x3F},
-	{652800, 0x010501AA, 0x3F},
-	{599040, 0x0105019C, 0x3F},
-	{549120, 0x0105018F, 0x3F},
+	{798720, 0x010501D0, 0x37},
+	{748800, 0x010501C3, 0x37},
+	{698880, 0x010501B6, 0x37},
+	{652800, 0x010501AA, 0x37},
+	{599040, 0x0105019C, 0x37},
+	{549120, 0x0105018F, 0x37},
 	{499200, 0x01050182, 0x25},
 	{449280, 0x01050175, 0x24},
 	{399360, 0x01050168, 0x24},
@@ -115,7 +115,7 @@ static struct delayed_work mali_boost_delayedwork;
 
 static int vape_voltage(u8 raw)
 {
-	if (raw <= 0x3F) {
+	if (raw <= 0x37) {
 		return (AB8500_VAPE_MIN_UV + (raw * AB8500_VAPE_STEP_UV));
 	} else {
 		return AB8500_VAPE_MAX_UV;
