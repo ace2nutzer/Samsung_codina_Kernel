@@ -1638,7 +1638,7 @@ static irqreturn_t bt404_ts_interrupt(int irq, void *dev_id)
 	u16 addr, val;
 	u16 status;
 
-	if (gpio_get_value(data->pdata->gpio_int)) {
+	if (gpio_get_value(data->pdata->gpio_int) && !s2w_switch && !is_charger_present) {
 		dev_err(&client->dev, "invalid interrupt\n");
 		return IRQ_HANDLED;
 	}
