@@ -1915,7 +1915,7 @@ static struct ab8500_force_reg ab8500_force_reg[] = {
 		.mask = 0x03,
 		.val  = 0x03,
  	},
-#ifndef CONFIG_MACH_GAVINI
+#if !defined(CONFIG_MACH_GAVINI) && !defined(CONFIG_MACH_CODINA)
 	{
 		/* Vaux4Regu */
 		.name = "Vaux4Regu",

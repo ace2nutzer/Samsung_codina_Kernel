@@ -63,7 +63,6 @@ static int wait_for_vcmp(struct mcde_chnl_state *chnl);
 static int probe_hw(struct platform_device *pdev);
 static void wait_for_flow_disabled(struct mcde_chnl_state *chnl);
 static int enable_mcde_hw(void);
-//static int enable_mcde_hw_pre(void);
 static int update_channel_static_registers(struct mcde_chnl_state *chnl);
 static void _mcde_chnl_update_color_conversion(struct mcde_chnl_state *chnl);
 static void chnl_update_overlay(struct mcde_chnl_state *chnl,
@@ -1821,7 +1820,7 @@ static void enable_flow(struct mcde_chnl_state *chnl, bool setstate)
 	 */
 	switch (chnl->id) {
 	case MCDE_CHNL_A:
-		WARN_ON_ONCE(mcde_rfld(MCDE_CRA0, FLOEN));
+		mcde_rfld(MCDE_CRA0, FLOEN);	/* WARN_ON_ONCE(mcde_rfld(MCDE_CRA0, FLOEN)); */
 		mcde_wfld(MCDE_CRA0, ROTEN, chnl->regs.roten);
 		mcde_wfld(MCDE_CRA0, FLOEN, true);
 		break;
