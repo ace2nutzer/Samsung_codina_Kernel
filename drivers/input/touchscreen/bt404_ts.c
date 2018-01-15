@@ -1638,7 +1638,7 @@ static irqreturn_t bt404_ts_interrupt(int irq, void *dev_id)
 	u16 addr, val;
 	u16 status;
 
-	if (gpio_get_value(data->pdata->gpio_int) && !s2w_switch && !is_charger_present) {
+	if (gpio_get_value(data->pdata->gpio_int)) {
 		dev_err(&client->dev, "invalid interrupt\n");
 		return IRQ_HANDLED;
 	}
@@ -4317,9 +4317,9 @@ err_i2c:
 	return ret;
 }
 
+extern unsigned int is_charger_present;
 static bool is_awaken = false;
 static bool is_sleep = false;
-extern unsigned int is_charger_present;
 
 #if defined(CONFIG_PM) || defined(CONFIG_HAS_EARLYSUSPEND)
 static int bt404_ts_suspend(struct device *dev)
