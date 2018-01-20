@@ -437,7 +437,7 @@ static int brcm_set_carddetect(int val)
 }
 
 /* Customized Locale table : OPTIONAL feature */
-#define WLC_CNTRY_BUF_SZ        4
+#define WLC_CNTRY_BUF_SZ        3
 typedef struct cntry_locales_custom {
 	char iso_abbrev[WLC_CNTRY_BUF_SZ];
 	char custom_locale[WLC_CNTRY_BUF_SZ];

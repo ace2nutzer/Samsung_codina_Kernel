@@ -83,6 +83,11 @@ static inline bool ux500_ci_dbg_force_ape_on(void)
 	return false;
 }
 
+static inline int ux500_ci_dbg_deepest_state(void)
+{
+	return CONFIG_DBX500_CPUIDLE_DEEPEST_STATE;
+}
+
 static inline void ux500_ci_dbg_set_deepest_state(int state) { }
 
 static inline void ux500_ci_dbg_console(void) { }
