@@ -141,7 +141,7 @@ static bool use_lowbat_wakelock = 0;
 /* 
  * Voltage Threshold that decides when to power off.
  */
-static unsigned int pwroff_threshold = 3250;
+static unsigned int pwroff_threshold = 3300;
 
 /* Allow battery capacity goes up */
 static unsigned int battlvl_real = 1;
@@ -1714,7 +1714,7 @@ static void ab8500_fg_check_capacity_limits(struct ab8500_fg *di, bool init)
 		    && !changed)
 			di->lowbat_poweroff = true;
 
-		if (di->vbat > 3450) {
+		if (di->vbat > 3400) {
 			dev_info(di->dev, "Low bat condition is recovered.\n");
 			di->lowbat_poweroff_locked = false;
 			if(use_lowbat_wakelock)
