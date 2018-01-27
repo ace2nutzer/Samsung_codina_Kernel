@@ -372,9 +372,9 @@ static struct v_to_cap cap_tbl[] = {
 /* SAMSUNG Battery | 3.8V | 1500mA | 4.35V */
 static struct v_to_cap cap_tbl_5ma[] = {
 	{4250,	100},
-	{4245,	99},
-	{4240,	98},
-	{4225,	95},
+	{4240,	99},
+	{4230,	98},
+	{4210,	95},
 	{4183,	90},
 	{4150,	87},
 	{4116,	84},
@@ -677,7 +677,7 @@ sec_battery_platform_data_t sec_battery_pdata = {
 	.recharge_condition_type =
 		SEC_BATTERY_RECHARGE_CONDITION_VCELL,
 	.recharge_condition_soc = 99,
-	.recharge_condition_vcell = 4200,
+	.recharge_condition_vcell = 4240,
 	.recharge_check_count = 4,
 
 	.charging_total_time = 5 * 60 * 60,
