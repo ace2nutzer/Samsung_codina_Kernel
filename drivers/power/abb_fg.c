@@ -103,7 +103,7 @@
 
 #define VALID_CAPACITY_SEC		(45 * 60) /* 45 minutes */
 
-#define VBAT_ADC_CAL			3800
+#define VBAT_ADC_CAL			3700
 
 #define CONFIG_BATT_CAPACITY_PARAM
 #define BATT_CAPACITY_PATH		"/efs/last_battery_capacity"
@@ -1714,7 +1714,7 @@ static void ab8500_fg_check_capacity_limits(struct ab8500_fg *di, bool init)
 		    && !changed)
 			di->lowbat_poweroff = true;
 
-		if (di->vbat > 3400) {
+		if (di->vbat > 3450) {
 			dev_info(di->dev, "Low bat condition is recovered.\n");
 			di->lowbat_poweroff_locked = false;
 			if(use_lowbat_wakelock)

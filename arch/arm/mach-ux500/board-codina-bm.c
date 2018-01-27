@@ -133,9 +133,9 @@ static struct v_to_cap cap_tbl[] = {
 /* SAMSUNG Battery | 3.8V | 1500mA | 4.35V */
 static struct v_to_cap cap_tbl_5ma[] = {
 	{4250,	100},
-	{4245,	99},
-	{4240,	98},
-	{4225,	95},
+	{4240,	99},
+	{4230,	98},
+	{4210,	95},
 	{4183,	90},
 	{4150,	87},
 	{4116,	84},
@@ -307,7 +307,7 @@ static const struct battery_type bat_type[] = {
 #ifdef CONFIG_SAMSUNG_CHARGER_SPEC
 		.termination_curr_1st = 170,
 		.termination_curr_2nd = 170,
-		.recharge_vol = 4050,
+		.recharge_vol = 4090,
 #else
 		.termination_curr = 170,
 #endif
@@ -376,7 +376,7 @@ static const struct battery_type bat_type[] = {
 #ifdef CONFIG_SAMSUNG_CHARGER_SPEC
 		.termination_curr_1st = 150,
 		.termination_curr_2nd = 150,
-		.recharge_vol = 4200,
+		.recharge_vol = 4240,
 #else
 		.termination_curr = 150,
 #endif
