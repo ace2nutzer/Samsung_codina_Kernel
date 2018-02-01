@@ -672,7 +672,7 @@ sec_battery_platform_data_t sec_battery_pdata = {
 		SEC_BATTERY_FULL_CONDITION_VCELL |
 		SEC_BATTERY_FULL_CONDITION_NOTIMEFULL,
 	.full_condition_soc = 100,
-	.full_condition_vcell = 4340,
+	.full_condition_vcell = 4350,
 
 	.recharge_condition_type =
 		SEC_BATTERY_RECHARGE_CONDITION_VCELL,
@@ -704,7 +704,7 @@ sec_battery_platform_data_t sec_battery_pdata = {
 	.chg_polarity_status = 0,
 	.chg_irq = 0,
 	.chg_irq_attr = 0,
-	.chg_float_voltage = 4340,
+	.chg_float_voltage = 4250,
 
 };
 
