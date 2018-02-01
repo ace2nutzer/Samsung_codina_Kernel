@@ -303,7 +303,7 @@ static const struct battery_type bat_type[] = {
 #endif
 		.charge_full_design = 1700,
 		.nominal_voltage = 3700,
-		.termination_vol = 4190,
+		.termination_vol = 4200,
 #ifdef CONFIG_SAMSUNG_CHARGER_SPEC
 		.termination_curr_1st = 170,
 		.termination_curr_2nd = 170,
@@ -312,12 +312,12 @@ static const struct battery_type bat_type[] = {
 		.termination_curr = 170,
 #endif
 		.normal_cur_lvl = 1500,
-		.normal_vol_lvl = 4190,
+		.normal_vol_lvl = 4200,
 		.maint_a_cur_lvl = 1500,
-		.maint_a_vol_lvl = 4190,
+		.maint_a_vol_lvl = 4200,
 		.maint_a_chg_timer_h = 60,
 		.maint_b_cur_lvl = 1500,
-		.maint_b_vol_lvl = 4190,
+		.maint_b_vol_lvl = 4200,
 		.maint_b_chg_timer_h = 200,
 		.low_high_cur_lvl = 300,
 		.low_high_vol_lvl = 4000,
@@ -343,7 +343,7 @@ static const struct battery_type bat_type[] = {
 		.subsequent_timeout_time = HZ*60*90,
 			/* After an error stop charging for a minute. */
 		.error_charge_stoptime = HZ*60,
-		.over_voltage_threshold =  4290,
+		.over_voltage_threshold =  4300,
 #else
 		.n_batres_tbl_elements = ARRAY_SIZE(temp_to_batres_tbl),
 		.batres_tbl = temp_to_batres_tbl,
@@ -372,7 +372,7 @@ static const struct battery_type bat_type[] = {
 #endif
 		.charge_full_design = 1500,
 		.nominal_voltage = 3800,
-		.termination_vol =  4340,
+		.termination_vol =  4350,
 #ifdef CONFIG_SAMSUNG_CHARGER_SPEC
 		.termination_curr_1st = 150,
 		.termination_curr_2nd = 150,
@@ -381,12 +381,12 @@ static const struct battery_type bat_type[] = {
 		.termination_curr = 150,
 #endif
 		.normal_cur_lvl = 1500,
-		.normal_vol_lvl = 4340,
+		.normal_vol_lvl = 4350,
 		.maint_a_cur_lvl = 1500,
-		.maint_a_vol_lvl = 4340,
+		.maint_a_vol_lvl = 4350,
 		.maint_a_chg_timer_h = 60,
 		.maint_b_cur_lvl = 1500,
-		.maint_b_vol_lvl = 4340,
+		.maint_b_vol_lvl = 4350,
 		.maint_b_chg_timer_h = 200,
 		.low_high_cur_lvl = 300,
 		.low_high_vol_lvl = 4000,
@@ -412,7 +412,7 @@ static const struct battery_type bat_type[] = {
 		.subsequent_timeout_time = HZ*60*90,
 			/* After an error stop charging for a minute. */
 		.error_charge_stoptime = HZ*60,
-		.over_voltage_threshold =  4440,
+		.over_voltage_threshold =  4450,
 #else
 		.n_batres_tbl_elements = ARRAY_SIZE(temp_to_batres_tbl),
 		.batres_tbl = temp_to_batres_tbl,
@@ -526,10 +526,10 @@ struct ab8500_bm_data ab8500_bm_data = {
 #if defined( CONFIG_USB_SWITCHER ) || defined( CONFIG_INPUT_AB8505_MICRO_USB_DETECT )
 	.ta_chg_current		= 1500,
 	.ta_chg_current_input	= 700,
-	.ta_chg_voltage		= 4340,
+	.ta_chg_voltage		= 4350,
 	.usb_chg_current	= 1500,
 	.usb_chg_current_input	= 500,
-	.usb_chg_voltage	= 4340,
+	.usb_chg_voltage	= 4350,
 #endif
 	.main_safety_tmr_h	= 4,
 	.usb_safety_tmr_h	= 4,
