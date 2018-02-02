@@ -135,8 +135,8 @@ static struct cstate cstates[] = {
 #ifdef CONFIG_DBX500_CPUIDLE_APDEEPIDLE
 	{
 		.enter_latency = 400,
-		.exit_latency = DEEP_SLEEP_WAKE_UP_LATENCY,
-		.threshold = DEEP_SLEEP_WAKE_UP_LATENCY + 400,
+		.exit_latency = DEEP_SLEEP_WAKE_UP_LATENCY - 1000,
+		.threshold = DEEP_SLEEP_WAKE_UP_LATENCY - 1000 + 400,
 		.power_usage = 2,
 		.APE = APE_ON,
 		.ARM = ARM_OFF,
