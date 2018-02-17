@@ -449,13 +449,7 @@ int __init init_codina_display_devices(void)
 		codina_dpi_pri_display_info.video_mode.hbp = 8;
 		codina_dpi_pri_display_info.video_mode.hfp = 8;
 		codina_dpi_pri_display_info.video_mode.vfp = 8;
-		}
-		if (is_lpm) {
-		codina_dpi_pri_display_info.sleep_in_delay = 50;
-		codina_dpi_pri_display_info.sleep_out_delay = 120;
-		}
-		if (is_recovery) {
-		codina_dpi_pri_display_info.sleep_in_delay = 120;
+		codina_dpi_pri_display_info.sleep_in_delay = 200;
 		codina_dpi_pri_display_info.sleep_out_delay = 50;
 		} else {
 		codina_dpi_pri_display_info.video_mode.hsw = 6;
@@ -463,7 +457,7 @@ int __init init_codina_display_devices(void)
 		codina_dpi_pri_display_info.video_mode.hfp = 6;
 		codina_dpi_pri_display_info.video_mode.vfp = 6;
 		codina_dpi_pri_display_info.sleep_in_delay = 50;
-		codina_dpi_pri_display_info.sleep_out_delay = 120; /* 200 */
+		codina_dpi_pri_display_info.sleep_out_delay = 200;
 		}
 	}
 	
