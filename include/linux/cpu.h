@@ -78,24 +78,36 @@ enum {
 		{ .notifier_call = fn, .priority = pri };	\
 	register_cpu_notifier(&fn##_nb);			\
 }
+
+#define __cpu_notifier(fn, pri) {				\
+	static struct notifier_block fn##_nb =			\
+		{ .notifier_call = fn, .priority = pri };	\
+	__register_cpu_notifier(&fn##_nb);			\
+}
+
 #else /* #if defined(CONFIG_HOTPLUG_CPU) || !defined(MODULE) */
 #define cpu_notifier(fn, pri)	do { (void)(fn); } while (0)
 #endif /* #else #if defined(CONFIG_HOTPLUG_CPU) || !defined(MODULE) */
 #ifdef CONFIG_HOTPLUG_CPU
 extern int register_cpu_notifier(struct notifier_block *nb);
+extern int __register_cpu_notifier(struct notifier_block *nb);
 extern void unregister_cpu_notifier(struct notifier_block *nb);
+extern void __unregister_cpu_notifier(struct notifier_block *nb);
 #else
 
 #ifndef MODULE
 extern int register_cpu_notifier(struct notifier_block *nb);
+extern int __register_cpu_notifier(struct notifier_block *nb);
 #else
 static inline int register_cpu_notifier(struct notifier_block *nb)
+static inline int __register_cpu_notifier(struct notifier_block *nb)
 {
 	return 0;
 }
 #endif
 
 static inline void unregister_cpu_notifier(struct notifier_block *nb)
+static inline void __unregister_cpu_notifier(struct notifier_block *nb)
 {
 }
 #endif
@@ -104,6 +116,9 @@ int cpu_up(unsigned int cpu);
 void notify_cpu_starting(unsigned int cpu);
 extern void cpu_maps_update_begin(void);
 extern void cpu_maps_update_done(void);
+
+#define cpu_notifier_register_begin	cpu_maps_update_begin
+#define cpu_notifier_register_done	cpu_maps_update_done
 
 #else	/* CONFIG_SMP */
 
@@ -114,7 +129,16 @@ static inline int register_cpu_notifier(struct notifier_block *nb)
 	return 0;
 }
 
+static inline int __register_cpu_notifier(struct notifier_block *nb)
+{
+	return 0;
+}
+
 static inline void unregister_cpu_notifier(struct notifier_block *nb)
+{
+}
+
+static inline void __unregister_cpu_notifier(struct notifier_block *nb)
 {
 }
 
@@ -123,6 +147,14 @@ static inline void cpu_maps_update_begin(void)
 }
 
 static inline void cpu_maps_update_done(void)
+{
+}
+
+static inline void cpu_notifier_register_begin(void)
+{
+}
+
+static inline void cpu_notifier_register_done(void)
 {
 }
 
@@ -136,7 +168,9 @@ extern void get_online_cpus(void);
 extern void put_online_cpus(void);
 #define hotcpu_notifier(fn, pri)	cpu_notifier(fn, pri)
 #define register_hotcpu_notifier(nb)	register_cpu_notifier(nb)
+#define __register_hotcpu_notifier(nb)	__register_cpu_notifier(nb)
 #define unregister_hotcpu_notifier(nb)	unregister_cpu_notifier(nb)
+#define __unregister_hotcpu_notifier(nb)	__unregister_cpu_notifier(nb)
 int cpu_down(unsigned int cpu);
 
 #ifdef CONFIG_ARCH_CPU_PROBE_RELEASE
