@@ -410,6 +410,13 @@ static int determine_sleep_state(u32 *sleep_time, int loc_idle_counter,
 		break;
 	}
 
+	/* temporary preventing pwr transition during charging */
+	{
+		extern bool vbus_state;
+		if (vbus_state)
+			i = CI_WFI;
+	}
+
 	ux500_ci_dbg_register_reason(i, ape, modem, uart,
 				     (*sleep_time),
 				     max_depth);
