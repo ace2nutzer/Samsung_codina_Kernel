@@ -160,6 +160,7 @@ static struct usb_device_descriptor device_desc = {
 	.bNumConfigurations   = 1,
 };
 
+#ifdef CONFIG_USB_MUSB_OTG
 static struct usb_otg_descriptor otg_descriptor = {
 	.bLength =		sizeof(otg_descriptor),
 	.bDescriptorType =	USB_DT_OTG,
@@ -171,6 +172,7 @@ static struct usb_descriptor_header *otg_desc[] = {
 	(struct usb_descriptor_header *) &otg_descriptor,
 	NULL,
 };
+#endif
 
 static struct usb_configuration android_config_driver = {
 	.label		= "android",
