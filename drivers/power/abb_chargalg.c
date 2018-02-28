@@ -75,15 +75,11 @@ bool is_suspend = 0;
 static void ab8500_chargalg_early_suspend(struct early_suspend *h)
 {
 	is_suspend = 1;
-
-	/* use lower vape on suspend */
-	prcmu_qos_vape_override(true);
 }
 
 static void ab8500_chargalg_late_resume(struct early_suspend *h)
 {
 	is_suspend = 0;
-	prcmu_qos_vape_override(false);
 }
 
 enum ab8500_chargers {
