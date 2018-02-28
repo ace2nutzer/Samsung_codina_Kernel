@@ -469,7 +469,7 @@ void prcmu_qos_force_opp(int prcmu_qos_class, s32 i)
 	update_target(prcmu_qos_class, true);
 }
 
-#define LPA_OVERRIDE_VOLTAGE 0x1c /* 1.05V and was 0x22 1.125V */
+#define LPA_OVERRIDE_VOLTAGE_SETTING 0x24 /* 1.15V */
 
 int prcmu_qos_lpa_override(bool enable)
 {
@@ -479,7 +479,15 @@ int prcmu_qos_lpa_override(bool enable)
 
 	if (enable) {
 		if (!lpa_override_enabled) {
+			u8 opp100_voltage_val;
 			u8 override_voltage_val;
+
+			/* Get the APE OPP 100% setting. */
+			ret = prcmu_abb_read(AB8500_REGU_CTRL2,
+					     AB8500_VAPESEL1_REG,
+					     &opp100_voltage_val, 1);
+			if (ret)
+				goto out;
 
 			/* Save the APE OPP 50% setting. */
 			ret = prcmu_abb_read(AB8500_REGU_CTRL2,
@@ -488,9 +496,10 @@ int prcmu_qos_lpa_override(bool enable)
 			if (ret)
 				goto out;
 
-			override_voltage_val = (u8)LPA_OVERRIDE_VOLTAGE;
+			override_voltage_val = min(opp100_voltage_val,
+						(u8)LPA_OVERRIDE_VOLTAGE_SETTING);
 
-			/* Use LPA Override Voltage for APE OPP 50%. */
+			/* Use the APE OPP 100% setting also for APE OPP 50%. */
 			ret = prcmu_abb_write(AB8500_REGU_CTRL2,
 					      AB8500_VAPESEL2_REG,
 					      &override_voltage_val, 1);
@@ -505,49 +514,6 @@ int prcmu_qos_lpa_override(bool enable)
 					      &opp50_voltage_val, 1);
 
 			lpa_override_enabled = false;
-		}
-	}
-out:
-	mutex_unlock(&prcmu_qos_mutex);
-	return ret;
-}
-
-#define VAPE_OVERRIDE_VOLTAGE 0x1c /* 1.05V */
-
-int prcmu_qos_vape_override(bool enable)
-{
-	int ret = 0;
-
-	mutex_lock(&prcmu_qos_mutex);
-
-	if (enable) {
-		if (!vape_override_enabled) {
-			u8 vape_override_voltage_val;
-
-			/* Save the APE OPP 100% setting. */
-			ret = prcmu_abb_read(AB8500_REGU_CTRL2,
-					     AB8500_VAPESEL1_REG,
-					     &opp100_voltage_val, 1);
-			if (ret)
-				goto out;
-
-			vape_override_voltage_val = (u8)VAPE_OVERRIDE_VOLTAGE;
-
-			/* Use VAPE Override Voltage for APE OPP 100%. */
-			ret = prcmu_abb_write(AB8500_REGU_CTRL2,
-					      AB8500_VAPESEL1_REG,
-					      &vape_override_voltage_val, 1);
-
-			vape_override_enabled = true;
-		}
-	} else {
-		if (vape_override_enabled) {
-			/* Restore the original APE OPP 100% setting. */
-			ret = prcmu_abb_write(AB8500_REGU_CTRL2,
-					      AB8500_VAPESEL1_REG,
-					      &opp100_voltage_val, 1);
-
-			vape_override_enabled = false;
 		}
 	}
 out:
