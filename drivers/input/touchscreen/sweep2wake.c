@@ -41,7 +41,6 @@
 
 /* Resources */
 int s2w_switch = 0;
-extern unsigned int is_charger_present;
 extern bool is_suspend;
 static bool exec_count = true;
 static bool barrier[2] = {false, false};
@@ -109,7 +108,7 @@ void detect_sweep2wake(int x, int y, bool st)
                 x, y, (single_touch) ? "true" : "false");
 #endif
 	//left->right
-	if ((single_touch) && (is_suspend || is_lpm) && (s2w_switch > 0 || is_charger_present)) {
+	if ((single_touch) && (is_suspend || is_lpm) && (s2w_switch > 0)) {
 		prevx = 0;
 		nextx = S2W_X_B1;
 		if ((barrier[0] == true) ||

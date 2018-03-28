@@ -4317,7 +4317,6 @@ err_i2c:
 	return ret;
 }
 
-extern unsigned int is_charger_present;
 static bool is_awaken = false;
 static bool is_sleep = false;
 
@@ -4328,7 +4327,7 @@ static int bt404_ts_suspend(struct device *dev)
 	struct bt404_ts_data *data = i2c_get_clientdata(client);
 	int ret;
 
-        if (s2w_switch || is_charger_present) {
+        if (s2w_switch) {
                         pr_err("%s: skipped\n", __func__);
 		goto out;
         }
@@ -4418,7 +4417,7 @@ out:
 }
 #endif
 
-inline bool early_suspend_bt404_ts(void)
+inline static bool early_suspend_bt404_ts(void)
 {
 	if (!is_sleep) {
 		is_sleep = true;
@@ -4429,7 +4428,7 @@ inline bool early_suspend_bt404_ts(void)
 	return !is_sleep;
 }
 
-inline bool late_resume_bt404_ts(void)
+inline static bool late_resume_bt404_ts(void)
 {
 	if (!is_awaken) {
 		bt404_ts_resume(&data_->client->dev);

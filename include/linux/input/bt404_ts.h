@@ -66,7 +66,4 @@ struct bt404_ts_platform_data {
 
 extern struct class *sec_class;
 
-bool late_resume_bt404_ts(void);
-bool early_suspend_bt404_ts(void);
-
 #endif /* __LINUX_BT404_TS_H */
