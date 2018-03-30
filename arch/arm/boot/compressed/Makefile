@@ -6,9 +6,6 @@
 
 KBUILD_CFLAGS += -fno-stack-protector
 
-KBUILD_CFLAGS += -fPIC
-KBUILD_AFLAGS += -fPIC
-
 OBJS		=
 
 # Ensure that mmcif loader code appears early in the image
