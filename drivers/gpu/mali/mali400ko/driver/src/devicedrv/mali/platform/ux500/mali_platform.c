@@ -56,7 +56,7 @@
 #define AB8500_VAPE_MIN_UV		700000
 #define AB8500_VAPE_MAX_UV		1387500
 
-#define MALI_CLOCK_DEFLO		249600
+#define MALI_CLOCK_DEFLO		299520
 #define MALI_CLOCK_DEFHI		399360
 
 struct mali_dvfs_data
@@ -78,7 +78,6 @@ static struct mali_dvfs_data mali_dvfs[] = {
 	{399360, 0x01050168, 0x24},
 	{349440, 0x0105015B, 0x24},
 	{299520, 0x0105014E, 0x24},
-	{249600, 0x01050141, 0x24},
 };
 
 int mali_utilization_high_to_low = MALI_HIGH_TO_LOW_LEVEL_UTILIZATION_LIMIT;
