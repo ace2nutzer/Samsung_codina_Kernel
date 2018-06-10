@@ -10,7 +10,6 @@ mount -t proc proc /proc
 mount -t sysfs sysfs /sys
 
 # Some workarounds
-echo 0 > /sys/devices/system/cpu/cpufreq/interactive/hispeed_freq
 echo 600000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
 echo 800000 > /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
 
