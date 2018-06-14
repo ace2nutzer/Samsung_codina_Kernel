@@ -37,7 +37,7 @@
 #include <linux/mfd/dbx500-prcmu.h>
 #endif
 
-#define MALI_HIGH_TO_LOW_LEVEL_UTILIZATION_LIMIT 26 /* 10% */
+#define MALI_HIGH_TO_LOW_LEVEL_UTILIZATION_LIMIT 51 /* 20% */
 #define MALI_LOW_TO_HIGH_LEVEL_UTILIZATION_LIMIT 243 /* 95% */
 
 #define MALI_UX500_VERSION		"1.0.1"
@@ -106,7 +106,7 @@ static u32 boost_delay 		= 0;
 static u32 boost_low 		= 0;
 static u32 boost_high 		= 0;
 static u32 boost_upthreshold 	= 243; /* 95% */
-static u32 boost_downthreshold	= 26; /* 10% */
+static u32 boost_downthreshold	= 51; /* 20% */
 //mutex to protect above variables
 static DEFINE_MUTEX(mali_boost_lock);
 
