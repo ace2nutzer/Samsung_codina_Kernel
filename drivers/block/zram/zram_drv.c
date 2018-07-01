@@ -989,6 +989,7 @@ put_zram:
 	zram_meta_put(zram);
 error:
 	bio_io_error(bio);
+
 	return 0;
 }
 

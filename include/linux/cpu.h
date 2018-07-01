@@ -100,16 +100,25 @@ extern int register_cpu_notifier(struct notifier_block *nb);
 extern int __register_cpu_notifier(struct notifier_block *nb);
 #else
 static inline int register_cpu_notifier(struct notifier_block *nb)
+{
+	return 0;
+}
+
 static inline int __register_cpu_notifier(struct notifier_block *nb)
 {
 	return 0;
 }
+
 #endif
 
 static inline void unregister_cpu_notifier(struct notifier_block *nb)
+{
+}
+
 static inline void __unregister_cpu_notifier(struct notifier_block *nb)
 {
 }
+
 #endif
 
 int cpu_up(unsigned int cpu);
