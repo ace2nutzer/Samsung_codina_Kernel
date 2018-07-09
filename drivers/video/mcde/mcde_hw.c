@@ -40,10 +40,13 @@
 #include "mcde_hw.h"
 
 #include "mcde_debugfs.h"
-#define CREATE_TRACE_POINTS
-#include "mcde_trace.h"
 
-#define MCDE_DPI_UNDERFLOW
+//#define CREATE_TRACE_POINTS
+#ifdef CREATE_TRACE_POINTS
+#include "mcde_trace.h"
+#endif
+
+//#define MCDE_DPI_UNDERFLOW
 #ifdef MCDE_DPI_UNDERFLOW
 #include <linux/fb.h>
 #include <video/mcde_fb.h>
@@ -710,8 +713,10 @@ static inline void mcde_add_vsync_capture_listener(struct mcde_chnl_state *chnl)
 {
 	int n_listeners = atomic_inc_return(&chnl->n_vsync_capture_listeners);
 
+#ifdef CREATE_TRACE_POINTS
 	trace_keyvalue((0xF0 | chnl->id), "mcde_add_vsync_capture_listener",
 			n_listeners);
+#endif
 
 	if (n_listeners == 1) {
 		switch (chnl->port.sync_src) {
@@ -732,8 +737,10 @@ static inline void mcde_remove_vsync_capture_listener(
 {
 	int n_listeners = atomic_dec_return(&chnl->n_vsync_capture_listeners);
 
+#ifdef CREATE_TRACE_POINTS
 	trace_keyvalue((0xF0 | chnl->id), "mcde_remove_vsync_capture_listener",
 			n_listeners);
+#endif
 
 	if (n_listeners == 0) {
 		switch (chnl->port.sync_src) {
@@ -751,7 +758,9 @@ static inline void mcde_remove_vsync_capture_listener(
 
 static inline void mcde_handle_vsync(struct mcde_chnl_state *chnl)
 {
+#ifdef CREATE_TRACE_POINTS
 	trace_vsync(chnl->id, chnl->state);
+#endif
 	atomic_inc(&chnl->vsync_cnt);
 	chnl->vcmp_cnt_wait = atomic_read(&chnl->vcmp_cnt) + 1;
 	if (chnl->port.type == MCDE_PORTTYPE_DSI) {
@@ -795,7 +804,9 @@ static inline void mcde_handle_vcmp_state_stopping(struct mcde_chnl_state *chnl)
 
 static inline void mcde_handle_vcmp(struct mcde_chnl_state *chnl)
 {
+#ifdef CREATE_TRACE_POINTS
 	trace_vcmp(chnl->id, chnl->state);
+#endif
 	if (!chnl->vcmp_per_field ||
 			(chnl->vcmp_per_field && chnl->even_vcmp)) {
 		if (chnl->state == CHNLSTATE_STOPPING)
@@ -814,7 +825,9 @@ static void handle_dsi_irq(struct mcde_chnl_state *chnl)
 
 	events = nova_dsilink_handle_irq(chnl->dsilink);
 	if (events & DSILINK_IRQ_BTA_TE) {
+#ifdef CREATE_TRACE_POINTS
 		trace_vsync(chnl->id, chnl->state);
+#endif
 		atomic_inc(&chnl->vsync_cnt);
 		chnl->vcmp_cnt_wait = atomic_read(&chnl->vcmp_cnt) + 1;
 
@@ -884,7 +897,9 @@ static irqreturn_t mcde_irq_handler(int irq, void *dev)
 	if (active_interrupts & MCDE_AIS_MCDECHNLI_MASK) {
 		irq_status = mcde_rreg(MCDE_MISCHNL);
 		if (irq_status) {
+#ifdef CREATE_TRACE_POINTS
 			trace_chnl_err(irq_status);
+#endif
 			dev_err(&mcde_dev->dev,
 					"chnl error=%.8x\n", irq_status);
 			mcde_wreg(MCDE_RISCHNL, irq_status);
@@ -893,7 +908,9 @@ static irqreturn_t mcde_irq_handler(int irq, void *dev)
 	if (active_interrupts & MCDE_AIS_MCDEERRI_MASK) {
 		irq_status = mcde_rreg(MCDE_MISERR);
 		if (irq_status) {
+#ifdef CREATE_TRACE_POINTS
 			trace_err(irq_status);
+#endif
 #ifdef MCDE_DPI_UNDERFLOW
 		if (irq_status & MCDE_RISERR_FUARIS_MASK) {
 				dev_warn(&mcde_dev->dev, "FIFO A underflow interrupt detected!!\n");
@@ -983,7 +1000,9 @@ static int set_channel_state_atomic(struct mcde_chnl_state *chnl,
 	    (chnl_state == CHNLSTATE_RUNNING && state == CHNLSTATE_STOPPING)) {
 		/* Set wait TE, running, or stopping state */
 		chnl->state = state;
+#ifdef CREATE_TRACE_POINTS
 		trace_state(chnl->id, chnl->state);
+#endif
 		return 0;
 	} else if ((chnl_state == CHNLSTATE_STOPPING &&
 						state == CHNLSTATE_STOPPED) ||
@@ -991,7 +1010,9 @@ static int set_channel_state_atomic(struct mcde_chnl_state *chnl,
 						state == CHNLSTATE_STOPPED)) {
 		/* Set stopped state */
 		chnl->state = state;
+#ifdef CREATE_TRACE_POINTS
 		trace_state(chnl->id, chnl->state);
+#endif
 		wake_up_all(&chnl->state_waitq);
 		return 0;
 	} else if (state == CHNLSTATE_IDLE) {
@@ -1001,7 +1022,9 @@ static int set_channel_state_atomic(struct mcde_chnl_state *chnl,
 			     chnl_state != CHNLSTATE_REQ_BTA_TE &&
 			     chnl_state != CHNLSTATE_SUSPEND);
 		chnl->state = state;
+#ifdef CREATE_TRACE_POINTS
 		trace_state(chnl->id, chnl->state);
+#endif
 		wake_up_all(&chnl->state_waitq);
 		return 0;
 	} else {
@@ -1047,7 +1070,9 @@ static int set_channel_state_sync(struct mcde_chnl_state *chnl,
 
 	/* State is IDLE, do transition to new state */
 	chnl->state = state;
+#ifdef CREATE_TRACE_POINTS
 	trace_state(chnl->id, chnl->state);
+#endif
 
 	return ret;
 }
@@ -1095,7 +1120,9 @@ int mcde_chnl_wait_for_next_vsync(struct mcde_chnl_state *chnl,
 	 * After this there can be context switches and other calls to
 	 * other mcde_hw functions.
 	 */
+#ifdef CREATE_TRACE_POINTS
 	trace_keyvalue((0xF0 | chnl->id), "Wait for next vsync", w);
+#endif
 	rem_jiffies = wait_event_timeout(chnl->vsync_waitq,
 			atomic_read(&chnl->vsync_cnt) >= w,
 			msecs_to_jiffies(CHNL_TIMEOUT));
@@ -1129,12 +1156,16 @@ int mcde_chnl_wait_for_next_vsync(struct mcde_chnl_state *chnl,
 	mcde_unlock(__func__, __LINE__);
 
 	if (rem_jiffies == 0) {
+#ifdef CREATE_TRACE_POINTS
 		trace_keyvalue((0xF0 | chnl->id),
 				"Timeout waiting for next vsync", w);
+#endif
 		return -1;
 	} else {
+#ifdef CREATE_TRACE_POINTS
 		trace_keyvalue((0xF0 | chnl->id),
 				"Done waiting for vsync", w);
+#endif
 		return 0;
 	}
 }
@@ -1142,16 +1173,22 @@ int mcde_chnl_wait_for_next_vsync(struct mcde_chnl_state *chnl,
 static int wait_for_vcmp(struct mcde_chnl_state *chnl)
 {
 	int w = chnl->vcmp_cnt_wait;
+#ifdef CREATE_TRACE_POINTS
 	trace_keyvalue((0xF0 | chnl->id), "Wait for vcmp_cnt", w);
+#endif
 	if (wait_event_timeout(chnl->vcmp_waitq,
 			atomic_read(&chnl->vcmp_cnt) >= w,
 			msecs_to_jiffies(CHNL_TIMEOUT)) == 0) {
+#ifdef CREATE_TRACE_POINTS
 		trace_keyvalue((0xF0 | chnl->id), "Timeout waiting, vcmp_cnt",
 				atomic_read(&chnl->vcmp_cnt));
+#endif
 		return -1;
 	} else {
+#ifdef CREATE_TRACE_POINTS
 		trace_keyvalue((0xF0 | chnl->id), "Done waiting, vcmp_cnt",
 				atomic_read(&chnl->vcmp_cnt));
+#endif
 		return 0;
 	}
 }
@@ -1159,29 +1196,35 @@ static int wait_for_vcmp(struct mcde_chnl_state *chnl)
 static int wait_for_vsync(struct mcde_chnl_state *chnl)
 {
 	int w = chnl->vsync_cnt_wait;
+#ifdef CREATE_TRACE_POINTS
 	trace_keyvalue((0xF0 | chnl->id), "Wait for vsync_cnt", w);
+#endif
 	if (wait_event_timeout(chnl->vsync_waitq,
 			atomic_read(&chnl->vsync_cnt) >= w,
 			msecs_to_jiffies(CHNL_TIMEOUT)) == 0) {
+#ifdef CREATE_TRACE_POINTS
 		trace_keyvalue((0xF0 | chnl->id), "Timeout waiting, vsync_cnt",
 				atomic_read(&chnl->vsync_cnt));
+#endif
 		return -1;
 	} else {
+#ifdef CREATE_TRACE_POINTS
 		trace_keyvalue((0xF0 | chnl->id), "Done waiting, vsync_cnt",
 				atomic_read(&chnl->vsync_cnt));
+#endif
 		return 0;
 	}
 }
 /* PRCMU LCDCLK
- * 30720000
- * 33280000	[S6D27A1]
- * 36305454	[S6D27A1 - Tuned]
- * 39936000
- * 44373333
- * 49920000
- * 57051428
- * 66560000	[WS2401]
- * 79872000	[WS2401 - Tuned]
+ * 30720000	[S6D27A1 - Stock]
+ * 33280000	[S6D27A1 - Tuned]
+ * 36305454	[S6D27A1]
+ * 39936000	[S6D27A1]
+ * 44373333	[S6D27A1]
+ * 49920000	[WS2401 - Stock]
+ * 57051428	[WS2401]
+ * 66560000	[WS2401 - Tuned]
+ * 79872000	[WS2401]
  */
 #include <linux/kobject.h>
 #include <linux/mfd/dbx500-prcmu.h>
@@ -1197,39 +1240,39 @@ struct lcdclk_prop
 
 static struct lcdclk_prop lcdclk_prop[] = {
   	[1] = {
-		.name = "30.72 Mhz (30720000)",
+		.name = "30.72 Mhz (30720000) [S6D27A1 - Stock]",
 		.clk = 30720000,
 	},
   	[2] = {
-		.name = "33.28 Mhz (33280000) [S6D27A1]",
+		.name = "33.28 Mhz (33280000) [S6D27A1 - Tuned]",
 		.clk = 33280000,
 	},
   	[3] = {
-		.name = "36.30 Mhz (36305454) [S6D27A1 - Tuned]",
+		.name = "36.30 Mhz (36305454) [S6D27A1]",
 		.clk = 36305454,
 	},
   	[4] = {
-		.name = "39.93 Mhz (39936000)",
+		.name = "39.93 Mhz (39936000) [S6D27A1]",
 		.clk = 39936000,
 	},
   	[5] = {
-		.name = "44.37 Mhz (44373333)",
+		.name = "44.37 Mhz (44373333) [S6D27A1]",
 		.clk = 44373333,
 	},
   	[6] = {
-		.name = "49.92 Mhz (49920000)",
+		.name = "49.92 Mhz (49920000) [WS2401 - Stock]",
 		.clk = 49920000,
 	},
   	[7] = {
-		.name = "57.05 Mhz (57051428)",
+		.name = "57.05 Mhz (57051428) [WS2401]",
 		.clk = 57051428,
 	},
   	[8] = {
-		.name = "66.56 Mhz (66560000) [WS2401]",
+		.name = "66.56 Mhz (66560000) [WS2401 - Tuned]",
 		.clk = 66560000,
 	},
   	[9] = {
-		.name = "79.87 Mhz (79872000) [WS2401 - Tuned]",
+		.name = "79.87 Mhz (79872000) [WS2401]",
 		.clk = 79872000,
 	},
 };
@@ -1238,10 +1281,6 @@ static int lcdclk_usr;
 
 static void lcdclk_thread(struct work_struct *ws2401_lcdclk_work)
 {
-	msleep(200);
-
-		pr_err("[MCDE] LCDCLK %dHz\n",  lcdclk_prop[lcdclk_usr].clk);
-
 		LCDCLK_SET(lcdclk_prop[lcdclk_usr].clk);
 }
 static DECLARE_WORK(lcdclk_work, lcdclk_thread);
@@ -1293,6 +1332,7 @@ static ssize_t lcd_clk_store(struct kobject *kobj, struct kobj_attribute *attr, 
 	lcdclk_usr = tmp;
 out:
 	schedule_work(&lcdclk_work);
+		pr_err("[MCDE] Set LCDCLK to %d Hz\n",  lcdclk_prop[lcdclk_usr].clk);
 
 	return count;
 }
@@ -1401,19 +1441,20 @@ static int update_channel_static_registers(struct mcde_chnl_state *chnl)
 	}
 
 	if (port->type == MCDE_PORTTYPE_DPI) {
-		if (lcdclk_usr) {
-			pr_err("[MCDE] Rebasing LCDCLK...\n");
-			schedule_work(&lcdclk_work);
-		}
-		
 		if (port->phy.dpi.lcd_freq != clk_round_rate(chnl->clk_dpi,
 							port->phy.dpi.lcd_freq))
 			dev_warn(&mcde_dev->dev, "Could not set lcd freq"
 					" to %d\n", port->phy.dpi.lcd_freq);
-		WARN_ON_ONCE(clk_set_rate(chnl->clk_dpi,
-						port->phy.dpi.lcd_freq));
-		pr_err("[MCDE] rebased LCDCLK to %d Hz\n", port->phy.dpi.lcd_freq);
-		WARN_ON_ONCE(clk_enable(chnl->clk_dpi));
+
+		if (lcdclk_usr) {
+		schedule_work(&lcdclk_work);
+		pr_err("[MCDE] Set LCDCLK to %d Hz\n",  lcdclk_prop[lcdclk_usr].clk);
+		} else {
+				WARN_ON_ONCE(clk_set_rate(chnl->clk_dpi,
+				port->phy.dpi.lcd_freq));
+				pr_err("[MCDE] Set LCDCLK to %d Hz\n", port->phy.dpi.lcd_freq);
+				}
+	WARN_ON_ONCE(clk_enable(chnl->clk_dpi));
 	}
 
 	mcde_wfld(MCDE_CR, MCDEEN, true);
@@ -1820,7 +1861,7 @@ static void enable_flow(struct mcde_chnl_state *chnl, bool setstate)
 	 */
 	switch (chnl->id) {
 	case MCDE_CHNL_A:
-		mcde_rfld(MCDE_CRA0, FLOEN);	/* WARN_ON_ONCE(mcde_rfld(MCDE_CRA0, FLOEN)); */
+		WARN_ON_ONCE(mcde_rfld(MCDE_CRA0, FLOEN)); /* BUG */
 		mcde_wfld(MCDE_CRA0, ROTEN, chnl->regs.roten);
 		mcde_wfld(MCDE_CRA0, FLOEN, true);
 		break;
@@ -3189,19 +3230,25 @@ static void mcde_ovly_update_color_conversion(struct mcde_ovly_state *ovly,
 					MCDE_OVL0CR_COLCCTRL_DISABLED)) {
 			ovly->regs.col_conv = MCDE_OVL0CR_COLCCTRL_DISABLED;
 			ovly->chnl->update_color_conversion = true;
+#ifdef CREATE_TRACE_POINTS
 			trace_keyvalue(ovly->idx, "1. cc", ovly->regs.col_conv);
+#endif
 		} else if (!ovly_yuv && (ovly->regs.col_conv !=
 				MCDE_OVL0CR_COLCCTRL_ENABLED_SAT)) {
 			ovly->regs.col_conv = MCDE_OVL0CR_COLCCTRL_ENABLED_SAT;
 			ovly->chnl->update_color_conversion = true;
+#ifdef CREATE_TRACE_POINTS
 			trace_keyvalue(ovly->idx, "2. cc", ovly->regs.col_conv);
+#endif
 		}
 	} else {
 		if (!ovly_yuv && (ovly->regs.col_conv !=
 					MCDE_OVL0CR_COLCCTRL_DISABLED)) {
 			ovly->regs.col_conv = MCDE_OVL0CR_COLCCTRL_DISABLED;
 			ovly->regs.dirty = true;
+#ifdef CREATE_TRACE_POINTS
 			trace_keyvalue(ovly->idx, "3. cc", ovly->regs.col_conv);
+#endif
 		}
 	}
 }
@@ -3250,8 +3297,10 @@ static void _mcde_chnl_update_color_conversion(struct mcde_chnl_state *chnl)
 		chnl->regs.background_yuv = true;
 		chnl->regs.dirty = true;
 		chnl->update_color_conversion = true;
+#ifdef CREATE_TRACE_POINTS
 		trace_keyvalue((0xF0 | chnl->id), "oled_enable",
 			chnl->regs.oled_enable);
+#endif
 	} else if (chnl->oled_color_conversion && !ovly0_yuv && !ovly1_yuv) {
 		/* Turn off if no overlay needs YUV conv */
 		chnl->oled_color_conversion = false;
@@ -3259,8 +3308,10 @@ static void _mcde_chnl_update_color_conversion(struct mcde_chnl_state *chnl)
 		chnl->regs.oled_enable = false;
 		chnl->regs.dirty = true;
 		chnl->update_color_conversion = true;
+#ifdef CREATE_TRACE_POINTS
 		trace_keyvalue((0xF0 | chnl->id), "oled_enable",
 			chnl->regs.oled_enable);
+#endif
 	}
 
 	if (ovly0_valid)
@@ -3288,7 +3339,9 @@ static bool is_update_time_long(struct mcde_chnl_state *chnl,
 	sumtime += (u32)ktime_to_ms(diff);
 	cnt++;
 	if (cnt == TIME_UPDATE_CNT) {
+#ifdef CREATE_TRACE_POINTS
 		trace_keyvalue(chnl->id, "update_time", sumtime);
+#endif
 		if (sumtime > TIME_UPDATE_ALL_MAX)
 			ret = true;
 		sumtime = 0;
@@ -3556,7 +3609,10 @@ int mcde_chnl_apply(struct mcde_chnl_state *chnl)
 	mcde_unlock(__func__, __LINE__);
 
 	dev_vdbg(&mcde_dev->dev, "%s exit with ret %d\n", __func__, ret);
+
+#ifdef CREATE_TRACE_POINTS
 	trace_update(chnl->id, false);
+#endif
 
 	return ret;
 }
@@ -3570,7 +3626,9 @@ int mcde_chnl_update(struct mcde_chnl_state *chnl,
 	if (!chnl->reserved)
 		return -EINVAL;
 
+#ifdef CREATE_TRACE_POINTS
 	trace_update(chnl->id, true);
+#endif
 
 	mcde_lock(__func__, __LINE__);
 
@@ -3890,7 +3948,9 @@ static int regulator_notify(struct notifier_block *self, unsigned long action,
 	switch (action) {
 	case REGULATOR_EVENT_FORCE_DISABLE: /* Intentional */
 	case REGULATOR_EVENT_DISABLE:
+#ifdef MCDE_DPI_UNDERFLOW
 		regulator_disabled = true;
+#endif
 		wake_up_all(&regulator_disable_waitq);
 		break;
 	default:
@@ -3914,7 +3974,9 @@ static void work_mcde_restart(struct work_struct *ptr)
 		 * terminated to early.
 		 */
 		regulator_enable(regulator_mcde_epod);
+#ifdef MCDE_DPI_UNDERFLOW
 		regulator_disabled = false;
+#endif
 
 		for (i = 0; i < num_channels; i++) {
 			struct mcde_chnl_state *chnl = &channels[i];
@@ -3931,8 +3993,10 @@ static void work_mcde_restart(struct work_struct *ptr)
 		 */
 		regulator_disable(regulator_mcde_epod);
 
+#ifdef MCDE_DPI_UNDERFLOW
 		rem_jiffies = wait_event_timeout(regulator_disable_waitq,
 				regulator_disabled, msecs_to_jiffies(3000));
+#endif
 
 		BUG_ON(!rem_jiffies);
 
