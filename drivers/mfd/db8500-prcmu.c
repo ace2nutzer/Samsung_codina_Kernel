@@ -52,10 +52,12 @@
 #define PRCMU_I2C_TIMEOUT	0x0F000000
 #endif //CONFIG_SAMSUNG_PANIC_DISPLAY_DEVICES
 
-#define CREATE_TRACE_POINTS
+//#define CREATE_TRACE_POINTS
+#ifdef CREATE_TRACE_POINTS
 #include "dbx500-prcmu-trace.h"
-
 #include <linux/ftrace_event.h>
+#endif
+
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
 void log_this(u8 pc, char* a, u32 extra1, char* b, u32 extra2);
@@ -994,9 +996,10 @@ int db8500_prcmu_set_power_state(u8 state, bool keep_ulp_clk, bool keep_ap_pll)
 	writel(MBOX_BIT(0), PRCM_MBOX_CPU_SET);
 
 	spin_unlock_irqrestore(&mb0_transfer.lock, flags);
-
+#ifdef CREATE_TRACE_POINTS
 	trace_u8500_set_power_state(
 			fw_trans[state], keep_ulp_clk, keep_ap_pll);
+#endif
 	return 0;
 }
 
@@ -1004,7 +1007,9 @@ static u8 db8500_prcmu_get_power_state_result(void)
 {
 	u8 status;
 	status = readb(tcdm_base + PRCM_ACK_MB0_AP_PWRSTTR_STATUS);
+#ifdef CREATE_TRACE_POINTS
 	trace_u8500_get_power_state_result(status);
+#endif
 	return status;
 }
 
@@ -1043,7 +1048,9 @@ static void config_wakeups(void)
 	}
 	last_dbb_events = dbb_events;
 	last_abb_events = abb_events;
+#ifdef CREATE_TRACE_POINTS
 	trace_u8500_config_wakeups(dbb_events, abb_events);
+#endif
 }
 
 static void db8500_prcmu_enable_wakeups(u32 wakeups)
@@ -1461,8 +1468,9 @@ static int db8500_prcmu_set_arm_opp(u8 opp)
 
 	if (opp < ARM_NO_CHANGE || opp > ARM_EXTCLK)
 		return -EINVAL;
-
+#ifdef CREATE_TRACE_POINTS
 	trace_u8500_set_arm_opp(opp);
+#endif
 	r = 0;
 
 	mutex_lock(&mb1_transfer.lock);
@@ -1614,8 +1622,9 @@ static int db8500_prcmu_set_ddr_opp(u8 opp)
 	/* Changing the DDR OPP can hang the hardware pre-v21 */
 	if (!cpu_is_u8500v20())
 		writeb(opp, PRCM_DDR_SUBSYS_APE_MINBW);
-
+#ifdef CREATE_TRACE_POINTS
 	trace_u8500_set_ddr_opp(opp);
+#endif
 	return 0;
 }
 
@@ -1676,8 +1685,9 @@ static int db8500_prcmu_set_ape_opp(u8 opp)
 {
 	int r = 0;
 	u8 prcmu_opp_req;
-
+#ifdef CREATE_TRACE_POINTS
 	trace_u8500_set_ape_opp(opp);
+#endif
 	if (opp == mb1_transfer.ape_opp)
 		return 0;
 
@@ -1868,8 +1878,9 @@ static int set_epod(u16 epod_id, u8 epod_state)
 	/* check argument */
 	BUG_ON(epod_state > EPOD_STATE_ON);
 	BUG_ON(epod_state == EPOD_STATE_RAMRET && !ram_retention);
-
+#ifdef CREATE_TRACE_POINTS
 	trace_u8500_set_epod(epod_id, epod_state);
+#endif
 	/* get lock */
 	mutex_lock(&mb2_transfer.lock);
 
@@ -2262,7 +2273,9 @@ static int request_b2r2_clock(u8 clock, bool enable)
  */
 int db8500_prcmu_request_clock(u8 clock, bool enable)
 {
+#ifdef CREATE_TRACE_POINTS
 	trace_u8500_request_clock(clock, enable);
+#endif
 	if (clock == PRCMU_SGACLK)
 		return request_sga_clock(clock, enable);
 	else if (clock == PRCMU_B2R2CLK)
@@ -2874,7 +2887,9 @@ static int db8500_prcmu_set_clock_rate(u8 clock, unsigned long rate)
 		set_dsiclk_rate((clock - PRCMU_DSI0CLK), rate);
 	else if ((PRCMU_DSI0ESCCLK <= clock) && (clock <= PRCMU_DSI2ESCCLK))
 		set_dsiescclk_rate((clock - PRCMU_DSI0ESCCLK), rate);
+#ifdef CREATE_TRACE_POINTS
 	trace_u8500_set_clock_rate(clock, rate);
+#endif
 	return 0;
 }
 
@@ -2907,8 +2922,9 @@ static int db8500_prcmu_config_esram0_deep_sleep(u8 state)
 
 static int prcmu_a9wdog(u8 cmd, u8 d0, u8 d1, u8 d2, u8 d3)
 {
+#ifdef CREATE_TRACE_POINTS
 	trace_u8500_a9_wdog(cmd, d0, d1, d2, d3);
-
+#endif
 	mutex_lock(&mb4_transfer.lock);
 
 	while (readl(PRCM_MBOX_CPU_VAL) & MBOX_BIT(4))
@@ -3015,11 +3031,15 @@ static int db8500_prcmu_abb_read(u8 slave, u8 reg, u8 *value, u8 size)
 		*value = mb5_transfer.ack.value;
 		if (!(*value == 0 && slave == 0x0E && (reg >= 0x20 && reg < 0x40))) {
 			log_this(230, "reg", slave << 8 | reg, "value", *value);
+#ifdef CREATE_TRACE_POINTS
 			trace_printk("%02X@%04Xh\n", *value, (slave << 8 | reg));
+#endif
 		}
 	} else {
 		log_this(230, "reg", slave << 8 | reg, "error", mb5_transfer.ack.status);
+#ifdef CREATE_TRACE_POINTS
 		trace_printk("error(%02X)@%04Xh\n", *value, mb5_transfer.ack.status);
+#endif
 	}
 
 	mutex_unlock(&mb5_transfer.lock);
@@ -3179,10 +3199,14 @@ static int db8500_prcmu_abb_write_masked(u8 slave, u8 reg, u8 *value, u8 *mask,
 
 	if (!r) {
 		log_this(240, "reg", slave << 8 | reg, "mask|write", *mask << 16 | *value);
+#ifdef CREATE_TRACE_POINTS
 		trace_printk("(%02X&%02X)@%04Xh\n", *value, *mask, (slave << 8 | reg));
+#endif
 	} else {
 		log_this(240, "reg", slave << 8 | reg, "error", mb5_transfer.ack.status);
+#ifdef CREATE_TRACE_POINTS
 		trace_printk("error(%02X)@%04Xh\n", mb5_transfer.ack.status, (slave << 8 | reg));
+#endif
 	}
 
 	mutex_unlock(&mb5_transfer.lock);
@@ -3411,7 +3435,9 @@ void prcmu_ac_wake_req(void)
 	mutex_lock(&mb0_transfer.ac_wake_lock);
 
 	val = readl(PRCM_HOSTACCESS_REQ);
+#ifdef CREATE_TRACE_POINTS
 	trace_u8500_ac_wake_req(val);
+#endif
 	if (val & PRCM_HOSTACCESS_REQ_HOSTACCESS_REQ)
 		goto unlock_and_return;
 
@@ -3506,7 +3532,9 @@ void prcmu_ac_sleep_req()
 	mutex_lock(&mb0_transfer.ac_wake_lock);
 
 	val = readl(PRCM_HOSTACCESS_REQ);
+#ifdef CREATE_TRACE_POINTS
 	trace_u8500_ac_sleep_req(val);
+#endif
 	if (!(val & PRCM_HOSTACCESS_REQ_HOSTACCESS_REQ))
 		goto unlock_and_return;
 
@@ -3551,8 +3579,9 @@ static bool db8500_prcmu_is_ac_wake_requested(void)
 static void db8500_prcmu_system_reset(u16 reset_code)
 {
 	u8 power_cut_reset = 0;
+#ifdef CREATE_TRACE_POINTS
 	trace_u8500_system_reset(reset_code);
-
+#endif
 	/* Disable power-cut feature */
 	(void)db8500_prcmu_abb_write_no_irq(AB8500_RTC, PCUT_CTR_AND_STATUS,
 						&power_cut_reset, 1);
@@ -3591,7 +3620,9 @@ static u32 db8500_prcmu_get_reset_status(void)
  */
 static void db8500_prcmu_modem_reset(void)
 {
+#ifdef CREATE_TRACE_POINTS
 	trace_u8500_modem_reset(0);
+#endif
 	mutex_lock(&mb1_transfer.lock);
 
 	while (readl(PRCM_MBOX_CPU_VAL) & MBOX_BIT(1))
@@ -3700,8 +3731,9 @@ static bool read_mailbox_0(void)
 		break;
 	}
 	writel(MBOX_BIT(0), PRCM_ARM_IT1_CLR);
+#ifdef CREATE_TRACE_POINTS
 	trace_u8500_irq_mailbox_0(header, ev, mask);
-
+#endif
 	if (r) {
 		unsigned long flags;
 
@@ -3732,9 +3764,11 @@ static bool read_mailbox_1(void)
 	mb1_transfer.ack.ape_voltage_status = readb(tcdm_base +
 		PRCM_ACK_MB1_APE_VOLTAGE_STATUS);
 	writel(MBOX_BIT(1), PRCM_ARM_IT1_CLR);
+#ifdef CREATE_TRACE_POINTS
 	trace_u8500_irq_mailbox_1(mb1_transfer.ack.header,
 		mb1_transfer.ack.arm_opp, mb1_transfer.ack.ape_opp,
 		mb1_transfer.ack.ape_voltage_status);
+#endif
 	complete(&mb1_transfer.work);
 	return false;
 }
@@ -3743,7 +3777,9 @@ static bool read_mailbox_2(void)
 {
 	mb2_transfer.ack.status = readb(tcdm_base + PRCM_ACK_MB2_DPS_STATUS);
 	writel(MBOX_BIT(2), PRCM_ARM_IT1_CLR);
+#ifdef CREATE_TRACE_POINTS
 	trace_u8500_irq_mailbox_2(mb2_transfer.ack.status);
+#endif
 	complete(&mb2_transfer.work);
 	return false;
 }
@@ -3780,8 +3816,9 @@ static bool read_mailbox_3(void)
 	log_req = readb(tcdm_base + PRCM_ACK_MB3_LOG_REQ);
 
 	writel(MBOX_BIT(3), PRCM_ARM_IT1_CLR);
+#ifdef CREATE_TRACE_POINTS
 	trace_u8500_irq_mailbox_3(0);
-
+#endif
 	if (log_req) {
 		spin_lock_irqsave(&mb3_transfer.fw_log_lock, flags);
 		mb3_transfer.fw_log_req |= log_req;
@@ -3817,7 +3854,9 @@ static bool read_mailbox_4(void)
 	}
 
 	writel(MBOX_BIT(4), PRCM_ARM_IT1_CLR);
+#ifdef CREATE_TRACE_POINTS
 	trace_u8500_irq_mailbox_4(header);
+#endif
 	if (do_complete)
 		complete(&mb4_transfer.work);
 
@@ -3829,8 +3868,10 @@ static bool read_mailbox_5(void)
 	mb5_transfer.ack.status = readb(tcdm_base + PRCM_ACK_MB5_I2C_STATUS);
 	mb5_transfer.ack.value = readb(tcdm_base + PRCM_ACK_MB5_I2C_VAL);
 	writel(MBOX_BIT(5), PRCM_ARM_IT1_CLR);
+#ifdef CREATE_TRACE_POINTS
 	//trace_u8500_irq_mailbox_5(mb5_transfer.ack.status,
 	//	mb5_transfer.ack.value);
+#endif
 	complete(&mb5_transfer.work);
 	return false;
 }
@@ -3838,14 +3879,18 @@ static bool read_mailbox_5(void)
 static bool read_mailbox_6(void)
 {
 	writel(MBOX_BIT(6), PRCM_ARM_IT1_CLR);
+#ifdef CREATE_TRACE_POINTS
 	trace_u8500_irq_mailbox_6(0);
+#endif
 	return false;
 }
 
 static bool read_mailbox_7(void)
 {
 	writel(MBOX_BIT(7), PRCM_ARM_IT1_CLR);
+#ifdef CREATE_TRACE_POINTS
 	trace_u8500_irq_mailbox_7(0);
+#endif
 	return false;
 }
 
@@ -4182,14 +4227,15 @@ static int __init late(void)
 	#ifdef CONFIG_DB8500_LIVEOPP
 	int ret;
 	#endif /* CONFIG_DB8500_LIVEOPP */
-#ifdef CONFIG_TRACING
+#ifdef CREATE_TRACE_POINTS
 	extern int tracing_update_buffers(void);
+#endif
 #ifdef ENABLE_FTRACE_BY_DEFAULT
 	extern int tracing_set_tracer(const char *buf);
 	int err;
 #endif
+#ifdef CREATE_TRACE_POINTS
 	tracing_update_buffers();
-
 	trace_set_clr_event("irq", "irq_handler_entry", 1);
 	trace_set_clr_event("irq", "irq_handler_exit", 1);
 	//trace_set_clr_event("irq", "softirq_entry", 1);
