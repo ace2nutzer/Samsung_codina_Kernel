@@ -22,12 +22,9 @@
 #include <linux/cpufreq.h>
 #include <linux/mfd/dbx500-prcmu.h>
 
-#ifdef CONFIG_DEBUG_FS
-#include <linux/seq_file.h>
-#include <linux/debugfs.h>
-#endif
-
 #include <mach/prcmu-debug.h>
+
+#define ARM_THRESHOLD_FREQ 400000
 
 #define AB8500_VAPESEL1_REG 0x0E   /* APE OPP 100 voltage */
 #define AB8500_VAPESEL2_REG 0x0F   /* APE OPP 50 voltage  */
@@ -84,7 +81,7 @@ static struct prcmu_qos_object ape_opp_qos = {
 	.notifiers = &prcmu_ape_opp_notifier,
 	.name = "ape_opp",
 	/* Target value in % APE OPP */
-	.default_value = 25,
+	.default_value = 50,
 	.max_value = 100,
 	.force_value = 0,
 	.target_value = ATOMIC_INIT(100),
@@ -140,89 +137,19 @@ static struct prcmu_qos_object *prcmu_qos_array[] = {
 	&vsafe_opp_qos,
 };
 
-#ifdef CONFIG_DEBUG_FS
-static int requirements_print(struct seq_file *s, struct prcmu_qos_object *qo)
-{
-	struct requirement_list *node;
-	//TODO locking
-	list_for_each_entry(node, &qo->requirements.list, list) {
-		seq_printf(s, "%s: %d\n", node->name, node->value);
-	}
-	return 0;
-}
-
-#define PRINT_REQUIREMENTS(_name, _requirement) \
-static int _name##_requirements_print(struct seq_file *s, void *p) \
-{ \
-	requirements_print(s, prcmu_qos_array[_requirement]); \
-	return 0; \
-} \
-static int _name##_requirements_open_file(struct inode *inode, struct file *file) \
-{ \
-	return single_open(file, _name##_requirements_print, inode->i_private); \
-} \
-static const struct file_operations _name##_requirements_fops = { \
-	.open = _name##_requirements_open_file, \
-	.read = seq_read, \
-	.llseek = seq_lseek, \
-	.release = single_release, \
-	.owner = THIS_MODULE, \
-};
-
-PRINT_REQUIREMENTS(ape, PRCMU_QOS_APE_OPP);
-PRINT_REQUIREMENTS(ddr, PRCMU_QOS_DDR_OPP);
-PRINT_REQUIREMENTS(arm, PRCMU_QOS_ARM_KHZ);
-
-static int setup_debugfs(void)
-{
-	struct dentry *dir;
-	struct dentry *file;
-
-	dir = debugfs_create_dir("prcmu-qos", NULL);
-	if (IS_ERR_OR_NULL(dir))
-		goto fail;
-
-	file = debugfs_create_file("ape_requirements", (S_IRUGO),
-				   dir, NULL, &ape_requirements_fops);
-	if (IS_ERR_OR_NULL(file))
-		goto fail;
-
-	file = debugfs_create_file("arm_requirements", (S_IRUGO),
-				   dir, NULL, &arm_requirements_fops);
-	if (IS_ERR_OR_NULL(file))
-		goto fail;
-
-	file = debugfs_create_file("ddr_requirements", (S_IRUGO),
-				   dir, NULL, &ddr_requirements_fops);
-	if (IS_ERR_OR_NULL(file))
-		goto fail;
-
-	return 0;
-fail:
-	if (!IS_ERR_OR_NULL(dir))
-		debugfs_remove_recursive(dir);
-
-	pr_err("prcmu qos debug: debugfs entry failed\n");
-	return -ENOMEM;
-}
-#endif
-
 static DEFINE_MUTEX(prcmu_qos_mutex);
 static DEFINE_SPINLOCK(prcmu_qos_lock);
 
 static bool ape_opp_50_partly_25_enabled;
 
-#define CPUFREQ_OPP_DELAY 0
-#define CPUFREQ_OPP_DELAY_VOICECALL 0
+#define CPUFREQ_OPP_DELAY (HZ/5)
+#define CPUFREQ_OPP_DELAY_VOICECALL HZ
 static unsigned long cpufreq_opp_delay = CPUFREQ_OPP_DELAY;
 
 static bool prcmu_qos_cpufreq_init_done;
 
 static bool lpa_override_enabled;
 static u8 opp50_voltage_val;
-
-static bool vape_override_enabled;
-static u8 opp100_voltage_val;
 
 unsigned long prcmu_qos_get_cpufreq_opp_delay(void)
 {
@@ -357,9 +284,9 @@ static void update_target(int target, bool sem)
 		case 100:
 			/*
 			 * 9540 cross table matrix:set vsafe to 100% and
-			 * ARM  freq min to 200000
+			 * ARM  freq min to 400000
 			 */
-			__prcmu_qos_update_ddr_opp(200000, 100);
+			__prcmu_qos_update_ddr_opp(400000, 100);
 			op = DDR_100_OPP;
 			prcmu_set_ddr_opp(op);
 			pr_debug("prcmu qos: set ddr opp to 100%%\n");
@@ -407,9 +334,8 @@ static void update_target(int target, bool sem)
 			break;
 	case PRCMU_QOS_APE_OPP:
 		switch (extreme_value) {
-		case 25:
 		case 50:
-			if (ape_opp_50_partly_25_enabled || extreme_value == 25)
+			if (ape_opp_50_partly_25_enabled)
 				op = APE_50_PARTLY_25_OPP;
 			else
 				op = APE_50_OPP;
@@ -423,11 +349,11 @@ static void update_target(int target, bool sem)
 			}
 			break;
 		case 100:
-			/* 9540 cross table matrix: set ARM min freq to 200000 */
+			/* 9540 cross table matrix: set ARM min freq to 400000 */
 			if (cpu_is_u9540()) {
 				__prcmu_qos_update_requirement(
 					PRCMU_QOS_ARM_KHZ, "cross_opp_ape",
-					200000, false);
+					400000, false);
 			}
 			op = APE_100_OPP;
 			pr_debug("prcmu qos: set ape opp to 100%%\n");
@@ -469,7 +395,7 @@ void prcmu_qos_force_opp(int prcmu_qos_class, s32 i)
 	update_target(prcmu_qos_class, true);
 }
 
-#define LPA_OVERRIDE_VOLTAGE_SETTING 0x24 /* 1.15V */
+#define LPA_OVERRIDE_VOLTAGE_SETTING 0x22 /* 1.125V */
 
 int prcmu_qos_lpa_override(bool enable)
 {
@@ -563,22 +489,6 @@ int prcmu_qos_requirement(int prcmu_qos_class)
 EXPORT_SYMBOL_GPL(prcmu_qos_requirement);
 
 /**
-* prcmu_qos_requirement_is_active - returns true if qos request is inside a list
- * @prcmu_qos_class: identifies which list of qos request to us
- * @name: identifies the request
- */
-bool prcmu_qos_requirement_is_active(int prcmu_qos_class, char *name)
-{
-	struct requirement_list *dep;
-
-	list_for_each_entry(dep, &prcmu_qos_array[prcmu_qos_class]->requirements.list, list) {
-                if (!strcmp(dep->name, name)) return true;
-        }
-
-	return false;
-}
-
-/**
  * prcmu_qos_add_requirement - inserts new qos request into the list
  * @prcmu_qos_class: identifies which list of qos request to us
  * @name: identifies the request
@@ -594,11 +504,6 @@ static int __prcmu_qos_add_requirement(int prcmu_qos_class, char *name,
 {
 	struct requirement_list *dep;
 	unsigned long flags;
-
-	//ignore duplicate names
-	list_for_each_entry(dep, &prcmu_qos_array[prcmu_qos_class]->requirements.list, list) {
-		if (!strcmp(dep->name, name)) return 0;
-	}
 
 	dep = kzalloc(sizeof(struct requirement_list), GFP_KERNEL);
 	if (dep == NULL)
@@ -699,11 +604,7 @@ static int __prcmu_qos_update_requirement(int prcmu_qos_class, char *name,
 int prcmu_qos_update_requirement(int prcmu_qos_class, char *name,
 		s32 val)
 {
-	if (prcmu_qos_class == PRCMU_QOS_ARM_KHZ)
-			return 0;
-	if ((prcmu_qos_class == PRCMU_QOS_APE_OPP) &&
-		(!strncmp(&name[0], "ab8500-usb", 10)))
-			return 0;
+
 	return __prcmu_qos_update_requirement(prcmu_qos_class, name,
 			val, true);
 }
@@ -925,10 +826,53 @@ static int qos_delayed_cpufreq_notifier(struct notifier_block *nb,
 			unsigned long event, void *data)
 {
 	struct cpufreq_freqs *freq = data;
+	s32 new_ddr_target;
 
 	/* Only react once per transition and only for one core, e.g. core 0 */
 	if (event != CPUFREQ_POSTCHANGE || freq->cpu != 0)
-	return 0;
+		return 0;
+
+	/*
+	 * APE and DDR OPP are always handled together in this solution.
+	 * Hence no need to check both DDR and APE opp in the code below.
+	 */
+
+	/* Which DDR OPP are we aiming for? */
+	if (freq->new > ARM_THRESHOLD_FREQ)
+		new_ddr_target = PRCMU_QOS_DDR_OPP_MAX;
+	else
+		new_ddr_target = PRCMU_QOS_DEFAULT_VALUE;
+
+	if (new_ddr_target == cpufreq_requirement_queued) {
+		/*
+		 * We're already at, or going to, the target requirement.
+		 * This is only a fluctuation within the interval
+		 * corresponding to the same DDR requirement.
+		 */
+		return 0;
+	}
+	cpufreq_requirement_queued = new_ddr_target;
+
+	if (freq->new > ARM_THRESHOLD_FREQ) {
+		cancel_delayed_work_sync(&qos_delayed_work_down);
+		/*
+		 * Only schedule this requirement if it is not the current
+		 * one.
+		 */
+		if (new_ddr_target != cpufreq_requirement_set)
+			schedule_delayed_work(&qos_delayed_work_up,
+					      cpufreq_opp_delay);
+	} else {
+		cancel_delayed_work_sync(&qos_delayed_work_up);
+		/*
+		 * Only schedule this requirement if it is not the current
+		 * one.
+		 */
+		if (new_ddr_target != cpufreq_requirement_set)
+			schedule_delayed_work(&qos_delayed_work_down,
+					      cpufreq_opp_delay);
+	}
+
 	return 0;
 }
 
@@ -1002,10 +946,8 @@ static int __init prcmu_qos_power_init(void)
 			PRCMU_QOS_DEFAULT_VALUE);
 	cpufreq_requirement_set = PRCMU_QOS_DEFAULT_VALUE;
 	cpufreq_requirement_queued = PRCMU_QOS_DEFAULT_VALUE;
-/*
 	cpufreq_register_notifier(&qos_delayed_cpufreq_notifier_block,
 			CPUFREQ_TRANSITION_NOTIFIER);
-*/
 	if (cpu_is_u9540()) {
 		prcmu_qos_add_requirement(PRCMU_QOS_ARM_KHZ, "cpufreq",
 				PRCMU_QOS_DEFAULT_VALUE);
@@ -1018,10 +960,6 @@ static int __init prcmu_qos_power_init(void)
 		prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP, "cross_opp_arm",
 				PRCMU_QOS_DEFAULT_VALUE);
 	}
-
-#ifdef CONFIG_DEBUG_FS
-	ret = setup_debugfs();
-#endif
 
 	return ret;
 
