@@ -696,7 +696,7 @@ int ux500_msp_i2s_close(struct ux500_msp_i2s_drvdata *drvdata, enum i2s_flag fla
 			MSP_RECEIVE_MODE : MSP_TRANSMIT_MODE;
 
 	if (msp->vape_opp_constraint == 1) {
-		prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP, "ux500_msp_i2s", 50);
+		prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP, "ux500_msp_i2s", PRCMU_QOS_DEFAULT_VALUE);
 		msp->vape_opp_constraint = 0;
 	}
 end:

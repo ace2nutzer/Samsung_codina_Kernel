@@ -1197,6 +1197,7 @@ static inline void liveopp_update_cpuhw(struct liveopp_arm_table table,
 	/*
 	 * FIXME: Using another thread here would be better?
 	 */
+
 	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
 					"cpufreq",
 					(signed char)table.ddr_opp);
@@ -4227,7 +4228,7 @@ static int __init late(void)
 	#ifdef CONFIG_DB8500_LIVEOPP
 	int ret;
 	#endif /* CONFIG_DB8500_LIVEOPP */
-#ifdef CREATE_TRACE_POINTS
+#ifdef CONFIG_TRACING
 	extern int tracing_update_buffers(void);
 #endif
 #ifdef ENABLE_FTRACE_BY_DEFAULT
@@ -4256,6 +4257,14 @@ static int __init late(void)
 	if (ret) {
 		kobject_put(liveopp_kobject);
 	}
+
+	prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
+					"cpufreq",
+					PRCMU_QOS_MAX_VALUE);
+	prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
+					"cpufreq",
+					PRCMU_QOS_MAX_VALUE);
+
 	pr_info("[LiveOPP] Initialized: v%s\n", LIVEOPP_VER);
 	#endif /* CONFIG_DB8500_LIVEOPP */
 

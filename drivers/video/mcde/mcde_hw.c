@@ -3327,29 +3327,6 @@ static void _mcde_chnl_update_color_conversion(struct mcde_chnl_state *chnl)
 #define TIME_UPDATE_CNT		20
 #define TIME_UPDATE_ALL_MAX	(TIME_UPDATE_ONE_MAX * TIME_UPDATE_CNT)
 
-static bool is_update_time_long(struct mcde_chnl_state *chnl,
-				ktime_t *before, ktime_t *after)
-{
-	static u32 sumtime;
-	static u32 cnt;
-	ktime_t diff;
-	bool ret = false;
-
-	diff = ktime_sub(*after, *before);
-	sumtime += (u32)ktime_to_ms(diff);
-	cnt++;
-	if (cnt == TIME_UPDATE_CNT) {
-#ifdef CREATE_TRACE_POINTS
-		trace_keyvalue(chnl->id, "update_time", sumtime);
-#endif
-		if (sumtime > TIME_UPDATE_ALL_MAX)
-			ret = true;
-		sumtime = 0;
-		cnt = 0;
-	}
-	return ret;
-}
-
 static void chnl_update_overlay(struct mcde_chnl_state *chnl,
 						struct mcde_ovly_state *ovly)
 {
@@ -4422,10 +4399,6 @@ static int __devinit mcde_probe(struct platform_device *pdev)
 
 	INIT_DELAYED_WORK_DEFERRABLE(&hw_timeout_work, work_sleep_function);
 
-	WARN_ON(prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
-		dev_name(&pdev->dev), PRCMU_QOS_DEFAULT_VALUE));
-	WARN_ON(prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
-		dev_name(&pdev->dev), PRCMU_QOS_DEFAULT_VALUE));
 	ret = probe_hw(pdev);
 	if (ret)
 		goto failed_probe_hw;
@@ -4460,10 +4433,6 @@ failed_irq_get:
 
 static int __devexit mcde_remove(struct platform_device *pdev)
 {
-	prcmu_qos_remove_requirement(PRCMU_QOS_APE_OPP,
-		dev_name(&pdev->dev));
-	prcmu_qos_remove_requirement(PRCMU_QOS_DDR_OPP,
-		dev_name(&pdev->dev));
 	remove_clocks_and_power(pdev);
 #ifdef MCDE_DPI_UNDERFLOW
 	if (mcde_underflow_workqueue != NULL) {

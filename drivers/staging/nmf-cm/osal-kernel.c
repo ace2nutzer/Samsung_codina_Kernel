@@ -33,19 +33,6 @@
 __iomem void *prcmu_base = NULL;
 __iomem void *prcmu_tcdm_base = NULL;
 
-/* DSP Load Monitoring */
-#define FULL_OPP 100
-#define HALF_OPP PRCMU_QOS_DEFAULT_VALUE
-static unsigned long running_dsp = 0;
-static unsigned int dspLoadMonitorPeriod = 1000;
-module_param(dspLoadMonitorPeriod, uint, S_IWUSR|S_IRUGO);
-MODULE_PARM_DESC(dspLoadMonitorPeriod, "Period of the DSP-Load monitoring in ms");
-static unsigned int dspLoadHighThreshold = 85;
-module_param(dspLoadHighThreshold, uint, S_IWUSR|S_IRUGO);
-MODULE_PARM_DESC(dspLoadHighThreshold, "Threshold above which 100 APE OPP is requested");
-static unsigned int dspLoadLowThreshold = 38;
-module_param(dspLoadLowThreshold, uint, S_IWUSR|S_IRUGO);
-MODULE_PARM_DESC(dspLoadLowThreshold, "Threshold below which 100 APE OPP request is removed");
 static bool cm_use_ftrace;
 module_param(cm_use_ftrace, bool, S_IWUSR|S_IRUGO);
 MODULE_PARM_DESC(cm_use_ftrace, "Whether all CM debug traces goes through ftrace or normal kernel output");
@@ -687,152 +674,6 @@ void OSAL_Log(const char *format, int param1, int param2, int param3, int param4
 		printk(format, param1, param2, param3, param4, param5, param6);
 }
 
-/**
- * compute the dsp load
- * 
- * return -1 if in case of failure, a value between 0 and 100 otherwise
- */
-static s8 computeDspLoad(t_cm_mpc_load_counter *oldCounter, t_cm_mpc_load_counter *counter)
-{
-	u32 t, l;
-
-	if ((oldCounter->totalCounter == 0) && (oldCounter->loadCounter == 0))
-		return -1; // Failure or not started ?
-	if ((counter->totalCounter == 0) && (counter->loadCounter == 0))
-		return -1; // Failure or already stopped ?
-
-	if (counter->totalCounter < oldCounter->totalCounter)
-		t = (u32)((((u64)-1) - oldCounter->totalCounter)
-			  + counter->totalCounter + 1);
-	else
-		t = (u32)(counter->totalCounter - oldCounter->totalCounter);
-
-	if (counter->loadCounter < oldCounter->loadCounter)
-		l = (u32)((((u64)-1) - oldCounter->loadCounter)
-			  + counter->loadCounter  + 1);
-	else
-		l = (u32)(counter->loadCounter - oldCounter->loadCounter);
-
-	if (t == 0) // not significant
-		return -1;
-
-	if (l > t) // not significant
-		return -1;
-
-	return (l*100) / t;
-}
-
-static void wakeup_process(unsigned long data)
-{
-	wake_up_process((struct task_struct *)data);
-}
-
-/**
- * Thread function entry for monitorin the CPU load
- */
-static int dspload_monitor(void *idx)
-{
-	int i = (int)idx;
-	signed char current_opp_request = FULL_OPP;
-	struct mpcConfig *mpc = &osalEnv.mpc[i];
-	struct timer_list timer;
-
-	timer.function = wakeup_process;
-	timer.data = (unsigned long)current;
-	init_timer_deferrable(&timer);
-
-#ifdef CONFIG_DEBUG_FS
-	mpc->opp_request = current_opp_request;
-#endif
-	if (prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
-				      (char*)mpc->name,
-				      current_opp_request))
-		pr_err("CM Driver: Add QoS failed\n");
-
-	/*
-	 * Wait for 500ms before initializing the counter,
-	 * to let the DSP boot (init of counter will failed if
-	 * DSP is not booted).
-	 */
-	schedule_timeout_uninterruptible(msecs_to_jiffies(500));
-
-	/* init counter */
-	if (CM_GetMpcLoadCounter(mpc->coreId,
-				 &mpc->oldLoadCounter) != CM_OK)
-		pr_warn("CM Driver: Failed to init load counter for %s\n",
-			mpc->name);
-
-	while (!kthread_should_stop()) {
-		t_cm_mpc_load_counter loadCounter;
-		s8 load = -1;
-		unsigned long expire;
-
-		__set_current_state(TASK_UNINTERRUPTIBLE);
-
-		expire = msecs_to_jiffies(dspLoadMonitorPeriod) + jiffies;
-
-		mod_timer(&timer, expire);
-		schedule();
-		/* We can be woken up before the expiration of the timer
-		   but we don't need to handle that case as the
-		   computation of the DSP load takes that into account */
-
-		if (!test_bit(i, &running_dsp))
-			continue;
-
-		if (CM_GetMpcLoadCounter(mpc->coreId,
-					 &loadCounter) != CM_OK)
-			loadCounter = mpc->oldLoadCounter;
-
-#ifdef CONFIG_DEBUG_FS
-		mpc->load =
-#endif
-		load = computeDspLoad(&mpc->oldLoadCounter, &loadCounter);
-		mpc->oldLoadCounter = loadCounter;
-
-		if (load == -1)
-			continue;
-		/* check if we must request more opp */
-		if ((current_opp_request == HALF_OPP)
-		    && (load > dspLoadHighThreshold)) {
-#ifdef CONFIG_DEBUG_FS
-			mpc->opp_request =
-#endif
-			current_opp_request = FULL_OPP;
-			if (cm_debug_level)
-				pr_info("CM Driver: Request QoS OPP %d for %s\n",
-					current_opp_request, mpc->name);
-			prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
-						     (char*)mpc->name,
-						     current_opp_request);
-		}
-		/* check if we can request less opp */
-		else if ((current_opp_request == FULL_OPP)
-			 && (load < dspLoadLowThreshold)) {
-#ifdef CONFIG_DEBUG_FS
-			mpc->opp_request =
-#endif
-			current_opp_request = HALF_OPP;
-			if (cm_debug_level)
-				pr_info("CM Driver: Request QoS OPP %d for %s\n",
-					current_opp_request, mpc->name);
-			prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
-						     (char*)mpc->name,
-						     current_opp_request);
-		}
-	}
-
-#ifdef CONFIG_DEBUG_FS
-	mpc->opp_request = mpc->load = 0;
-#endif
-	del_singleshot_timer_sync(&timer);
-	if (cm_debug_level)
-		pr_info("CM Driver: Remove QoS OPP for %s\n", mpc->name);
-	prcmu_qos_remove_requirement(PRCMU_QOS_APE_OPP,
-				     (char*)mpc->name);
- 	return 0;
-}
-
 static int enable_auto_pm = 1;
 module_param(enable_auto_pm, bool, S_IWUSR|S_IRUGO);
 
@@ -853,13 +694,6 @@ void OSAL_DisablePwrRessource(t_nmf_power_resource resource, t_uint32 firstParam
 		}
 
 		cm_debug_destroy_tcm_file(idx);
-
-		/* Stop the DSP load monitoring */
-		clear_bit(idx, &running_dsp);
-		if (osalEnv.mpc[idx].monitor_tsk) {
-			kthread_stop(osalEnv.mpc[idx].monitor_tsk);
-			osalEnv.mpc[idx].monitor_tsk = NULL;
-		}
 
 		/* Stop the DMA (normally done on DSP side, but be safe) */
 		if (firstParam == SIA_CORE_ID)
@@ -980,18 +814,6 @@ t_cm_error OSAL_EnablePwrRessource(t_nmf_power_resource resource, t_uint32 first
 #endif
 		if (regulator_enable(osalEnv.mpc[idx].mmdsp_regulator) < 0)
 			pr_err("CM Driver(%s): can't enable regulator %s-mmsdp\n", __func__, osalEnv.mpc[idx].name);
-
-		/* Start the DSP load monitoring for this dsp */
-		set_bit(idx, &running_dsp);
-		osalEnv.mpc[idx].monitor_tsk = kthread_run(&dspload_monitor,
-							   (void*)idx,
-							   "%s-loadd",
-							   osalEnv.mpc[idx].name);
-		if (IS_ERR(osalEnv.mpc[idx].monitor_tsk)) {
-			pr_err("CM Driver: failed to start dspmonitord "
-			       "thread: %ld\n", PTR_ERR(osalEnv.mpc[idx].monitor_tsk));
-			osalEnv.mpc[idx].monitor_tsk = NULL;
-		}
 
 		cm_debug_create_tcm_file(idx);
 		break;

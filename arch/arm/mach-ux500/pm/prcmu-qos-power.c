@@ -29,8 +29,6 @@
 
 #include <mach/prcmu-debug.h>
 
-#define ARM_THRESHOLD_FREQ 400000
-
 #define AB8500_VAPESEL1_REG 0x0E   /* APE OPP 100 voltage */
 #define AB8500_VAPESEL2_REG 0x0F   /* APE OPP 50 voltage  */
 
@@ -214,8 +212,8 @@ static DEFINE_SPINLOCK(prcmu_qos_lock);
 
 static bool ape_opp_50_partly_25_enabled;
 
-#define CPUFREQ_OPP_DELAY (HZ/5)
-#define CPUFREQ_OPP_DELAY_VOICECALL HZ
+#define CPUFREQ_OPP_DELAY 0
+#define CPUFREQ_OPP_DELAY_VOICECALL 0
 static unsigned long cpufreq_opp_delay = CPUFREQ_OPP_DELAY;
 
 static bool prcmu_qos_cpufreq_init_done;
@@ -237,10 +235,6 @@ void prcmu_qos_set_cpufreq_opp_delay(unsigned long n)
 	if (n == 0) {
 		cpufreq_unregister_notifier(&qos_delayed_cpufreq_notifier_block,
 					    CPUFREQ_TRANSITION_NOTIFIER);
-		prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP, "cpufreq",
-					     PRCMU_QOS_DEFAULT_VALUE);
-		prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP, "cpufreq",
-					     PRCMU_QOS_DEFAULT_VALUE);
 		cpufreq_requirement_set = PRCMU_QOS_DEFAULT_VALUE;
 		cpufreq_requirement_queued = PRCMU_QOS_DEFAULT_VALUE;
 	} else if (cpufreq_opp_delay != 0) {
@@ -468,7 +462,7 @@ void prcmu_qos_force_opp(int prcmu_qos_class, s32 i)
 	update_target(prcmu_qos_class, true);
 }
 
-#define LPA_OVERRIDE_VOLTAGE_SETTING 0x22 /* 1.125V */
+#define LPA_OVERRIDE_VOLTAGE_SETTING 0x24 /* 1.15V */
 
 int prcmu_qos_lpa_override(bool enable)
 {
@@ -879,27 +873,6 @@ static int register_prcmu_qos_misc(struct prcmu_qos_object *qos,
 	return misc_register(&qos->prcmu_qos_power_miscdev);
 }
 
-static void qos_delayed_work_up_fn(struct work_struct *work)
-{
-	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP, "cpufreq",
-				     PRCMU_QOS_DDR_OPP_MAX);
-	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP, "cpufreq",
-				     PRCMU_QOS_APE_OPP_MAX);
-	cpufreq_requirement_set = PRCMU_QOS_MAX_VALUE;
-}
-
-static void qos_delayed_work_down_fn(struct work_struct *work)
-{
-	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP, "cpufreq",
-				     PRCMU_QOS_DEFAULT_VALUE);
-	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP, "cpufreq",
-				     PRCMU_QOS_DEFAULT_VALUE);
-	cpufreq_requirement_set = PRCMU_QOS_DEFAULT_VALUE;
-}
-
-static DECLARE_DELAYED_WORK(qos_delayed_work_up, qos_delayed_work_up_fn);
-static DECLARE_DELAYED_WORK(qos_delayed_work_down, qos_delayed_work_down_fn);
-
 static int qos_delayed_cpufreq_notifier(struct notifier_block *nb,
 			unsigned long event, void *data)
 {
@@ -910,17 +883,6 @@ static int qos_delayed_cpufreq_notifier(struct notifier_block *nb,
 	if (event != CPUFREQ_POSTCHANGE || freq->cpu != 0)
 		return 0;
 
-	/*
-	 * APE and DDR OPP are always handled together in this solution.
-	 * Hence no need to check both DDR and APE opp in the code below.
-	 */
-
-	/* Which DDR OPP are we aiming for? */
-	if (freq->new > ARM_THRESHOLD_FREQ)
-		new_ddr_target = PRCMU_QOS_DDR_OPP_MAX;
-	else
-		new_ddr_target = PRCMU_QOS_DEFAULT_VALUE;
-
 	if (new_ddr_target == cpufreq_requirement_queued) {
 		/*
 		 * We're already at, or going to, the target requirement.
@@ -930,26 +892,6 @@ static int qos_delayed_cpufreq_notifier(struct notifier_block *nb,
 		return 0;
 	}
 	cpufreq_requirement_queued = new_ddr_target;
-
-	if (freq->new > ARM_THRESHOLD_FREQ) {
-		cancel_delayed_work_sync(&qos_delayed_work_down);
-		/*
-		 * Only schedule this requirement if it is not the current
-		 * one.
-		 */
-		if (new_ddr_target != cpufreq_requirement_set)
-			schedule_delayed_work(&qos_delayed_work_up,
-					      cpufreq_opp_delay);
-	} else {
-		cancel_delayed_work_sync(&qos_delayed_work_up);
-		/*
-		 * Only schedule this requirement if it is not the current
-		 * one.
-		 */
-		if (new_ddr_target != cpufreq_requirement_set)
-			schedule_delayed_work(&qos_delayed_work_down,
-					      cpufreq_opp_delay);
-	}
 
 	return 0;
 }
@@ -1018,14 +960,12 @@ static int __init prcmu_qos_power_init(void)
 		}
 	}
 
-	prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP, "cpufreq",
-			PRCMU_QOS_DEFAULT_VALUE);
-	prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP, "cpufreq",
-			PRCMU_QOS_DEFAULT_VALUE);
 	cpufreq_requirement_set = PRCMU_QOS_DEFAULT_VALUE;
 	cpufreq_requirement_queued = PRCMU_QOS_DEFAULT_VALUE;
+/*
 	cpufreq_register_notifier(&qos_delayed_cpufreq_notifier_block,
 			CPUFREQ_TRANSITION_NOTIFIER);
+*/
 	if (cpu_is_u9540()) {
 		prcmu_qos_add_requirement(PRCMU_QOS_ARM_KHZ, "cpufreq",
 				PRCMU_QOS_DEFAULT_VALUE);
