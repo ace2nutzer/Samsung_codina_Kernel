@@ -1124,14 +1124,14 @@ static struct liveopp_arm_table liveopp_arm[] = {
 //	| SHOW     | CLK    | PLL        | VDD  | VBB  | DDR | APE
 	{ 200000,  199680,  0x0005011A,   0x18,  0xDB,   25,   25},
 	{ 400000,  399360,  0x00050134,   0x1C,  0xDB,   25,   25},
-	{ 600000,  599040,  0x0005014E,   0x20,  0xDB,  100,  25},
-	{ 800000,  798720,  0x00050168,   0x28,  0xDB,  100,  25},
-	{1000000,  998400,  0x00050182,   0x32,  0xDB,  100,  25},
-	{1100000,  1098240, 0x0005018F,   0x37,  0x8F,  100,  25},
-	{1150000,  1152000, 0x00050196,   0x37,  0x8F,  100,  25},
-	{1200000,  1198080, 0x0005019C,   0x37,  0x8F,  100,  25},
-	{1250000,  1251840, 0x000501A3,   0x37,  0x8F,  100,  25},
-	{1300000,  1297920, 0x000501A9,   0x37,  0x8F,  100,  25},
+	{ 600000,  599040,  0x0005014E,   0x20,  0xDB,  100,  100},
+	{ 800000,  798720,  0x00050168,   0x28,  0xDB,  100,  100},
+	{1000000,  998400,  0x00050182,   0x32,  0xDB,  100,  100},
+	{1100000,  1098240, 0x0005018F,   0x37,  0x8F,  100,  100},
+	{1150000,  1152000, 0x00050196,   0x37,  0x8F,  100,  100},
+	{1200000,  1198080, 0x0005019C,   0x37,  0x8F,  100,  100},
+	{1250000,  1251840, 0x000501A3,   0x37,  0x8F,  100,  100},
+	{1300000,  1297920, 0x000501A9,   0x37,  0x8F,  100,  100},
 };
 
 static const char *armopp_name[] = 
@@ -1197,6 +1197,7 @@ static inline void liveopp_update_cpuhw(struct liveopp_arm_table table,
 	/*
 	 * FIXME: Using another thread here would be better?
 	 */
+
 	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
 					"cpufreq",
 					(signed char)table.ddr_opp);
@@ -4227,7 +4228,7 @@ static int __init late(void)
 	#ifdef CONFIG_DB8500_LIVEOPP
 	int ret;
 	#endif /* CONFIG_DB8500_LIVEOPP */
-#ifdef CREATE_TRACE_POINTS
+#ifdef CONFIG_TRACING
 	extern int tracing_update_buffers(void);
 #endif
 #ifdef ENABLE_FTRACE_BY_DEFAULT
@@ -4256,6 +4257,14 @@ static int __init late(void)
 	if (ret) {
 		kobject_put(liveopp_kobject);
 	}
+
+	prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
+					"cpufreq",
+					PRCMU_QOS_MAX_VALUE);
+	prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
+					"cpufreq",
+					PRCMU_QOS_MAX_VALUE);
+
 	pr_info("[LiveOPP] Initialized: v%s\n", LIVEOPP_VER);
 	#endif /* CONFIG_DB8500_LIVEOPP */
 

@@ -349,33 +349,6 @@ error:
 	return res;
 }
 
-static void s6d27a1_request_opp(struct s6d27a1_dpi *lcd)
-{
-	if ((!lcd->opp_is_requested) && (lcd->pd->min_ddr_opp > 0)) {
-#if 0
-		if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
-						LCD_DRIVER_NAME_S6D27A1,
-						lcd->pd->min_ddr_opp)) {
-			dev_err(lcd->dev, "add DDR OPP %d failed\n",
-				lcd->pd->min_ddr_opp);
-		}
-#endif
-		dev_dbg(lcd->dev, "DDR OPP requested at %d%%\n",lcd->pd->min_ddr_opp);
-		lcd->opp_is_requested = true;
-	}
-}
-
-static void s6d27a1_release_opp(struct s6d27a1_dpi *lcd)
-{
-	if (lcd->opp_is_requested) {
-#if 0
-		prcmu_qos_remove_requirement(PRCMU_QOS_DDR_OPP, LCD_DRIVER_NAME_S6D27A1);
-#endif
-		lcd->opp_is_requested = false;
-		dev_dbg(lcd->dev, "DDR OPP removed\n");
-	}
-}
-
 /* Reverse order of power on and channel update as compared with MCDE default display update */
 static int s6d27a1_display_update(struct mcde_display_device *ddev,
 							bool tripple_buffer)
@@ -639,8 +612,6 @@ static int s6d27a1_dpi_power_on(struct s6d27a1_dpi *lcd)
 	int ret = 0;
 	struct ssg_dpi_display_platform_data *dpd = NULL;
 
-	s6d27a1_request_opp(lcd);
-
 	dpd = lcd->pd;
 	if (!dpd) {
 		dev_err(lcd->dev, "s6d27a1_dpi platform data is NULL.\n");
@@ -738,8 +709,6 @@ static int s6d27a1_dpi_power_off(struct s6d27a1_dpi *lcd)
 		return -EFAULT;
 	} else
 		dpd->power_on(dpd, LCD_POWER_DOWN);
-
-	s6d27a1_release_opp(lcd);
 
 	return 0;
 }
@@ -1297,7 +1266,6 @@ static int __devinit s6d27a1_dpi_mcde_probe(
 	lcd->pd = pdata;
 	lcd->turn_on_backlight = false;
 	lcd->opp_is_requested = false;
-	s6d27a1_request_opp(lcd);
 
 #ifdef CONFIG_LCD_CLASS_DEVICE
 	lcd->ld = lcd_device_register("panel", &ddev->dev,
@@ -1364,15 +1332,17 @@ ret = device_create_file(&(ddev->dev), &dev_attr_mcde_chnl);
 #endif
 	//when screen is on, DDR_OPP 25 sometimes messes it up
 	//TODO change these to add/update/remove
-	if (prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
-			"codina_lcd_dpi", 100)) {
-		pr_info("pcrm_qos_add APE failed\n");
-	}
+
 	if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
-			"codina_lcd_dpi", 50)) {
+			"codina_lcd_dpi", 25)) {
 		pr_info("pcrm_qos_add DDR failed\n");
 	}
-	
+
+	if (prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
+			"codina_lcd_dpi", 25)) {
+		pr_info("pcrm_qos_add APE failed\n");
+	}
+
 	dev_dbg(&ddev->dev, "DPI display probed\n");
 
 	goto out;
@@ -1474,11 +1444,13 @@ static void s6d27a1_dpi_mcde_early_suspend(
 	pm_message_t dummy;
 
 	s6d27a1_dpi_mcde_suspend(lcd->mdd, dummy);
-	
-	prcmu_qos_remove_requirement(PRCMU_QOS_APE_OPP,
-				"codina_lcd_dpi");
-	prcmu_qos_remove_requirement(PRCMU_QOS_DDR_OPP,
-				"codina_lcd_dpi");
+
+	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
+				"codina_lcd_dpi", 25);
+
+	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
+				"codina_lcd_dpi", 25);
+
 }
 
 static void s6d27a1_dpi_mcde_late_resume(
@@ -1488,15 +1460,16 @@ static void s6d27a1_dpi_mcde_late_resume(
 						struct s6d27a1_dpi,
 						earlysuspend);
 
-	if (prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
-			"codina_lcd_dpi", 100)) {
-		pr_info("pcrm_qos_add APE failed\n");
-	}
-	if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
-			"codina_lcd_dpi", 50)) {
+	if (prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
+			"codina_lcd_dpi", 25)) {
 		pr_info("pcrm_qos_add DDR failed\n");
 	}
-	
+
+	if (prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
+			"codina_lcd_dpi", 25)) {
+		pr_info("pcrm_qos_add APE failed\n");
+	}
+
 	s6d27a1_dpi_mcde_resume(lcd->mdd);
 }
 #endif

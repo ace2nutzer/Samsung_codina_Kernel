@@ -15,11 +15,11 @@
  *
  */
 
-#define TSP_DEBUG
-/* #define TSP_VERBOSE_DEBUG */
+//#define TSP_DEBUG
+//#define TSP_VERBOSE_DEBUG
 #define TSP_FACTORY
 
-/* #define TOUCH_BOOSTER */
+//#define TOUCH_BOOSTER
 #define DISABLE_TOUCHSCREEN_SPAM
 
 #include <linux/kernel.h>

@@ -328,23 +328,12 @@ void mali_utilization_function(struct work_struct *ptr)
 		if (mali_last_utilization > mali_utilization_low_to_high) {
 			if (has_requested_low) {
 				MALI_DEBUG_PRINT(5, ("MALI GPU utilization: %u SIGNAL_HIGH\n", mali_last_utilization));
-				/*Request 100% APE_OPP.*/
-				prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP, "mali", PRCMU_QOS_MAX_VALUE);
-				/*
-				* Since the utilization values will be reported higher
-				* if DDR_OPP is lowered, we also request 100% DDR_OPP.
-				*/
-				prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP, "mali", PRCMU_QOS_MAX_VALUE);
 				has_requested_low = 0;
 				mutex_unlock(&mali_boost_lock);
-				return;		//After we switch to APE_100_OPP we want to measure utilization once again before entering boost logic
 			}
 		} else {
 			if (mali_last_utilization < mali_utilization_high_to_low) {
 				if (!has_requested_low) {
-					/*Remove APE_OPP and DDR_OPP requests*/
-					prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP, "mali", PRCMU_QOS_DEFAULT_VALUE);
-					prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP, "mali", PRCMU_QOS_DEFAULT_VALUE);
 					MALI_DEBUG_PRINT(5, ("MALI GPU utilization: %u SIGNAL_LOW\n", mali_last_utilization));
 					has_requested_low = 1;
 				}
@@ -785,9 +774,6 @@ _mali_osk_errcode_t mali_platform_init()
 			kobject_put(mali_kobject);
 		}
 
-		prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP, "mali", PRCMU_QOS_DEFAULT_VALUE);
-		prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP, "mali", PRCMU_QOS_DEFAULT_VALUE);
-
 		pr_info("[Mali] DB8500 GPU OC Initialized (%s)\n", MALI_UX500_VERSION);
 
 		is_initialized = true;
@@ -811,8 +797,6 @@ _mali_osk_errcode_t mali_platform_deinit()
 	kobject_put(mali_kobject);
 	is_running = false;
 	mali_last_utilization = 0;
-	prcmu_qos_remove_requirement(PRCMU_QOS_APE_OPP, "mali");
-	prcmu_qos_remove_requirement(PRCMU_QOS_DDR_OPP, "mali");
 	is_initialized = false;
 	MALI_DEBUG_PRINT(2, ("SGA terminated.\n"));
 	MALI_SUCCESS;
