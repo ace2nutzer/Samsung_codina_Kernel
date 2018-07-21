@@ -1334,12 +1334,12 @@ ret = device_create_file(&(ddev->dev), &dev_attr_mcde_chnl);
 	//TODO change these to add/update/remove
 
 	if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
-			"codina_lcd_dpi", 25)) {
+			"codina_lcd_dpi", PRCMU_QOS_DEFAULT_VALUE)) {
 		pr_info("pcrm_qos_add DDR failed\n");
 	}
 
 	if (prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
-			"codina_lcd_dpi", 25)) {
+			"codina_lcd_dpi", PRCMU_QOS_DEFAULT_VALUE)) {
 		pr_info("pcrm_qos_add APE failed\n");
 	}
 
@@ -1371,6 +1371,12 @@ static int __devexit s6d27a1_dpi_mcde_remove(
 		backlight_device_unregister(lcd->bd);
 
 	spi_unregister_driver(&lcd->spi_drv);
+
+	prcmu_qos_remove_requirement(PRCMU_QOS_DDR_OPP,
+                        "codina_lcd_dpi");
+	prcmu_qos_remove_requirement(PRCMU_QOS_APE_OPP,
+                        "codina_lcd_dpi");
+
 	kfree(lcd);
 
 	return 0;
@@ -1446,10 +1452,10 @@ static void s6d27a1_dpi_mcde_early_suspend(
 	s6d27a1_dpi_mcde_suspend(lcd->mdd, dummy);
 
 	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
-				"codina_lcd_dpi", 25);
+				"codina_lcd_dpi", PRCMU_QOS_DEFAULT_VALUE);
 
 	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
-				"codina_lcd_dpi", 25);
+				"codina_lcd_dpi", PRCMU_QOS_DEFAULT_VALUE);
 
 }
 
@@ -1460,15 +1466,11 @@ static void s6d27a1_dpi_mcde_late_resume(
 						struct s6d27a1_dpi,
 						earlysuspend);
 
-	if (prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
-			"codina_lcd_dpi", 25)) {
-		pr_info("pcrm_qos_add DDR failed\n");
-	}
+	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
+				"codina_lcd_dpi", PRCMU_QOS_DEFAULT_VALUE);
 
-	if (prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
-			"codina_lcd_dpi", 25)) {
-		pr_info("pcrm_qos_add APE failed\n");
-	}
+	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
+				"codina_lcd_dpi", PRCMU_QOS_DEFAULT_VALUE);
 
 	s6d27a1_dpi_mcde_resume(lcd->mdd);
 }
