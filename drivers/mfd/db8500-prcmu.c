@@ -4258,12 +4258,17 @@ static int __init late(void)
 		kobject_put(liveopp_kobject);
 	}
 
-	prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
+	if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
 					"cpufreq",
-					PRCMU_QOS_MAX_VALUE);
-	prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
+					PRCMU_QOS_MAX_VALUE)) {
+		pr_err("pcrm_qos_add DDR failed\n");
+	}
+
+	if (prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
 					"cpufreq",
-					PRCMU_QOS_MAX_VALUE);
+					PRCMU_QOS_MAX_VALUE)) {
+		pr_err("pcrm_qos_add APE failed\n");
+	}
 
 	pr_info("[LiveOPP] Initialized: v%s\n", LIVEOPP_VER);
 	#endif /* CONFIG_DB8500_LIVEOPP */
