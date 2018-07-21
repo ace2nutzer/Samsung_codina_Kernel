@@ -171,6 +171,7 @@ static void ddr_cross_clocks_boost(bool state)
 
 	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
 			"PLLDDR_OC", PRCMU_QOS_DEFAULT_VALUE);
+
 }
 
 #define PLLDDR_FREQ_STEPS 38400
@@ -418,7 +419,7 @@ static ssize_t pllddr_store(struct kobject *kobj, struct kobj_attribute *attr, c
 	int ret = 0;
 
 	if (unlikely(pending_pllddr_val > 0)) {
-		pr_err("%s: PLLDDR OC is already scheduled.\n", __func__);
+		pr_err("PLLDDR OC is already scheduled.\n");
 		return -EBUSY;
 	}
 
@@ -683,6 +684,8 @@ static void __exit pllddr_oc_end(void)
 	wake_lock_destroy(&pllddr_oc_lock);
 	unregister_early_suspend(&early_suspend);
 	prcmu_qos_remove_requirement(PRCMU_QOS_DDR_OPP,
+                        "PLLDDR_OC");
+	prcmu_qos_remove_requirement(PRCMU_QOS_APE_OPP,
                         "PLLDDR_OC");
 
 	sysfs_remove_group(pllddr_kobject, &pllddr_interface_group);
