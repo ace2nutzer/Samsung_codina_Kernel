@@ -36,12 +36,11 @@
 #include <linux/earlysuspend.h>
 #endif
 
-#include <linux/mfd/dbx500-prcmu.h>
-
 #include <video/mcde_display.h>
 #include <video/mcde_display-dpi.h>
 #include <video/mcde_display_ssg_dpi.h>
 
+#include <linux/mfd/dbx500-prcmu.h>
 
 #define ESD_PORT_NUM 			93
 #define SPI_COMMAND			0
@@ -77,8 +76,6 @@
 #define DCS_CMD_S6D27A1_PANELCTL 	0xF7	/* Panel Control */
 #define DCS_CMD_S6D27A1_PGAMMACTL	0xFA	/* Positive Gamma Control */
 #define DCS_CMD_S6D27A1_NGAMMACTL	0xFB	/* Negative Gamma Control */
-
-
 
 #define DCS_CMD_SEQ_DELAY_MS	0xFE
 #define DCS_CMD_SEQ_END		0xFF
@@ -349,6 +346,41 @@ error:
 	return res;
 }
 
+static void s6d27a1_request_opp(struct s6d27a1_dpi *lcd)
+{
+	if ((!lcd->opp_is_requested) && (lcd->pd->min_ddr_opp > 0)) {
+
+		if (prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
+						LCD_DRIVER_NAME_S6D27A1,
+						PRCMU_QOS_MAX_VALUE)) {
+			dev_err(lcd->dev, "add APE OPP %d failed\n",
+						PRCMU_QOS_MAX_VALUE);
+		}
+
+		if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
+						LCD_DRIVER_NAME_S6D27A1,
+						lcd->pd->min_ddr_opp)) {
+			dev_err(lcd->dev, "add DDR OPP %d failed\n",
+				lcd->pd->min_ddr_opp);
+		}
+
+		dev_dbg(lcd->dev, "APE OPP requested at %d%%\n",PRCMU_QOS_MAX_VALUE);
+		dev_dbg(lcd->dev, "DDR OPP requested at %d%%\n",lcd->pd->min_ddr_opp);
+		lcd->opp_is_requested = true;
+	}
+}
+
+static void s6d27a1_release_opp(struct s6d27a1_dpi *lcd)
+{
+	if (lcd->opp_is_requested) {
+		prcmu_qos_remove_requirement(PRCMU_QOS_DDR_OPP, LCD_DRIVER_NAME_S6D27A1);
+		prcmu_qos_remove_requirement(PRCMU_QOS_APE_OPP, LCD_DRIVER_NAME_S6D27A1);
+		lcd->opp_is_requested = false;
+		dev_dbg(lcd->dev, "DDR OPP removed\n");
+		dev_dbg(lcd->dev, "APE OPP removed\n");
+	}
+}
+
 /* Reverse order of power on and channel update as compared with MCDE default display update */
 static int s6d27a1_display_update(struct mcde_display_device *ddev,
 							bool tripple_buffer)
@@ -612,6 +644,8 @@ static int s6d27a1_dpi_power_on(struct s6d27a1_dpi *lcd)
 	int ret = 0;
 	struct ssg_dpi_display_platform_data *dpd = NULL;
 
+	s6d27a1_request_opp(lcd);
+
 	dpd = lcd->pd;
 	if (!dpd) {
 		dev_err(lcd->dev, "s6d27a1_dpi platform data is NULL.\n");
@@ -709,6 +743,8 @@ static int s6d27a1_dpi_power_off(struct s6d27a1_dpi *lcd)
 		return -EFAULT;
 	} else
 		dpd->power_on(dpd, LCD_POWER_DOWN);
+
+	s6d27a1_release_opp(lcd);
 
 	return 0;
 }
@@ -1266,6 +1302,7 @@ static int __devinit s6d27a1_dpi_mcde_probe(
 	lcd->pd = pdata;
 	lcd->turn_on_backlight = false;
 	lcd->opp_is_requested = false;
+	s6d27a1_request_opp(lcd);
 
 #ifdef CONFIG_LCD_CLASS_DEVICE
 	lcd->ld = lcd_device_register("panel", &ddev->dev,
@@ -1330,18 +1367,6 @@ ret = device_create_file(&(ddev->dev), &dev_attr_mcde_chnl);
 	lcd->earlysuspend.resume  = s6d27a1_dpi_mcde_late_resume;
 	register_early_suspend(&lcd->earlysuspend);
 #endif
-	//when screen is on, DDR_OPP 25 sometimes messes it up
-	//TODO change these to add/update/remove
-
-	if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
-			"codina_lcd_dpi", PRCMU_QOS_DEFAULT_VALUE)) {
-		pr_info("pcrm_qos_add DDR failed\n");
-	}
-
-	if (prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
-			"codina_lcd_dpi", PRCMU_QOS_DEFAULT_VALUE)) {
-		pr_info("pcrm_qos_add APE failed\n");
-	}
 
 	dev_dbg(&ddev->dev, "DPI display probed\n");
 
@@ -1371,11 +1396,6 @@ static int __devexit s6d27a1_dpi_mcde_remove(
 		backlight_device_unregister(lcd->bd);
 
 	spi_unregister_driver(&lcd->spi_drv);
-
-	prcmu_qos_remove_requirement(PRCMU_QOS_DDR_OPP,
-                        "codina_lcd_dpi");
-	prcmu_qos_remove_requirement(PRCMU_QOS_APE_OPP,
-                        "codina_lcd_dpi");
 
 	kfree(lcd);
 
@@ -1450,13 +1470,6 @@ static void s6d27a1_dpi_mcde_early_suspend(
 	pm_message_t dummy;
 
 	s6d27a1_dpi_mcde_suspend(lcd->mdd, dummy);
-
-	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
-				"codina_lcd_dpi", PRCMU_QOS_DEFAULT_VALUE);
-
-	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
-				"codina_lcd_dpi", PRCMU_QOS_DEFAULT_VALUE);
-
 }
 
 static void s6d27a1_dpi_mcde_late_resume(
@@ -1465,12 +1478,6 @@ static void s6d27a1_dpi_mcde_late_resume(
 	struct s6d27a1_dpi *lcd = container_of(earlysuspend,
 						struct s6d27a1_dpi,
 						earlysuspend);
-
-	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
-				"codina_lcd_dpi", PRCMU_QOS_DEFAULT_VALUE);
-
-	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
-				"codina_lcd_dpi", PRCMU_QOS_DEFAULT_VALUE);
 
 	s6d27a1_dpi_mcde_resume(lcd->mdd);
 }
@@ -1510,4 +1517,3 @@ module_exit(s6d27a1_dpi_exit);
 MODULE_AUTHOR("Gareth Phillips <gareth.phillips@samsung.com>");
 MODULE_DESCRIPTION("Sony S6D27A1 DPI Driver");
 MODULE_LICENSE("GPL");
-

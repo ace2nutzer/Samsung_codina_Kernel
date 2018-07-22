@@ -34,7 +34,6 @@
 #include <linux/err.h>
 #include <linux/mfd/abx500.h>
 #include <linux/mfd/ab8500.h>
-#include <linux/mfd/dbx500-prcmu.h>
 #include <linux/kernel_stat.h>
 #include <linux/pm_qos_params.h>
 #include <linux/wakelock.h>

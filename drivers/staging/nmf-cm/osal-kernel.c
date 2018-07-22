@@ -703,6 +703,7 @@ void OSAL_DisablePwrRessource(t_nmf_power_resource resource, t_uint32 firstParam
 		if (regulator_disable(osalEnv.mpc[idx].mmdsp_regulator) < 0)
 			pr_err("CM Driver(%s): can't disable regulator %s-mmsdp\n",
 			       __func__, osalEnv.mpc[idx].name);
+
 #ifdef CONFIG_HAS_WAKELOCK
 		wake_unlock(&osalEnv.mpc[idx].wakelock);
 #endif

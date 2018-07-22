@@ -13,8 +13,6 @@
 #include <linux/resume-trace.h>
 #include <linux/workqueue.h>
 
-#include <linux/moduleparam.h>
-
 #include "power.h"
 
 #ifdef CONFIG_DVFS_LIMIT
@@ -23,9 +21,6 @@
 #endif /* CONFIG_DVFS_LIMIT */
 
 DEFINE_MUTEX(pm_mutex);
-
-static bool debug_mask = false;
-module_param(debug_mask, bool, 0644);
 
 #ifdef CONFIG_PM_SLEEP
 
@@ -326,6 +321,7 @@ power_attr(wake_unlock);
 #ifdef CONFIG_DVFS_LIMIT
 static int cpufreq_max_limit_val = -1;
 static int cpufreq_min_limit_val = -1;
+static int min_replacement = 0;
 
 static ssize_t cpufreq_table_show(struct kobject *kobj,
 				struct kobj_attribute *attr,
@@ -441,9 +437,7 @@ static int get_cpufreq_level(unsigned int freq, unsigned int *level, int req_typ
 		for (i = 0; (table[i].frequency != CPUFREQ_TABLE_END); i++)
 			if (table[i].frequency >= freq) {
 				*level = table[i].frequency;
-				if (debug_mask) {
-					pr_info("%s: MIN_LOCK req_freq(%d), matched_freq(%d)\n", __func__, freq, table[i].frequency);
-				}
+				pr_info("%s: MIN_LOCK req_freq(%d), matched_freq(%d)\n", __func__, freq, table[i].frequency);
 				return VALID_LEVEL;
 			}
 		break;
@@ -452,9 +446,7 @@ static int get_cpufreq_level(unsigned int freq, unsigned int *level, int req_typ
 		for (i = table_length-1; i >= 0; i--)
 			if (table[i].frequency <= freq) {
 				*level = table[i].frequency;
-				if (debug_mask) {
-					pr_info("%s: MAX_LOCK req_freq(%d), matched_freq(%d)\n", __func__, freq, table[i].frequency);
-				}
+				pr_info("%s: MAX_LOCK req_freq(%d), matched_freq(%d)\n", __func__, freq, table[i].frequency);
 				return VALID_LEVEL;
 			}
 		break;
@@ -493,6 +485,13 @@ static ssize_t cpufreq_max_limit_store(struct kobject *kobj,
 			for_each_online_cpu(cpu)
 				cpufreq_update_policy(cpu);
 
+			/* Update PRCMU QOS value to min value */
+			if(min_replacement && cpufreq_min_limit_val != -1) {
+				prcmu_qos_update_requirement(PRCMU_QOS_ARM_KHZ,
+						"power", cpufreq_min_limit_val);
+				/* Clear replacement flag */
+				min_replacement = 0;
+			}
 		} else /* Already unlocked */
 			printk(KERN_ERR "%s: Unlock request is ignored\n",
 				__func__);
@@ -500,6 +499,19 @@ static ssize_t cpufreq_max_limit_store(struct kobject *kobj,
 		if (get_cpufreq_level((unsigned int)val, &cpufreq_level, DVFS_MAX_LOCK_REQ)
 		    == VALID_LEVEL) {
  			cpufreq_max_limit_val = val;
+
+			/* Max lock has higher priority than Min lock */
+			if (cpufreq_min_limit_val != -1 &&
+			    cpufreq_min_limit_val > cpufreq_max_limit_val) {
+				printk(KERN_ERR "%s: Min lock forced to %d"
+					" because of Max lock\n",
+					__func__, cpufreq_max_limit_val);
+				/* Update PRCMU QOS value to max value */
+				prcmu_qos_update_requirement(PRCMU_QOS_ARM_KHZ,
+						"power", cpufreq_max_limit_val);
+				/* Set replacement flag */
+				min_replacement = 1;
+			}
 
 			/* Update CPU frequency policy */
 			for_each_online_cpu(cpu)
@@ -540,6 +552,12 @@ static ssize_t cpufreq_min_limit_store(struct kobject *kobj,
 			/* Reset lock value to default */
  			cpufreq_min_limit_val = -1;
 
+			/* Update PRCMU QOS value to default */
+			prcmu_qos_update_requirement(PRCMU_QOS_ARM_KHZ,
+					"power", PRCMU_QOS_DEFAULT_VALUE);
+
+			/* Clear replacement flag */
+			min_replacement = 0;
 		} else /* Already unlocked */
 			printk(KERN_ERR "%s: Unlock request is ignored\n",
 				__func__);
@@ -548,6 +566,22 @@ static ssize_t cpufreq_min_limit_store(struct kobject *kobj,
 			== VALID_LEVEL) {
  			cpufreq_min_limit_val = val;
 
+			/* Max lock has higher priority than Min lock */
+			if (cpufreq_max_limit_val != -1 &&
+			    cpufreq_min_limit_val > cpufreq_max_limit_val) {
+				printk(KERN_ERR "%s: Min lock forced to %d"
+					" because of Max lock\n",
+					__func__, cpufreq_max_limit_val);
+				/* Update PRCMU QOS value to max value */
+				prcmu_qos_update_requirement(PRCMU_QOS_ARM_KHZ,
+						"power", cpufreq_max_limit_val);
+				/* Set replacement flag */
+				min_replacement = 1;
+			} else {
+				/* Update PRCMU QOS value to new value */
+				prcmu_qos_update_requirement(PRCMU_QOS_ARM_KHZ,
+						"power", cpufreq_min_limit_val);
+			}
 		} else /* Invalid lock request --> No action */
 			printk(KERN_ERR "%s: Lock request is invalid\n",
 				__func__);
@@ -619,6 +653,8 @@ static int __init pm_init(void)
 #ifdef CONFIG_DVFS_LIMIT
 	cpufreq_register_notifier(&dvfs_cpufreq_notifier_block,
 				  CPUFREQ_POLICY_NOTIFIER);
+	prcmu_qos_add_requirement(PRCMU_QOS_ARM_KHZ, "power",
+				  PRCMU_QOS_DEFAULT_VALUE);
 #endif
 	return sysfs_create_group(power_kobj, &attr_group);
 }

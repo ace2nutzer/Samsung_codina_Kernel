@@ -137,9 +137,13 @@ struct ssg_dpi_display_platform_data codina_dpi_pri_display_info = {
 	.reset_gpio		= LCD_RESX_CODINA_R0_0,
 	.pwr_gpio		= LCD_PWR_EN_CODINA_R0_0,
 	.bl_ctrl		= false,
+
 	.power_on_delay = 10,
 	.reset_delay = 10,
 	.display_off_delay = 25,
+
+	.min_ddr_opp		= 50,
+
 	.video_mode.xres	= 480,
 	.video_mode.yres	= 800,
 	.video_mode.interlaced	= false,
@@ -201,7 +205,7 @@ static int pri_display_power_on(struct ssg_dpi_display_platform_data *pd,
 		else
 			regulator_disable(vreg_lcd_1v8_regulator);
 		
-		gpio_set_value(pd->pwr_gpio, enable);		
+		gpio_set_value(pd->pwr_gpio, enable);
 
 	} else {
 		/*
@@ -251,6 +255,8 @@ static pin_cfg_t codina_lcd_spi_pins_enable[] = {
 	GPIO224_GPIO | PIN_OUTPUT_HIGH, /* LCD_SDA */
 };
 
+static bool boost = false;
+
 static int lcd_gpio_cfg_earlysuspend(void)
 {
 	int ret = 0;
@@ -258,12 +264,28 @@ static int lcd_gpio_cfg_earlysuspend(void)
 	ret = nmk_config_pins(codina_lcd_spi_pins_disable,
 		ARRAY_SIZE(codina_lcd_spi_pins_disable));
 
+	if (boost) {
+	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
+				"mcde", PRCMU_QOS_DEFAULT_VALUE);
+
+	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
+				"mcde", PRCMU_QOS_DEFAULT_VALUE);
+	}
+
 	return ret;
 }
 
 static int lcd_gpio_cfg_lateresume(void)
 {
 	int ret = 0;
+
+	if (boost) {
+	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
+				"mcde", PRCMU_QOS_MAX_VALUE);
+
+	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
+				"mcde", PRCMU_QOS_MAX_VALUE);
+	}
 
 	ret = nmk_config_pins(codina_lcd_spi_pins_enable,
 		ARRAY_SIZE(codina_lcd_spi_pins_enable));
@@ -313,7 +335,7 @@ static int display_postregistered_callback(struct notifier_block *nb,
 
 	/* Create frame buffer */
 	fbi = mcde_fb_create(ddev, width, height, width, virtual_height,
-	ddev->default_pixel_format, FB_ROTATE_UR);
+				ddev->default_pixel_format, FB_ROTATE_UR);
 
 	if (IS_ERR(fbi)) {
 		dev_warn(&ddev->dev,
@@ -352,6 +374,59 @@ display_postregistered_callback_err:
 static struct notifier_block display_nb = {
 	.notifier_call = display_postregistered_callback,
 };
+
+static void update_mcde_opp(struct device *dev,
+					struct mcde_opp_requirements *reqs)
+{
+	static s32 requested_qos;
+	s32 req_ape = PRCMU_QOS_DEFAULT_VALUE;
+	static bool update_first = true;
+	s32 req_ddr = PRCMU_QOS_DEFAULT_VALUE;
+
+	static u8 prev_rot_channels;
+	static ktime_t rot_time;
+	s64 diff;
+
+	/* If a rotation is detected, clock up CPU to max */
+	if (reqs->num_rot_channels != prev_rot_channels) {
+		prev_rot_channels = reqs->num_rot_channels;
+		rot_time = ktime_get();
+	}
+
+	diff = ktime_to_ms(ktime_sub(ktime_get(),rot_time));
+
+/*
+ * Wait a while before clocking down again
+	 * unless we have an overlay
+ */
+if ((reqs->num_rot_channels && reqs->num_overlays > 1) ||
+		 (diff < 5000)) {
+		req_ape = PRCMU_QOS_MAX_VALUE;
+		req_ddr = PRCMU_QOS_MAX_VALUE;
+			boost = true;
+	} else {
+		req_ape = PRCMU_QOS_DEFAULT_VALUE;
+		req_ddr = PRCMU_QOS_DEFAULT_VALUE;
+			boost = false;
+	}
+
+	if (req_ape != requested_qos) {
+		requested_qos = req_ape;
+		prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
+						"mcde", req_ape);
+		prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
+						"mcde", req_ddr);
+		pr_info("Requested APE QOS = %d\n", req_ape);
+
+		if (update_first == true) {
+			codina_backlight_on_off(false);
+			msleep(1);
+			codina_backlight_on_off(true);
+			update_first = false;
+		}
+	}
+	
+}
 
 int __init init_codina_display_devices(void)
 {
@@ -403,6 +478,7 @@ int __init init_codina_display_devices(void)
 	pdata->pixelfetchwtrmrk[1] = fifo * 3 / 24;	/* LCD 24bpp */
 #endif
 	}
+	pdata->update_opp = update_mcde_opp;
 
 	if (lcd_type == LCD_PANEL_TYPE_SMD) {
 		generic_display0.name = LCD_DRIVER_NAME_WS2401;
@@ -443,6 +519,11 @@ int __init init_codina_display_devices(void)
 		codina_dpi_pri_display_info.sleep_out_delay = 200;
 		}
 	}
+
+	prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
+				"mcde", PRCMU_QOS_DEFAULT_VALUE);
+	prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
+				"mcde", PRCMU_QOS_DEFAULT_VALUE);
 	
 	ret = mcde_display_device_register(&generic_display0);
 	if (ret)
