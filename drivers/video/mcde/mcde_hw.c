@@ -4434,12 +4434,14 @@ failed_irq_get:
 static int __devexit mcde_remove(struct platform_device *pdev)
 {
 	remove_clocks_and_power(pdev);
+
 #ifdef MCDE_DPI_UNDERFLOW
 	if (mcde_underflow_workqueue != NULL) {
 		destroy_workqueue(mcde_underflow_workqueue);
 		mcde_underflow_workqueue = NULL;
 	}
 #endif
+
 	return 0;
 }
 

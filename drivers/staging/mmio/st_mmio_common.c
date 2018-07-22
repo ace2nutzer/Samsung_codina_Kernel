@@ -58,6 +58,16 @@ int mmio_cam_initboard(
 
 	dev_dbg(info->dev, "%s\n", __func__);
 
+	err = prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
+			(char *)info->misc_dev.name,
+			MAX_PRCMU_QOS_APP);
+
+	if (err) {
+		dev_err(info->dev, "Error adding PRCMU QoS requirement %d\n",
+				err);
+		goto out;
+}
+
 	/* Initialize platform specific data */
 	err = info->pdata->platform_init(info->pdata);
 
@@ -99,6 +109,9 @@ int mmio_cam_desinitboard(
 	}
 
 	info->pdata->platform_exit(info->pdata);
+
+	prcmu_qos_remove_requirement(PRCMU_QOS_APE_OPP,
+	(char *)info->misc_dev.name);
 
 out:
 	return err;

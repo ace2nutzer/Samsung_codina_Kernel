@@ -1197,13 +1197,13 @@ static inline void liveopp_update_cpuhw(struct liveopp_arm_table table,
 	/*
 	 * FIXME: Using another thread here would be better?
 	 */
+	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
+					"cpufreq",
+					(signed char)table.ape_opp);
 
 	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
 					"cpufreq",
 					(signed char)table.ddr_opp);
-	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
-					"cpufreq",
-					(signed char)table.ape_opp);
 
 out:
 	mutex_unlock(&liveopp_lock);
@@ -4258,16 +4258,16 @@ static int __init late(void)
 		kobject_put(liveopp_kobject);
 	}
 
-	if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
-					"cpufreq",
-					PRCMU_QOS_MAX_VALUE)) {
-		pr_err("pcrm_qos_add DDR failed\n");
-	}
-
 	if (prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
 					"cpufreq",
 					PRCMU_QOS_MAX_VALUE)) {
 		pr_err("pcrm_qos_add APE failed\n");
+	}
+
+	if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
+					"cpufreq",
+					PRCMU_QOS_MAX_VALUE)) {
+		pr_err("pcrm_qos_add DDR failed\n");
 	}
 
 	pr_info("[LiveOPP] Initialized: v%s\n", LIVEOPP_VER);

@@ -36,11 +36,11 @@
 #include <linux/earlysuspend.h>
 #endif
 
-#include <linux/mfd/dbx500-prcmu.h>
-
 #include <video/mcde_display.h>
 #include <video/mcde_display-dpi.h>
 #include <video/mcde_display_ssg_dpi.h>
+
+#include <linux/mfd/dbx500-prcmu.h>
 
 #define ESD_PORT_NUM 93
 #define SPI_COMMAND		0
@@ -470,6 +470,41 @@ error:
 	return res;
 }
 
+static void ws2401_request_opp(struct ws2401_dpi *lcd)
+{
+	if ((!lcd->opp_is_requested) && (lcd->pd->min_ddr_opp > 0)) {
+
+		if (prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
+						LCD_DRIVER_NAME_WS2401,
+						PRCMU_QOS_MAX_VALUE)) {
+			dev_err(lcd->dev, "add APE OPP %d failed\n",
+						PRCMU_QOS_MAX_VALUE);
+		}
+
+		if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
+						LCD_DRIVER_NAME_WS2401,
+						lcd->pd->min_ddr_opp)) {
+			dev_err(lcd->dev, "add DDR OPP %d failed\n",
+				lcd->pd->min_ddr_opp);
+		}
+
+		dev_dbg(lcd->dev, "APE OPP requested at %d%%\n",PRCMU_QOS_MAX_VALUE);
+		dev_dbg(lcd->dev, "DDR OPP requested at %d%%\n",lcd->pd->min_ddr_opp);
+		lcd->opp_is_requested = true;
+	}
+}
+
+static void ws2401_release_opp(struct ws2401_dpi *lcd)
+{
+	if (lcd->opp_is_requested) {
+		prcmu_qos_remove_requirement(PRCMU_QOS_DDR_OPP, LCD_DRIVER_NAME_WS2401);
+		prcmu_qos_remove_requirement(PRCMU_QOS_APE_OPP, LCD_DRIVER_NAME_WS2401);
+		lcd->opp_is_requested = false;
+		dev_dbg(lcd->dev, "DDR OPP removed\n");
+		dev_dbg(lcd->dev, "APE OPP removed\n");
+	}
+}
+
 static int ws2401_set_rotation(struct mcde_display_device *ddev,
 	enum mcde_display_rotation rotation)
 {
@@ -666,7 +701,7 @@ static int ws2401_dpi_ldi_disable(struct ws2401_dpi *lcd)
 	int ret;
 
 	dev_dbg(lcd->dev, "ws2401_dpi_ldi_disable\n");
-        ret |= ws2401_write_dcs_sequence(lcd,
+        ret = ws2401_write_dcs_sequence(lcd,
 					DCS_CMD_SEQ_WS2401_DISPLAY_OFF);
 	ret |= ws2401_write_dcs_sequence(lcd,
 				DCS_CMD_SEQ_WS2401_ENTER_SLEEP_MODE);
@@ -701,6 +736,8 @@ static int ws2401_dpi_power_on(struct ws2401_dpi *lcd)
 {
 	int ret = 0;
 	struct ssg_dpi_display_platform_data *dpd = NULL;
+
+	ws2401_request_opp(lcd);
 
 	dpd = lcd->pd;
 	if (!dpd) {
@@ -769,6 +806,8 @@ static int ws2401_dpi_power_off(struct ws2401_dpi *lcd)
 		return -EFAULT;
 	} else
 		dpd->power_on(dpd, LCD_POWER_DOWN);
+
+	ws2401_release_opp(lcd);
 
 	return 0;
 }
@@ -1302,6 +1341,7 @@ static int __devinit ws2401_dpi_mcde_probe(
 	lcd->pd = pdata;
 
 	lcd->opp_is_requested = false;
+	ws2401_request_opp(lcd);
 
 #ifdef CONFIG_LCD_CLASS_DEVICE
 	lcd->ld = lcd_device_register("panel", &ddev->dev,
@@ -1366,18 +1406,6 @@ ret = device_create_file(&(ddev->dev), &dev_attr_mcde_chnl);
 	lcd->earlysuspend.resume  = ws2401_dpi_mcde_late_resume;
 	register_early_suspend(&lcd->earlysuspend);
 #endif
-	//when screen is on, DDR_OPP 25 sometimes messes it up
-	//TODO change these to add/update/remove
-
-	if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
-			"codina_lcd_dpi", PRCMU_QOS_DEFAULT_VALUE)) {
-		pr_info("pcrm_qos_add DDR failed\n");
-	}
-
-	if (prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
-			"codina_lcd_dpi", PRCMU_QOS_DEFAULT_VALUE)) {
-		pr_info("pcrm_qos_add APE failed\n");
-	}
 
 	dev_dbg(&ddev->dev, "DPI display probed\n");
 
@@ -1407,11 +1435,6 @@ static int __devexit ws2401_dpi_mcde_remove(
 		backlight_device_unregister(lcd->bd);
 
 	spi_unregister_driver(&lcd->spi_drv);
-
-	prcmu_qos_remove_requirement(PRCMU_QOS_DDR_OPP,
-                        "codina_lcd_dpi");
-	prcmu_qos_remove_requirement(PRCMU_QOS_APE_OPP,
-                        "codina_lcd_dpi");
 
 	kfree(lcd);
 
@@ -1513,13 +1536,6 @@ static void ws2401_dpi_mcde_early_suspend(
 	#endif
 
 	ws2401_dpi_mcde_suspend(lcd->mdd, dummy);
-
-	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
-				"codina_lcd_dpi", PRCMU_QOS_DEFAULT_VALUE);
-
-	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
-				"codina_lcd_dpi", PRCMU_QOS_DEFAULT_VALUE);
-
 }
 
 static void ws2401_dpi_mcde_late_resume(
@@ -1528,12 +1544,6 @@ static void ws2401_dpi_mcde_late_resume(
 	struct ws2401_dpi *lcd = container_of(earlysuspend,
 						struct ws2401_dpi,
 						earlysuspend);
-
-	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
-				"codina_lcd_dpi", PRCMU_QOS_DEFAULT_VALUE);
-
-	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
-				"codina_lcd_dpi", PRCMU_QOS_DEFAULT_VALUE);
 
 	#ifdef ESD_OPERATION
 	if (lcd->lcd_connected)

@@ -52,6 +52,8 @@
 
 #define CLOCK_ENABLE_DELAY		(0x2)
 
+#define MAX_PRCMU_QOS_APP		(0x64)
+
 #define ISP_WRITE_DATA_SIZE		(0x4)
 
 #define clrbits32(_addr, _clear) \
@@ -1368,6 +1370,14 @@ mmio_enable_xshutdown_from_host(struct mmio_info *info, unsigned long enable)
 static int mmio_cam_initboard(struct mmio_info *info)
 {
 	int err = 0;
+	err = prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP, MMIO_NAME,
+			MAX_PRCMU_QOS_APP);
+
+	if (err) {
+		dev_err(info->dev, "Error adding PRCMU QoS requirement %d\n",
+				err);
+		goto out;
+	}
 
 	/* Initialize platform specific data */
 	err = info->pdata->platform_init(info->pdata);
@@ -1401,6 +1411,7 @@ static int mmio_cam_desinitboard(struct mmio_info *info)
 
 	info->pdata->platform_exit(info->pdata);
 
+	prcmu_qos_remove_requirement(PRCMU_QOS_APE_OPP, MMIO_NAME);
 	return 0;
 }
 
