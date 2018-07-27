@@ -123,11 +123,9 @@ static void disable_led_notification(void)
 	if (bln_ongoing) {
 		bln_disable_backlights(gen_all_leds_mask());
 		bln_power_off();
+		reset_bln_states();
+		pr_info("%s: notification led disabled\n", __FUNCTION__);
 	}
-
-	reset_bln_states();
-
-	pr_info("%s: notification led disabled\n", __FUNCTION__);
 }
 
 static void bln_late_resume(struct early_suspend *h)
