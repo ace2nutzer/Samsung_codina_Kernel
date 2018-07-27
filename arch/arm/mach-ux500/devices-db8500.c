@@ -620,21 +620,21 @@ struct platform_device u8500_ske_keypad_device = {
 static struct cpufreq_frequency_table db8500_freq_table[] = {
 	[0] = {
 		.index = 0,
-		.frequency = CPUFREQ_TABLE_END,
+		.frequency = 200000,
 	},
 	[1] = {
 		.index = 1,
-		.frequency = CPUFREQ_TABLE_END,
+		.frequency = 400000,
 	},
 	[2] = {
 		.index = 2,
-		.frequency = CPUFREQ_TABLE_END,
+		.frequency = 800000,
 	},
 	#if defined(CONFIG_MACH_GAVINI)
 	[3] = {
 		/* Used for MAX_OPP, if available */
 		.index = 3,
-		.frequency = CPUFREQ_TABLE_END,
+		.frequency = 1000000,
 	},
 	#else
 	[3] = {
