@@ -69,19 +69,22 @@ static int charging_stats = CHARGING_STOPPED;
 static bool eoc_first = 0;
 static bool eoc_real = 0;
 bool is_suspend = 0;
+static bool eoc_bln_is_ongoing = 0;
 
 static void ab8500_chargalg_early_suspend(struct early_suspend *h)
 {
 	is_suspend = 1;
-
-	if (eoc_bln) {
-	bln_disable_backlights(gen_all_leds_mask());
-	}
 }
 
 static void ab8500_chargalg_late_resume(struct early_suspend *h)
 {
 	is_suspend = 0;
+
+	/* disable EOC BLN */
+	if (eoc_bln_is_ongoing && !bln_is_ongoing()) {
+	bln_disable_backlights(gen_all_leds_mask());
+	eoc_bln_is_ongoing = 0;
+	}
 }
 
 enum ab8500_chargers {
@@ -1000,6 +1003,7 @@ static void ab8500_chargalg_end_of_charge(struct ab8500_chargalg *di)
 					if ((eoc_bln & !bln_is_ongoing()) && (is_suspend || is_lpm || is_recovery)) {
 					/* enable BLN */
 					bln_enable_backlights(get_led_mask());
+					eoc_bln_is_ongoing = 1;
 					}
 				} else {
 					dev_dbg(di->dev,
@@ -1233,8 +1237,11 @@ static int ab8500_chargalg_get_ext_psy_data(struct device *dev, void *data)
 			if (!ret.intval && is_charger) {
 				is_charger_present = false;
 
-				/* disable BLN */
+				/* disable EOC BLN */
+				if (eoc_bln_is_ongoing && !bln_is_ongoing()) {
 				bln_disable_backlights(gen_all_leds_mask());
+				eoc_bln_is_ongoing = 0;
+				}
 
 			} else if (ret.intval && is_charger) {
 				is_charger_present = true;
