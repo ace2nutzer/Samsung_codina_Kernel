@@ -858,6 +858,7 @@ void OSAL_DisablePwrRessource(t_nmf_power_resource resource, t_uint32 firstParam
 	case CM_OSAL_POWER_SxA_CLOCK: {
 		unsigned idx = COREIDX(firstParam);
 		struct osal_msg msg;
+		unsigned char sia;
 
 		if (idx >= NB_MPC) {
 			pr_err("CM Driver(%s(res=%d)): core %u unknown\n",
@@ -883,7 +884,7 @@ void OSAL_DisablePwrRessource(t_nmf_power_resource resource, t_uint32 firstParam
 			pr_err("CM Driver(%s): can't disable regulator %s-mmsdp\n",
 			       __func__, osalEnv.mpc[idx].name);
 #ifdef CONFIG_HAS_WAKELOCK
-		wake_unlock(&osalEnv.mpc[idx].wakelock);
+		wake_unlock(&osalEnv.mpc[sia].wakelock);
 #endif
 
 		/* Create and dispatch a shutdown service message */
@@ -981,6 +982,7 @@ t_cm_error OSAL_EnablePwrRessource(t_nmf_power_resource resource, t_uint32 first
 	switch (resource) {
 	case CM_OSAL_POWER_SxA_CLOCK: {
 		unsigned idx = COREIDX(firstParam);
+		unsigned char sia;
 
 		if (idx > NB_MPC) {
 			pr_err("CM Driver(%s(res=%d)): core %u unknown\n", __func__, (int)resource, (unsigned)firstParam);
@@ -989,7 +991,7 @@ t_cm_error OSAL_EnablePwrRessource(t_nmf_power_resource resource, t_uint32 first
 
 		/* Start the DSP */
 #ifdef CONFIG_HAS_WAKELOCK
-		wake_lock(&osalEnv.mpc[idx].wakelock);
+		wake_lock(&osalEnv.mpc[sia].wakelock);
 #endif
 		if (regulator_enable(osalEnv.mpc[idx].mmdsp_regulator) < 0)
 			pr_err("CM Driver(%s): can't enable regulator %s-mmsdp\n", __func__, osalEnv.mpc[idx].name);
