@@ -319,8 +319,8 @@ power_attr(wake_unlock);
 #endif
 
 #ifdef CONFIG_DVFS_LIMIT
-static int cpufreq_max_limit_val = -1;
-static int cpufreq_min_limit_val = -1;
+static int cpufreq_max_limit_val = 800 * 1000;
+static int cpufreq_min_limit_val = 200 * 1000;
 static int min_replacement = 0;
 
 static ssize_t cpufreq_table_show(struct kobject *kobj,
@@ -540,7 +540,6 @@ static ssize_t cpufreq_min_limit_store(struct kobject *kobj,
 	int val;
 	unsigned int cpufreq_level;
 	ssize_t ret = -EINVAL;
-	int cpu;
 
 	if (sscanf(buf, "%d", &val) != 1) {
 		printk(KERN_ERR "%s: Invalid cpufreq format\n", __func__);
