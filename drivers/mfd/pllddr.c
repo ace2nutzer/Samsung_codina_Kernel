@@ -419,7 +419,7 @@ static ssize_t pllddr_store(struct kobject *kobj, struct kobj_attribute *attr, c
 	int ret = 0;
 
 	if (unlikely(pending_pllddr_val > 0)) {
-		pr_err("PLLDDR OC is already scheduled.\n");
+		pr_err("%s: PLLDDR OC is already scheduled.\n", __func__);
 		return -EBUSY;
 	}
 

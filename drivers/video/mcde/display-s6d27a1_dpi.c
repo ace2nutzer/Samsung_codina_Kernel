@@ -381,46 +381,6 @@ static void s6d27a1_release_opp(struct s6d27a1_dpi *lcd)
 	}
 }
 
-/* Reverse order of power on and channel update as compared with MCDE default display update */
-static int s6d27a1_display_update(struct mcde_display_device *ddev,
-							bool tripple_buffer)
-{
-	int ret = 0;
-	struct s6d27a1_dpi *lcd = dev_get_drvdata(&ddev->dev);
-
-	/*Protection code for  power on /off test */
-	if((lcd->dev <= 0) || (lcd->mdd <= 0) || (lcd->dev->platform_data <= 0))
-		return ret;
-
-	if (ddev->power_mode != MCDE_DISPLAY_PM_ON && ddev->set_power_mode) {
-		ret = ddev->set_power_mode(ddev, MCDE_DISPLAY_PM_ON);
-		if (ret < 0) {
-			dev_warn(&ddev->dev,
-				"%s:Failed to set power mode to on\n",
-				__func__);
-			return ret;
-		}
-	}
-
-	ret = mcde_chnl_update(ddev->chnl_state, tripple_buffer);
-	if (ret < 0) {
-		dev_warn(&ddev->dev, "%s:Failed to update channel\n", __func__);
-		return ret;
-	}
-	if (lcd->turn_on_backlight == false){
-
-		lcd->turn_on_backlight = true;
-		/* Allow time for one frame to be sent to the display before switching on the backlight */
-		if (lcd->pd->bl_on_off) {
-			lcd->pd->bl_on_off(false);			
-			msleep(20);
-			lcd->pd->bl_on_off(true);			
-		}
-	}
-		
-	return 0;
-}
-
 static int s6d27a1_set_rotation(struct mcde_display_device *ddev,
 	enum mcde_display_rotation rotation)
 {
@@ -1176,10 +1136,10 @@ static int __devinit s6d27a1_dpi_spi_probe(struct spi_device *spi)
 {
 	int ret = 0;
 
-	s6d = 1;
-
 	struct s6d27a1_dpi *lcd = container_of(spi->dev.driver,
 					 struct s6d27a1_dpi, spi_drv.driver);
+
+	s6d = 1;
 
 	dev_dbg(&spi->dev, "panel s6d27a1_dpi spi being probed\n");
 
