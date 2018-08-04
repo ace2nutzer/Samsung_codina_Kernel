@@ -52,7 +52,7 @@
 struct ktd259 {
 	unsigned int currentRatio;
 	unsigned int brightness;
-	const struct ktd259x_bl_platform_data *pd;
+	struct ktd259x_bl_platform_data *pd;
 	bool backlight_disabled;
 #ifdef CONFIG_HAS_EARLYSUSPEND
 	struct early_suspend	earlysuspend;

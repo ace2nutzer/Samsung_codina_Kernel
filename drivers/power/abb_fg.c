@@ -2168,7 +2168,7 @@ err:
 }
 
 
-static void ab8500_init_columbcounter(struct ab8500_fg *di)
+static int ab8500_init_columbcounter(struct ab8500_fg *di)
 {
 	int ret = 0;
 	u8 reg_val;
@@ -2807,6 +2807,8 @@ static int ab8500_fg_get_ext_psy_data(struct device *dev, void *data)
 				di->flags.fully_charged_1st = ret.intval;
 				queue_work(di->fg_wq, &di->fg_work);
 				break;
+		default:
+			break;
 			}
 			break;
 
@@ -2816,6 +2818,8 @@ static int ab8500_fg_get_ext_psy_data(struct device *dev, void *data)
 			case POWER_SUPPLY_TYPE_BATTERY:
 				di->flags.chg_timed_out = ret.intval;
 				break;
+		default:
+			break;
 			}
 			break;
 
@@ -2864,7 +2868,6 @@ static int ab8500_fg_get_ext_psy_data(struct device *dev, void *data)
 				break;
 			}
 			break;
-
 		default:
 			break;
 		}
@@ -3023,7 +3026,7 @@ static void ab8500_fg_reinit_param_work(struct work_struct *work)
 	int delta, mah = 0;
 	int valid_range = 0;
 	int offset_null = -1;
-	int switchoff_status = 0;
+	u8 switchoff_status = 0;
 	bool reset_state = false;
 
 	int ret;
@@ -3222,6 +3225,8 @@ static int ab8500_fg_reboot_call(struct notifier_block *self,
 {
 	struct ab8500_fg *di;
 
+	int off_status = 0x0;
+
 	di = container_of(self, struct ab8500_fg, fg_notifier);
 
 	/* AB8500 FG cannot keep the battery capacity itself.
@@ -3232,7 +3237,6 @@ static int ab8500_fg_reboot_call(struct notifier_block *self,
 	/* Additionally, we will keep the last voltage and charging status
 	   for checking unknown/normal power off.
 	*/
-	int off_status = 0x0;
 
 	if (di->lpm_chg_mode && vbus_state)
 		off_status |= (MAGIC_CODE_RESET << OFF_MAGIC_CODE);

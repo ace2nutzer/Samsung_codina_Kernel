@@ -1,3 +1,4 @@
+CFLAGS_led-class.o += -Wno-error
 
 # LED Core
 obj-$(CONFIG_NEW_LEDS)			+= led-core.o

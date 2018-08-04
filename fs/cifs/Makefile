@@ -1,3 +1,5 @@
+CFLAGS_cifssmb.o += -Wno-error
+
 #
 # Makefile for Linux CIFS VFS client 
 #

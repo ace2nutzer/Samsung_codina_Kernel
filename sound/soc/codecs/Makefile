@@ -1,3 +1,5 @@
+CFLAGS_ab8500_audio.o += -Wno-error
+
 snd-soc-88pm860x-objs := 88pm860x-codec.o
 snd-soc-ab3550-objs := ab3550.o
 snd-soc-ab5500-objs := ab5500.o

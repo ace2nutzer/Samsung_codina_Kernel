@@ -95,15 +95,13 @@ static const struct dev_pm_ops SM5103_pm_ops = {
 
 static int SM5103_i2c_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
-	printk(KERN_INFO "-> SM5103_%s(client=%s, id=%s)", __func__, client->name, id->name);
-
     int ret = 0;
-	/* Struct NCP6914_platform_data * platdata = client->dev.platform_data; */
 
+	/* Struct NCP6914_platform_data * platdata = client->dev.platform_data; */
 	dev_set_name(&client->dev, client->name);
 	pClient = client;
 	gpio_power_on  = 145; /* SM5103 SUBPMU_PWRON -> GPIO145 */
-
+	printk(KERN_INFO "-> SM5103_%s(client=%s, id=%s)", __func__, client->name, id->name);
 	printk(KERN_INFO "<- SM5103_%s(client=%s) = %d", __func__, client->name, ret);
 	return ret;	
 }

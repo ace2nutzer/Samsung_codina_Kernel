@@ -459,7 +459,7 @@ static ssize_t store_batt_test_mode(struct device *dev, struct device_attribute 
 	return 0 ;
 }
 
-static ssize_t show_battery_type(struct device *dev, struct device_attribute *attr, const char *buf)
+static ssize_t show_battery_type(struct device *dev, struct device_attribute *attr, char *buf)
 {
 	char *batt_pack_str = "ELE";
 	char *batt_cell_str = "HIT";

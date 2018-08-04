@@ -31,13 +31,13 @@
 #ifdef IORA
 
  
-  void breakpoint_iora_init()
+  void breakpoint_iora_init(void)
 {
 	pr_info("breakpoint_iora_init...!!!");
 }
 EXPORT_SYMBOL(breakpoint_iora_init);
 
- void breakpoint_iora_suspend()
+ void breakpoint_iora_suspend(void)
 {
 	pr_info("breakpoint_iora_suspend...!!!");
 }

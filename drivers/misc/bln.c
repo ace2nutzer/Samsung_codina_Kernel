@@ -141,7 +141,7 @@ static struct early_suspend bln_suspend_data = {
 	.resume = bln_late_resume,
 };
 
-static void blink_thread(void)
+static int blink_thread(void *data)
 {
 	while(bln_suspended)
 	{
@@ -150,6 +150,7 @@ static void blink_thread(void)
 		bln_disable_backlights(get_led_mask());
 		msleep(bln_blinkoff_delay);
 	}
+	return 0;
 }
 
 static void enable_led_notification(void)
@@ -177,7 +178,7 @@ static void enable_led_notification(void)
 	if(!bln_blink_mode)
 		bln_enable_backlights(get_led_mask());
 	else
-		kthread_run(&blink_thread, NULL,"bln_blink_thread");
+		kthread_run(&blink_thread, (void*) NULL,"bln_blink_thread");
 
 	pr_info("%s: notification led enabled\n", __FUNCTION__);
 }
