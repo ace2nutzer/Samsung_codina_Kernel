@@ -1409,17 +1409,6 @@ static int ab8500_charger_led_en(struct ab8500_charger *di, int on)
 	return ret;
 }
 
-static struct wake_lock *ab8500_vbus_wake_lock;
-static struct wake_lock *ab8500_vbus_detect_charging_lock;
-static struct wake_lock *charger_attached_lock;
-
-bool is_abb_charger_wakelocks_active(void)
-{
-	return wake_lock_active(&ab8500_vbus_wake_lock) ||
-		wake_lock_active(&ab8500_vbus_detect_charging_lock) ||
-		wake_lock_active(&charger_attached_lock);
-}
-
 /**
  * ab8500_charger_ac_en() - enable or disable ac charging
  * @di:		pointer to the ab8500_charger structure
@@ -1954,7 +1943,7 @@ static void ab8500_charger_check_hw_failure_work(struct work_struct *work)
  */
 static void ab8500_charger_kick_watchdog_work(struct work_struct *work)
 {
-	int ret;
+	int ret = 0;
 
 	struct ab8500_charger *di = container_of(work,
 		struct ab8500_charger, kick_wd_work.work);
@@ -1977,7 +1966,7 @@ static void ab8500_charger_kick_watchdog_work(struct work_struct *work)
  */
 static void ab8500_charger_ac_work(struct work_struct *work)
 {
-	int ret;
+//	int ret = 0;
 	int cable_type, vbus_status;
 
 	struct ab8500_charger *di = container_of(work,

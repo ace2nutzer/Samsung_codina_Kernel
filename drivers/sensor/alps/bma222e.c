@@ -284,7 +284,6 @@ void bma222e_activate(int flgatm, int flg, int dtime)
 		atomic_set(&flgEna, flg);
 		atomic_set(&delay, dtime);
 	}
-	return 0;
 }
 EXPORT_SYMBOL(bma222e_activate);
 

@@ -344,7 +344,7 @@ static int bthid_ioctl(struct inode *inode, struct file *file, unsigned int cmd,
 
     p_dev->dscp_set = 1;
     } else {
-	printk(KERN_INFO "Invlid ioctl value");
+	printk(KERN_INFO "Invalid ioctl value");
         return -EINVAL;
     }
 

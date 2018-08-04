@@ -1,3 +1,5 @@
+CFLAGS_bma222e.o += -Wno-error
+
 #
 #  Makefile for the kernel Sensor device drivers.
 #

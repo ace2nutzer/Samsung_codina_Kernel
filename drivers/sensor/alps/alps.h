@@ -21,6 +21,6 @@ int hscd_activate(int flgatm, int flg, int dtime);
 #endif
 void bma222e_activate(int flgatm, int flg, int dtime);
 int bma222e_get_acceleration_data(int *xyz);
-int bma222e_open();
+int bma222e_open(void);
 
 #endif
