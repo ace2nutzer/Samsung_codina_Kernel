@@ -352,9 +352,9 @@ static void s6d27a1_request_opp(struct s6d27a1_dpi *lcd)
 
 		if (prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
 						LCD_DRIVER_NAME_S6D27A1,
-						PRCMU_QOS_HALF_VALUE)) {
+						PRCMU_QOS_DEFAULT_VALUE)) {
 			dev_err(lcd->dev, "add APE OPP %d failed\n",
-						PRCMU_QOS_HALF_VALUE);
+						PRCMU_QOS_DEFAULT_VALUE);
 		}
 
 		if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
@@ -364,7 +364,7 @@ static void s6d27a1_request_opp(struct s6d27a1_dpi *lcd)
 				lcd->pd->min_ddr_opp);
 		}
 
-		dev_dbg(lcd->dev, "APE OPP requested at %d%%\n",PRCMU_QOS_HALF_VALUE);
+		dev_dbg(lcd->dev, "APE OPP requested at %d%%\n",PRCMU_QOS_DEFAULT_VALUE);
 		dev_dbg(lcd->dev, "DDR OPP requested at %d%%\n",lcd->pd->min_ddr_opp);
 		lcd->opp_is_requested = true;
 	}
