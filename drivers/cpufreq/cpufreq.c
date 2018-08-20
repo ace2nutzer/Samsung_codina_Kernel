@@ -30,10 +30,6 @@
 #include <linux/mutex.h>
 #include <linux/syscore_ops.h>
 
-#ifdef CONFIG_HAS_EARLYSUSPEND
-#include <linux/earlysuspend.h>
-#endif
-
 #include <trace/events/power.h>
 
 /**
@@ -48,15 +44,6 @@ static DEFINE_PER_CPU(struct cpufreq_policy *, cpufreq_cpu_data);
 static DEFINE_PER_CPU(char[CPUFREQ_NAME_LEN], cpufreq_cpu_governor);
 #endif
 static DEFINE_SPINLOCK(cpufreq_driver_lock);
-
-#ifdef CONFIG_HAS_EARLYSUSPEND
-	struct early_suspend			earlysuspend;
-
-static void cpufreq_early_suspend(
-			struct early_suspend *earlysuspend);
-static void cpufreq_late_resume(
-			struct early_suspend *earlysuspend);
-#endif
 
 /*
  * cpu_policy_rwsem is a per CPU reader-writer semaphore designed to cure
@@ -79,6 +66,10 @@ static void cpufreq_late_resume(
  */
 static DEFINE_PER_CPU(int, cpufreq_policy_cpu);
 static DEFINE_PER_CPU(struct rw_semaphore, cpu_policy_rwsem);
+
+/* suspend max freq tunable */
+unsigned int suspend_max_freq = 0;
+module_param(suspend_max_freq, int, 0644);
 
 #define lock_policy_rwsem(mode, cpu)					\
 static int lock_policy_rwsem_##mode					\
@@ -1782,37 +1773,6 @@ no_policy:
 }
 EXPORT_SYMBOL(cpufreq_update_policy);
 
-#ifdef CONFIG_HAS_EARLYSUSPEND
-
-static unsigned int suspend_max_freq = 0;
-module_param(suspend_max_freq, int, 0644);
-static unsigned int user_min = 0;
-static unsigned int user_max = 0;
-
-static void cpufreq_early_suspend(
-		struct early_suspend *earlysuspend)
-{
-	if (suspend_max_freq) {
-	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
-
-	/* save current user min max freq */
-	user_min = policy->min;
-	user_max = policy->max;
-
-	cpufreq_update_freq(0, 200000, suspend_max_freq);
-	}
-}
-
-static void cpufreq_late_resume(
-		struct early_suspend *earlysuspend)
-{
-	if (suspend_max_freq) {
-	/* restore user min max freq */
-	cpufreq_update_freq(0, user_min, user_max);
-	}
-}
-#endif
-
 static int __cpuinit cpufreq_cpu_callback(struct notifier_block *nfb,
 					unsigned long action, void *hcpu)
 {
@@ -1906,13 +1866,6 @@ int cpufreq_register_driver(struct cpufreq_driver *driver_data)
 		}
 	}
 
-#ifdef CONFIG_HAS_EARLYSUSPEND
-	earlysuspend.level   = EARLY_SUSPEND_LEVEL_DISABLE_FB - 1;
-	earlysuspend.suspend = cpufreq_early_suspend;
-	earlysuspend.resume  = cpufreq_late_resume;
-	register_early_suspend(&earlysuspend);
-#endif
-
 	register_hotcpu_notifier(&cpufreq_cpu_notifier);
 	pr_debug("driver %s up and running\n", driver_data->name);
 
@@ -1948,10 +1901,6 @@ int cpufreq_unregister_driver(struct cpufreq_driver *driver)
 
 	sysdev_driver_unregister(&cpu_sysdev_class, &cpufreq_sysdev_driver);
 	unregister_hotcpu_notifier(&cpufreq_cpu_notifier);
-
-#ifdef CONFIG_HAS_EARLYSUSPEND
-	unregister_early_suspend(&earlysuspend);
-#endif
 
 	spin_lock_irqsave(&cpufreq_driver_lock, flags);
 	cpufreq_driver = NULL;
