@@ -32,6 +32,7 @@
 #include <linux/backlight.h>
 #include <linux/mutex.h>
 #include <linux/workqueue.h>
+#include <linux/cpufreq.h>
 #ifdef CONFIG_HAS_EARLYSUSPEND
 #include <linux/earlysuspend.h>
 #endif
@@ -1420,6 +1421,10 @@ static int s6d27a1_dpi_mcde_suspend(
 }
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
+extern unsigned int suspend_max_freq;
+static unsigned int user_min = 0;
+static unsigned int user_max = 0;
+
 static void s6d27a1_dpi_mcde_early_suspend(
 		struct early_suspend *earlysuspend)
 {
@@ -1430,6 +1435,16 @@ static void s6d27a1_dpi_mcde_early_suspend(
 	pm_message_t dummy;
 
 	s6d27a1_dpi_mcde_suspend(lcd->mdd, dummy);
+
+	if (suspend_max_freq) {
+	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
+
+	/* save current user min max freq */
+	user_min = policy->min;
+	user_max = policy->max;
+
+	cpufreq_update_freq(0, 200000, suspend_max_freq);
+	}
 }
 
 static void s6d27a1_dpi_mcde_late_resume(
@@ -1438,6 +1453,11 @@ static void s6d27a1_dpi_mcde_late_resume(
 	struct s6d27a1_dpi *lcd = container_of(earlysuspend,
 						struct s6d27a1_dpi,
 						earlysuspend);
+
+	if (suspend_max_freq) {
+	/* restore user min max freq */
+	cpufreq_update_freq(0, user_min, user_max);
+	}
 
 	s6d27a1_dpi_mcde_resume(lcd->mdd);
 }
