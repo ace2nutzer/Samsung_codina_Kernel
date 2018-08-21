@@ -20,6 +20,11 @@ fi
 
 load_image=/stage1/boot.cpio
 
+if grep -q bootmode=2 /proc/cmdline ; then
+	# recovery boot
+	load_image=/stage1/recovery.cpio
+fi
+
 cpio -i < ${load_image}
 
 umount /sys
