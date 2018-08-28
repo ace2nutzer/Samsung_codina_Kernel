@@ -89,7 +89,7 @@ static int pre_allocated_memory_size_current  = 0;
 #ifdef MALI_OS_MEMORY_KERNEL_BUFFER_SIZE_IN_MB
 	static int pre_allocated_memory_size_max      = MALI_OS_MEMORY_KERNEL_BUFFER_SIZE_IN_MB * 1024 * 1024;
 #else
-	static int pre_allocated_memory_size_max      = 16 * 1024 * 1024; /* 16 MiB */
+	static int pre_allocated_memory_size_max      = 32 * 1024 * 1024; /* 32 MiB */
 #endif
 
 module_param(pre_allocated_memory_size_max, int, S_IRUSR | S_IWUSR | S_IWGRP | S_IRGRP | S_IROTH);
