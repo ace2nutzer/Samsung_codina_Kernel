@@ -22,10 +22,11 @@
 #define UX500_SGA_BASE U8500_SGA_BASE
 #endif
 
-#define MEGABYTE (1024*1024)
-#define MALI_MEM_BASE (128 * MEGABYTE)
-#define MALI_MEM_SIZE ( 32 * MEGABYTE)
-#define OS_MEM_SIZE   (128 * MEGABYTE)
+#define MEGABYTE				(1024*1024)
+#define MALI_MEM_BASE		0x10000000 /* 256MB << vmalloc=264M from cmdline */
+#define MALI_MEM_SIZE		(256 * MEGABYTE)
+#define MALI_MEM_SIZE_OS	(256 * MEGABYTE)
+
 
 /* Hardware revision u8500 v1: GX570-BU-00000-r0p1
  * Hardware revision u8500 v2: GX570-BU-00000-r1p0
@@ -79,7 +80,7 @@ static _mali_osk_resource_t arch_configuration [] =
 		.type = MEMORY,
 		.description = "Mali SDRAM",
 		.alloc_order = 0, /* Highest preference for this memory */
-		.base = MALI_MEM_BASE,
+		.base = 0,
 		.size = 0,
 		.flags = _MALI_CPU_WRITEABLE | _MALI_CPU_READABLE | _MALI_PP_READABLE | _MALI_PP_WRITEABLE |_MALI_GP_READABLE | _MALI_GP_WRITEABLE
 	},
@@ -87,16 +88,16 @@ static _mali_osk_resource_t arch_configuration [] =
 	{
 		.type = OS_MEMORY,
 		.description = "Linux kernel memory",
-		.alloc_order = 5, /* Medium preference for this memory */
-		.size = 2047 * MEGABYTE,
+		.alloc_order = 3,
+		.size = MALI_MEM_SIZE_OS,
 		.flags = _MALI_CPU_WRITEABLE | _MALI_CPU_READABLE | _MALI_MMU_READABLE | _MALI_MMU_WRITEABLE
 	},
 #endif
 	{
 		.type = MEM_VALIDATION,
 		.description = "Framebuffer",
-		.base = 0x00000000, /* Validate all memory for now */
-		.size = 2047 * MEGABYTE, /* "2GB ought to be enough for anyone" */
+		.base = MALI_MEM_BASE ,
+		.size = MALI_MEM_SIZE,
 		.flags = _MALI_CPU_WRITEABLE | _MALI_CPU_READABLE | _MALI_PP_WRITEABLE | _MALI_PP_READABLE
 	},
 	{

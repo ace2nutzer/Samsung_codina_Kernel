@@ -143,3 +143,4 @@ clean
 build_kernel_sdcard_only.sh
 edit_kernel.sh
 clean.sh
+rejects

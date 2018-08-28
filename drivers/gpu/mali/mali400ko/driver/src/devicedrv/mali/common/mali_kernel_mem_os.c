@@ -13,6 +13,11 @@
 #include "mali_kernel_memory_engine.h"
 #include "mali_osk.h"
 
+#include <linux/moduleparam.h>
+
+static int mali_alloc_order = 3;
+module_param(mali_alloc_order, int, 0644);
+
 typedef struct os_allocation
 {
 	u32 num_pages;
@@ -243,7 +248,7 @@ static void os_allocator_release(void * ctx, void * handle)
 
 static mali_physical_memory_allocation_result os_allocator_allocate_page_table_block(void * ctx, mali_page_table_block * block)
 {
-	int allocation_order = 6; /* _MALI_OSK_CPU_PAGE_SIZE << 6 */
+	int allocation_order = mali_alloc_order; /* _MALI_OSK_CPU_PAGE_SIZE << mali_alloc_order */
 	void *virt = NULL;
 	u32 size = _MALI_OSK_CPU_PAGE_SIZE << allocation_order;
 	os_allocator * info;
