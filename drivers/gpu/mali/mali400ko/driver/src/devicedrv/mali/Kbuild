@@ -10,8 +10,12 @@
 
 # This file is called by the Linux build system.
 
-OSKOS=linux
 
+#these are the build options for the ST-Ericsson Ux500 platforms.
+
+ifeq ($(CONFIG_UX500_SOC_DB5500),y)
+DEFINES += -DSOC_DB5500=1
+endif
 
 CONFIG = ux500
 CPU = $(CONFIG)
@@ -25,7 +29,22 @@ USING_HWMEM = 1
 USING_OS_MEMORY = 1
 USING_GPU_UTILIZATION = 1
 USING_PROFILING = 0
+
+ifeq ($(CONFIG_MALI400_DEBUG),y)
+BUILD = debug
+else
 BUILD = release
+endif
+
+KDIR-$(CPU)=$(srctree)
+
+EXTRA_CFLAGS += -I$(realpath $(DRIVER_DIR)/../../../include/ump)
+EXTRA_CFLAGS += -I$(realpath $(DRIVER_DIR)/../ump/common)
+
+# END Ux500
+
+
+OSKOS=linux
 
 
 # set up defaults if not defined by the user
@@ -43,7 +62,6 @@ PROFILING_SKIP_PP_JOBS ?= 0
 PROFILING_SKIP_PP_AND_GP_JOBS ?= 0
 PROFILING_PRINT_L2_HITRATE_ON_GP_FINISH ?= 0
 TIMESTAMP ?= default
-BUILD ?= debug
 TARGET_PLATFORM ?= default
 KERNEL_RUNTIME_PM_ENABLED ?= 0
 CONFIG ?= pb-virtex5-m200

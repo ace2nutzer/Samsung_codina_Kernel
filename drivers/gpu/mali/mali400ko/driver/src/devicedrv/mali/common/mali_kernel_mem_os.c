@@ -15,7 +15,7 @@
 
 #include <linux/moduleparam.h>
 
-static int mali_alloc_order = 3;
+static int mali_alloc_order = 6;
 module_param(mali_alloc_order, int, 0644);
 
 typedef struct os_allocation
