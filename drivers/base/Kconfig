@@ -171,4 +171,12 @@ config SYS_HYPERVISOR
 config SYS_SOC
 	bool
 
+config SYNC
+	bool "Synchronization framework"
+	default n
+	select ANON_INODES
+	help
+	  This option enables the framework for synchronization between multiple
+	  drivers.  Sync implementations can take advantage of hardware
+	  synchronization built into devices like GPUs.
 endmenu
