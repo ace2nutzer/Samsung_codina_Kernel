@@ -285,7 +285,6 @@ static inline int ext4_inode_journal_mode(struct inode *inode)
 		return EXT4_INODE_WRITEBACK_DATA_MODE;	/* writeback */
 	else
 		BUG();
-return 0;
 }
 
 static inline int ext4_should_journal_data(struct inode *inode)
