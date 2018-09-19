@@ -15,7 +15,7 @@
 # define USER_HZ	100		/* User interfaces are in "ticks" */
 # define CLOCKS_PER_SEC	(USER_HZ)	/* like times() */
 #else
-# define HZ		100
+# define HZ		CONFIG_HZ	/* 100 */
 #endif
 
 #define EXEC_PAGESIZE	4096
