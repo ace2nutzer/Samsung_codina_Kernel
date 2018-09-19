@@ -375,7 +375,7 @@ void VFP_bounce(u32 trigger, u32 fpexc, struct pt_regs *regs)
 	 * If there isn't a second FP instruction, exit now. Note that
 	 * the FPEXC.FP2V bit is valid only if FPEXC.EX is 1.
 	 */
-	if (fpexc ^ (FPEXC_EX | FPEXC_FP2V))
+	if ((fpexc & (FPEXC_EX | FPEXC_FP2V)) != (FPEXC_EX | FPEXC_FP2V))
 		goto exit;
 
 	/*
@@ -419,13 +419,15 @@ static int vfp_pm_suspend(void)
 		/* disable, just in case */
 		fmxr(FPEXC, fmrx(FPEXC) & ~FPEXC_EN);
 	} else if (vfp_current_hw_state[ti->cpu]) {
+#ifndef CONFIG_SMP
 		fmxr(FPEXC, fpexc | FPEXC_EN);
 		vfp_save_state(vfp_current_hw_state[ti->cpu], fpexc);
 		fmxr(FPEXC, fpexc);
+#endif
 	}
 
 	/* clear any information we had about last context state */
-	memset(vfp_current_hw_state, 0, sizeof(vfp_current_hw_state));
+	vfp_current_hw_state[ti->cpu] = NULL;
 
 	return 0;
 }
@@ -585,13 +587,17 @@ static int __init vfp_init(void)
 			elf_hwcap |= HWCAP_VFPv3;
 
 			/*
-			 * Check for VFPv3 D16. CPUs in this configuration
-			 * only have 16 x 64bit registers.
+			 * Check for VFPv3 D16 and VFPv4 D16.  CPUs in
+			 * this configuration only have 16 x 64bit
+			 * registers.
 			 */
 			if (((fmrx(MVFR0) & MVFR0_A_SIMD_MASK)) == 1)
-				elf_hwcap |= HWCAP_VFPv3D16;
+				elf_hwcap |= HWCAP_VFPv3D16; /* also v4-D16 */
+			else
+				elf_hwcap |= HWCAP_VFPD32;
 		}
 #endif
+#ifdef CONFIG_NEON
 		/*
 		 * Check for the presence of the Advanced SIMD
 		 * load/store instructions, integer and single
@@ -599,13 +605,10 @@ static int __init vfp_init(void)
 		 * for NEON if the hardware has the MVFR registers.
 		 */
 		if ((read_cpuid_id() & 0x000f0000) == 0x000f0000) {
-#ifdef CONFIG_NEON
 			if ((fmrx(MVFR1) & 0x000fff00) == 0x00011100)
 				elf_hwcap |= HWCAP_NEON;
-#endif
-			if ((fmrx(MVFR1) & 0xf0000000) == 0x10000000)
-				elf_hwcap |= HWCAP_VFPv4;
 		}
+#endif
 	}
 	return 0;
 }
