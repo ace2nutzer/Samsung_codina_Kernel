@@ -13,7 +13,7 @@
 #include "mali_block_allocator.h"
 #include "mali_osk.h"
 
-#define MALI_BLOCK_SIZE (256UL * 1024UL)  /* 256 kB, remember to keep the ()s */
+#define MALI_BLOCK_SIZE (32UL * 1024UL)  /* 32 kB and was 256 kB, remember to keep the ()s */
 
 typedef struct block_info
 {
