@@ -37,20 +37,44 @@
 #include <linux/notifier.h>
 
 static uint32_t lowmem_debug_level = 0;
-static int lowmem_adj[6] = {
+static int lowmem_adj[16] = {
 	0,
 	1,
+	2,
+	3,
+	4,
+	5,
 	6,
+	7,
+	8,
+	9,
+	10,
+	11,
 	12,
+	13,
+	14,
+	15,
 };
-static int lowmem_adj_size = 4;
-static size_t lowmem_minfree[6] = {
-	3 * 512,	/* 6MB */
-	2 * 1024,	/* 8MB */
-	4 * 1024,	/* 16MB */
-	16 * 1024,	/* 64MB */
+static int lowmem_adj_size = 16;
+static size_t lowmem_minfree[16] = {
+	2048,	/* 8MB */
+	3072,	/* 12MB */
+	4096,	/* 16MB */
+	5120,	/* 20MB */
+	6144,	/* 24MB */
+	7168,	/* 28MB */
+	8192,	/* 32MB */
+	9216,	/* 36MB */
+	10240,	/* 40MB */
+	11264,	/* 44MB */
+	12288,	/* 48MB */
+	13312,	/* 52MB */
+	14336,	/* 56MB */
+	15360,	/* 60MB */
+	16384,	/* 64MB */
+	17408,	/* 68MB */
 };
-static int lowmem_minfree_size = 4;
+static int lowmem_minfree_size = 16;
 
 static struct task_struct *lowmem_deathpending;
 static unsigned long lowmem_deathpending_timeout;
