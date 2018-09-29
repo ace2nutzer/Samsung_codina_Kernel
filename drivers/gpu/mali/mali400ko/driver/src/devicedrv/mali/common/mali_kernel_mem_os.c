@@ -244,7 +244,7 @@ static void os_allocator_release(void * ctx, void * handle)
 
 static mali_physical_memory_allocation_result os_allocator_allocate_page_table_block(void * ctx, mali_page_table_block * block)
 {
-	int allocation_order = 3; /* _MALI_OSK_CPU_PAGE_SIZE << 3 and was 6 */
+	int allocation_order = 0; /* _MALI_OSK_CPU_PAGE_SIZE << 0 and was 6 */
 	void *virt = NULL;
 	u32 size = _MALI_OSK_CPU_PAGE_SIZE << allocation_order;
 	os_allocator * info;
