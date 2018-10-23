@@ -178,8 +178,8 @@ enum ab8500_usb_state {
 #define to_ab8500_charger_ac_device_info(x) container_of((x), \
 	struct ab8500_charger, ac_chg)
 
-#define MAX_DEDICATED_CHARGER_CURRENT 	USB_CH_IP_CUR_LVL_0P6 
-#define MAX_NON_ENUMERATED_USB_CURRENT  USB_CH_IP_CUR_LVL_0P5
+#define MAX_DEDICATED_CHARGER_CURRENT 	MAIN_CH_IP_CUR_LVL_1P5	/* 1500 mA */
+#define MAX_NON_ENUMERATED_USB_CURRENT  USB_CH_IP_CUR_LVL_1P5	/* 1500 mA */
 
 /**
  * struct ab8500_charger_interrupts - ab8500 interupts
@@ -345,21 +345,14 @@ extern void mxt224e_ts_change_vbus_state(bool vbus_status);
 static void (*mxt224e_ts_vbus_state)(bool vbus_status);
 #endif
 
-/* ace2nutzer: ABB Charger Control, based on cocafes source */
-/* On codina board, the max allowed current is 1500mA */
-/* Current limitation on USB is 500mA */
+/* On codina board, the max allowed input current is 1500mA */
 
-/* Recommended Charging Current: 0.5C = 750mA (700mA) for the 1500mA Battery */
-
-/* Current Control */
-static bool bCurrentControl = true;
-
-/* VBUS Drop Status - When VBUS droped, input current will be changed! */
+/* VBUS Drop Status - When VBUS dropped, input current will be changed! */
 static bool bVBUSDropped = false;
 
-/* (codina) Custom AC current */
-static unsigned int AcChargeCurrent = 700;
-static unsigned int UsbChargeCurrent = 500;
+/* User AC - USB input current */
+static unsigned int user_ta_chg_current_input = 600;
+static unsigned int user_usb_chg_current_input = 500;
 
 static void ab8500_charger_set_usb_connected(struct ab8500_charger *di,
 	bool connected)
@@ -829,7 +822,7 @@ static int ab8500_charger_max_usb_curr(struct ab8500_charger *di,
 	if ((connection & (EXTERNAL_USB_CHARGER|EXTERNAL_DEDICATED_CHARGER|EXTERNAL_CAR_KIT))
 		|| ((connection & EXTERNAL_JIG_UART_OFF) && vbus_status))
 	{
-		di->max_usb_in_curr = di->bat->ta_chg_current_input;
+		di->max_usb_in_curr = di->bat->usb_chg_current_input;
 	}
 	else {
 		if ( link_status != USB_STAT_STD_HOST_NC) /* we can see anything other than a non charging USB host  */
@@ -842,7 +835,7 @@ static int ab8500_charger_max_usb_curr(struct ab8500_charger *di,
 				 so we assume it isn't active we will try to charge with out enumerating 
 				 we must have been in this state for at least one second.				
 				*/
-			 	 di->max_usb_in_curr = MAX_NON_ENUMERATED_USB_CURRENT;
+				di->max_usb_in_curr = di->bat->usb_chg_current_input;
 			  break ;	
 			} else {
 				/* start a timer to retry detection in a second */
@@ -855,35 +848,35 @@ static int ab8500_charger_max_usb_curr(struct ab8500_charger *di,
 		case USB_STAT_STD_HOST_C_S:
 			dev_dbg(di->dev, "USB Type - Standard host is "
 				"detected through USB driver\n");
-	//		di->max_usb_in_curr = USB_CH_IP_CUR_LVL_0P5;	//ToDo get value from USB subsystem
+			di->max_usb_in_curr = di->bat->usb_chg_current_input;
 			ret = -1;
 			break;
 		case USB_STAT_HOST_CHG_HS_CHIRP:
-			di->max_usb_in_curr = USB_CH_IP_CUR_LVL_0P5;
+			di->max_usb_in_curr = di->bat->usb_chg_current_input;
 			break;
 		case USB_STAT_HOST_CHG_HS:
 		case USB_STAT_ACA_RID_C_HS:
-			di->max_usb_in_curr = USB_CH_IP_CUR_LVL_0P9;
+			di->max_usb_in_curr = di->bat->usb_chg_current_input;
 			break;
 		case USB_STAT_ACA_RID_A:
 			/*
 			 * Dedicated charger level minus maximum current accessory
 			 * can consume (300mA). Closest level is 1100mA
 			 */
-			di->max_usb_in_curr = USB_CH_IP_CUR_LVL_1P1;
+			di->max_usb_in_curr = di->bat->usb_chg_current_input;
 			break;
 		case USB_STAT_ACA_RID_B:
 			/*
 			 * Dedicated charger level minus 120mA (20mA for ACA and
 			 * 100mA for potential accessory). Closest level is 1300mA
 			 */
-			di->max_usb_in_curr = USB_CH_IP_CUR_LVL_1P3;
+			di->max_usb_in_curr = di->bat->usb_chg_current_input;
 			break;
 		case USB_STAT_DEDICATED_CHG:
 		case USB_STAT_HOST_CHG_NM:
 		case USB_STAT_ACA_RID_C_HS_CHIRP:
 		case USB_STAT_ACA_RID_C_NM:
-			di->max_usb_in_curr = USB_CH_IP_CUR_LVL_1P5;
+			di->max_usb_in_curr = di->bat->usb_chg_current_input;
 			break;
 		case USB_STAT_RESERVED:
 			/*
@@ -902,14 +895,14 @@ static int ab8500_charger_max_usb_curr(struct ab8500_charger *di,
 		case USB_STAT_HM_IDGND:
 		case USB_STAT_NOT_CONFIGURED:
 		case USB_STAT_NOT_VALID_LINK:
-			pr_err("[ABB-Charger] USB Type - Charging not allowed\n");
-			di->max_usb_in_curr = USB_CH_IP_CUR_LVL_0P05;
-			ret = -ENXIO;
+			pr_err("[ABB-Charger] USB Type - Charging not allowed... but we can try it anyway\n");
+			di->max_usb_in_curr = di->bat->usb_chg_current_input;
+	//		ret = -ENXIO;
 			break;
 		default:
-			pr_err("[ABB-Charger] USB Type - Unknown\n");
-			di->max_usb_in_curr = USB_CH_IP_CUR_LVL_0P05;
-			ret = -ENXIO;
+			pr_err("[ABB-Charger] USB Type - Unknown... trying to charge anyway\n");
+			di->max_usb_in_curr = di->bat->usb_chg_current_input;
+	//		ret = -ENXIO;
 			break;
 		};
 	}
@@ -1274,9 +1267,7 @@ static int ab8500_charger_set_main_in_curr(struct ab8500_charger *di, int ich_in
 	if (di->cable_type == POWER_SUPPLY_TYPE_MAINS)
 		min_value = min(di->bat->ta_chg_current_input, ich_in);
 	else
-
 		min_value = min(di->bat->usb_chg_current_input, ich_in);
-
 		input_curr_index = ab8500_main_in_curr_to_regval(min_value);
 
 	if (input_curr_index < 0) {
@@ -1437,24 +1428,19 @@ static int ab8500_charger_ac_en(struct ux500_charger *charger,
 	charger_status = ab8500_charger_detect_chargers(di);
 	vbus_status = ab8500_vbus_is_detected(di);
 
-	if (!bCurrentControl) {
+//	di->bat->ta_chg_current_input = di->bat->chg_params->ac_curr_max;
+//	di->bat->usb_chg_current_input = di->bat->chg_params->usb_curr_max;
 
-		di->bat->ta_chg_current_input = 700;
-		di->bat->usb_chg_current_input = 500;
-
-	} else {
-
-		pr_warn("[ABB-Charger] Switched custom input current\n");
-
-		di->bat->ta_chg_current_input = AcChargeCurrent;
-		di->bat->usb_chg_current_input = UsbChargeCurrent;
+	if (di->bat->batt_id == BATTERY_UNKNOWN) {
+		di->bat->ta_chg_voltage = 4200;
+		di->bat->usb_chg_voltage = 4200;
 	}
 
 	ab8500_charger_init_vdrop_state(di);
 
 	if (enable && (charger_status == NO_PW_CONN) && !vbus_status) {
 		pr_info("[ABB-Charger] Charging is enabled, but there's no \
-VBUS and MUIC cannot detect cable. So charging will be disabled\n");
+			VBUS and MUIC cannot detect cable. So charging will be disabled\n");
 
 		di->usb.charger_connected = 0;
 		di->vbus_detect_charging = false;
@@ -3040,8 +3026,8 @@ static struct ab8500_charger_interrupts ab8500_charger_irq[] = {
 void ab8500_charger_usb_state_changed(u8 bm_usb_state, u16 mA)
 {
 	struct ab8500_charger *di = static_di;
-	if (usb_switch_get_current_connection() & (EXTERNAL_CAR_KIT|EXTERNAL_DEDICATED_CHARGER)) 
-		return ;	//if NON USB connection don't let USB system change current 
+//	if (usb_switch_get_current_connection() & (EXTERNAL_CAR_KIT|EXTERNAL_DEDICATED_CHARGER))
+//		return ;	//if NON USB connection don't let USB system change current
 	pr_info("[ABB-Charger] %s usb_state: 0x%02x mA: %d\n",
 		__func__, bm_usb_state, mA);
 	del_timer_sync(&di->usb_link_status_timer); /*we could have got here via an interrupt or a timer */
@@ -3124,24 +3110,42 @@ static int ab8500_charger_suspend(struct platform_device *pdev,
 #define ab8500_charger_resume       NULL
 #endif
 
-static ssize_t abb_charger_current_ac_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+static ssize_t abb_input_current_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
 	struct ab8500_charger *di = static_di;
 	u8 tmp;
-	int i, MainChEna, CurrNow;
-
-	/* Check MainCharger status */
-	abx500_get_register_interruptible(di->dev, AB8500_CHARGER, AB8500_MCH_CTRL1, &tmp);
-	MainChEna = tmp & 1;
+	int i, CurrNow;
 
 	abx500_get_register_interruptible(di->dev, AB8500_CHARGER, AB8500_MCH_IPT_CURLVL_REG, &tmp);
 	CurrNow = tmp >> 4;
 
-	/* Output Current */
+	sprintf(buf, "%sInput Current:\t%d mA\n\n", buf, ab8500_charger_main_in_curr_map[CurrNow]);
+
+	/* Print VBUS dropped warnning */
+	if (bVBUSDropped) {
+		sprintf(buf, "%s*******************\n", buf);
+		sprintf(buf, "%s* VBUS DROPPED!!! *\n", buf);
+		sprintf(buf, "%s*******************\n", buf);
+	}
+
+	return strlen(buf);
+}
+
+static struct kobj_attribute abb_input_current_interface = __ATTR(input_current, 0444, abb_input_current_show, NULL);
+
+static ssize_t abb_input_current_ac_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+{
+	struct ab8500_charger *di = static_di;
+	u8 tmp;
+	int i, CurrNow;
+
+	abx500_get_register_interruptible(di->dev, AB8500_CHARGER, AB8500_MCH_IPT_CURLVL_REG, &tmp);
+	CurrNow = tmp >> 4;
+
+	/* Charger Current */
 	abx500_get_register_interruptible(di->dev, AB8500_CHARGER, AB8500_CH_OPT_CRNTLVL_REG, &tmp);
 
-	sprintf(buf,   "Current Control:\n\n");
-	sprintf(buf, "%sEnable [%s]\n\n", buf, bCurrentControl ? "*" : " ");
+	sprintf(buf,   "Charger input Current Control:\n\n");
 	sprintf(buf, "%s[MEM]\n", buf);
 
 	/* Print VBUS dropped warnning */
@@ -3151,51 +3155,24 @@ static ssize_t abb_charger_current_ac_show(struct kobject *kobj, struct kobj_att
 		sprintf(buf, "%s*******************\n", buf);
 	}
 
-	sprintf(buf, "%sChargerEnabled\t[%s]\n", buf, MainChEna ? "*" : " ");
-	sprintf(buf, "%sInputCurrent\t[%dmA]\n", buf, ab8500_charger_main_in_curr_map[CurrNow]);
-	sprintf(buf, "%sOutputCurrent\t[%dmA]\n\n", buf, ab8500_charger_main_in_curr_map[tmp]);
+	sprintf(buf, "%sAC input Current\t%d mA\n", buf, ab8500_charger_main_in_curr_map[CurrNow]);
+	sprintf(buf, "%sAC charge Current\t%d mA\n\n", buf, ab8500_charger_main_in_curr_map[tmp]);
 
 	sprintf(buf, "%s[USR]\n", buf);
-	sprintf(buf, "%sAcChargeCurrent\t[%dmA]\n\n", buf, AcChargeCurrent);
+	sprintf(buf, "%sAC input Current\t%d mA\n\n", buf, user_ta_chg_current_input);
 
 	sprintf(buf, "%s[Current Table]\n", buf);
 	for (i = 0; i < ARRAY_SIZE(ab8500_charger_main_in_curr_map); i++) {
-		sprintf(buf, "%s[%02d]\t\t%dmA\n", buf, i, ab8500_charger_main_in_curr_map[i]);
+		sprintf(buf, "%s[%02d]\t\t%d mA\n", buf, i, ab8500_charger_main_in_curr_map[i]);
 	}
 
 	return strlen(buf);
 }
 
-static ssize_t abb_charger_current_ac_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
+static ssize_t abb_input_current_ac_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
 	struct ab8500_charger *di = static_di;
 	int i, val, ret;
-
-	/* Current Control */
-	if (!strncmp(buf, "on", 2)) {
-		pr_info("[ABB-Charger] Current Control Enabled\n");
-
-		bCurrentControl = true;
-
-		/* Setup Params */
-		di->bat->ta_chg_current = di->bat->chg_params->ac_curr_max;
-		di->bat->ta_chg_current_input = AcChargeCurrent;
-
-		return count;
-	}
-
-	/* Current Control */
-	if (!strncmp(buf, "off", 3)) {
-		pr_info("[ABB-Charger] Current Control Disabled\n");
-
-		bCurrentControl = false;
-
-		/* Restore Params */
-		di->bat->ta_chg_current = di->bat->chg_params->ac_curr_max;
-		di->bat->ta_chg_current_input = 700;
-
-		return count;
-	}
 
 	/* Get the current from userspace */
 	ret = sscanf(buf, "%d", &val);
@@ -3203,13 +3180,11 @@ static ssize_t abb_charger_current_ac_store(struct kobject *kobj, struct kobj_at
 	/* Check the main charger current map */
 	for (i = 0; i < ARRAY_SIZE(ab8500_charger_main_in_curr_map); i++) {
 		if (val == ab8500_charger_main_in_curr_map[i]) {
-			pr_info("[ABB-Charger] MainCharger Input Current %d ==> %d\n", AcChargeCurrent, val);
+			pr_info("[ABB-Charger] AC Charger input Current %d ==> %d\n", user_ta_chg_current_input, val);
 
-			AcChargeCurrent = val;
-			
-			/* Write default value first */
-			di->bat->ta_chg_current = di->bat->chg_params->ac_curr_max;
-			di->bat->ta_chg_current_input = AcChargeCurrent;
+			user_ta_chg_current_input = val;
+
+			di->bat->ta_chg_current_input = user_ta_chg_current_input;
 
 			return count;
 		}
@@ -3221,26 +3196,21 @@ static ssize_t abb_charger_current_ac_store(struct kobject *kobj, struct kobj_at
 
 }
 
-static struct kobj_attribute abb_charger_current_ac_interface = __ATTR(charger_curr_ac, 0644, abb_charger_current_ac_show, abb_charger_current_ac_store);
+static struct kobj_attribute abb_input_current_ac_interface = __ATTR(input_curr_ac, 0644, abb_input_current_ac_show, abb_input_current_ac_store);
 
-static ssize_t abb_charger_current_usb_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+static ssize_t abb_input_current_usb_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
 	struct ab8500_charger *di = static_di;
 	u8 tmp;
-	int i, MainChEna, CurrNow;
-
-	/* Check MainCharger status */
-	abx500_get_register_interruptible(di->dev, AB8500_CHARGER, AB8500_MCH_CTRL1, &tmp);
-	MainChEna = tmp & 1;
+	int i, CurrNow;
 
 	abx500_get_register_interruptible(di->dev, AB8500_CHARGER, AB8500_MCH_IPT_CURLVL_REG, &tmp);
 	CurrNow = tmp >> 4;
 
-	/* Output Current */
+	/* Charger Current */
 	abx500_get_register_interruptible(di->dev, AB8500_CHARGER, AB8500_CH_OPT_CRNTLVL_REG, &tmp);
 
-	sprintf(buf,   "Current Control:\n\n");
-	sprintf(buf, "%sEnable [%s]\n\n", buf, bCurrentControl ? "*" : " ");
+	sprintf(buf,   "Charger input Current Control:\n\n");
 	sprintf(buf, "%s[MEM]\n", buf);
 
 	/* Print VBUS dropped warnning */
@@ -3250,51 +3220,24 @@ static ssize_t abb_charger_current_usb_show(struct kobject *kobj, struct kobj_at
 		sprintf(buf, "%s*******************\n", buf);
 	}
 
-	sprintf(buf, "%sChargerEnabled\t[%s]\n", buf, MainChEna ? "*" : " ");
-	sprintf(buf, "%sInputCurrent\t[%dmA]\n", buf, ab8500_charger_main_in_curr_map[CurrNow]);
-	sprintf(buf, "%sOutputCurrent\t[%dmA]\n\n", buf, ab8500_charger_main_in_curr_map[tmp]);
+	sprintf(buf, "%sUSB input Current\t%d mA\n", buf, ab8500_charger_main_in_curr_map[CurrNow]);
+	sprintf(buf, "%sUSB charge Current\t%d mA\n\n", buf, ab8500_charger_main_in_curr_map[tmp]);
 
 	sprintf(buf, "%s[USR]\n", buf);
-	sprintf(buf, "%sUsbChargeCurrent\t[%dmA]\n\n", buf, UsbChargeCurrent);
+	sprintf(buf, "%sUSB input Current\t%d mA\n\n", buf, user_usb_chg_current_input);
 
 	sprintf(buf, "%s[Current Table]\n", buf);
 	for (i = 0; i < ARRAY_SIZE(ab8500_charger_main_in_curr_map); i++) {
-		sprintf(buf, "%s[%02d]\t\t%dmA\n", buf, i, ab8500_charger_main_in_curr_map[i]);
+		sprintf(buf, "%s[%02d]\t\t%d mA\n", buf, i, ab8500_charger_main_in_curr_map[i]);
 	}
 
 	return strlen(buf);
 }
 
-static ssize_t abb_charger_current_usb_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
+static ssize_t abb_input_current_usb_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
 	struct ab8500_charger *di = static_di;
 	int i, val, ret;
-
-	/* Current Control */
-	if (!strncmp(buf, "on", 2)) {
-		pr_info("[ABB-Charger] Current Control Enabled\n");
-
-		bCurrentControl = true;
-
-		/* Setup Params */
-		di->bat->usb_chg_current = di->bat->chg_params->usb_curr_max;
-		di->bat->usb_chg_current_input = UsbChargeCurrent;
-
-		return count;
-	}
-
-	/* Current Control */
-	if (!strncmp(buf, "off", 3)) {
-		pr_info("[ABB-Charger] Current Control Disabled\n");
-
-		bCurrentControl = false;
-
-		/* Restore Params */
-		di->bat->usb_chg_current = di->bat->chg_params->usb_curr_max;
-		di->bat->usb_chg_current_input = 500;
-
-		return count;
-	}
 
 	/* Get the current from userspace */
 	ret = sscanf(buf, "%d", &val);
@@ -3302,13 +3245,11 @@ static ssize_t abb_charger_current_usb_store(struct kobject *kobj, struct kobj_a
 	/* Check the main charger current map */
 	for (i = 0; i < ARRAY_SIZE(ab8500_charger_main_in_curr_map); i++) {
 		if (val == ab8500_charger_main_in_curr_map[i]) {
-			pr_info("[ABB-Charger] MainCharger Input Current %d ==> %d\n", UsbChargeCurrent, val);
+			pr_info("[ABB-Charger] USB Charger input Current %d ==> %d\n", user_usb_chg_current_input, val);
 
-			UsbChargeCurrent = val;
-			
-			/* Write default value first */
-			di->bat->usb_chg_current = di->bat->chg_params->usb_curr_max;
-			di->bat->usb_chg_current_input = UsbChargeCurrent;
+			user_usb_chg_current_input = val;
+
+			di->bat->usb_chg_current_input = user_usb_chg_current_input;
 
 			return count;
 		}
@@ -3320,7 +3261,7 @@ static ssize_t abb_charger_current_usb_store(struct kobject *kobj, struct kobj_a
 
 }
 
-static struct kobj_attribute abb_charger_current_usb_interface = __ATTR(charger_curr_usb, 0644, abb_charger_current_usb_show, abb_charger_current_usb_store);
+static struct kobj_attribute abb_input_current_usb_interface = __ATTR(input_curr_usb, 0644, abb_input_current_usb_show, abb_input_current_usb_store);
 
 static ssize_t abb_charger_control_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
@@ -3384,12 +3325,15 @@ static ssize_t abb_charger_data_show(struct kobject *kobj, struct kobj_attribute
 	struct ab8500_charger *di = static_di;
 
 	sprintf(buf, "Charger Driver Data:\n\n");
-	sprintf(buf, "%s[ta_chg_current]\t%d\n", buf, di->bat->ta_chg_current);
-	sprintf(buf, "%s[ta_chg_current_input]\t%d\n", buf, di->bat->ta_chg_current_input);
 	sprintf(buf, "%s[ta_chg_voltage]\t%d\n", buf, di->bat->ta_chg_voltage);
-	sprintf(buf, "%s[usb_chg_current]\t%d\n", buf, di->bat->usb_chg_current);
-	sprintf(buf, "%s[usb_chg_current_input]\t%d\n", buf, di->bat->usb_chg_current_input);
+	sprintf(buf, "%s[ta_chg_current_input]\t%d\n", buf, di->bat->ta_chg_current_input);
+	sprintf(buf, "%s[ta_chg_current]\t%d\n\n", buf, di->bat->ta_chg_current);
+
 	sprintf(buf, "%s[usb_chg_voltage]\t%d\n", buf, di->bat->usb_chg_voltage);
+	sprintf(buf, "%s[usb_chg_current_input]\t%d\n", buf, di->bat->usb_chg_current_input);
+	sprintf(buf, "%s[usb_chg_current]\t%d\n\n", buf, di->bat->usb_chg_current);
+
+	sprintf(buf, "%s[batt_id]\t%d\n", buf, di->bat->batt_id);
 
 	return strlen(buf);
 }
@@ -3397,10 +3341,11 @@ static ssize_t abb_charger_data_show(struct kobject *kobj, struct kobj_attribute
 static struct kobj_attribute abb_charger_data_interface = __ATTR(charger_data, 0444, abb_charger_data_show, NULL);
 
 static struct attribute *abb_charger_attrs[] = {
-	&abb_charger_current_ac_interface.attr, 
-	&abb_charger_current_usb_interface.attr, 
+	&abb_input_current_ac_interface.attr, 
+	&abb_input_current_usb_interface.attr, 
 	&abb_charger_control_interface.attr, 
 	&abb_charger_data_interface.attr, 
+	&abb_input_current_interface.attr, 
 	NULL,
 };
 

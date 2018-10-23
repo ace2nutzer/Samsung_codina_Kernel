@@ -84,8 +84,8 @@
 #define OFF_CAPACITY_MASK		0x7F
 #define OFF_VOLTAGE_MASK		0x1FFF
 
-#define LOWBAT_TOLERANCE		50
-#define LOWBAT_ZERO_VOLTAGE		3300
+#define LOWBAT_TOLERANCE		40
+#define LOWBAT_ZERO_VOLTAGE		3320
 
 #define MAIN_CH_NO_OVERSHOOT_ENA_N	0x02
 #define MAIN_CH_ENA			0x01
@@ -136,15 +136,6 @@ module_param(debug_mask, bool, 0644);
 
 static unsigned int lowbat_zerovolt = LOWBAT_ZERO_VOLTAGE;
 static unsigned int lowbat_tolerance_volt = LOWBAT_TOLERANCE;
-static bool use_lowbat_wakelock = 0;
-
-/* 
- * Voltage Threshold that decides when to power off.
- */
-static unsigned int pwroff_threshold = 3300;
-
-/* Allow battery capacity goes up */
-static unsigned int battlvl_real = 1;
 
 /*
  * cocafe: Cycle Charging Control - Similar to Battery Life Extender by Ezekeel
@@ -1659,7 +1650,7 @@ static void ab8500_fg_check_capacity_limits(struct ab8500_fg *di, bool init)
 		 * unless we're charging or if we're in init
 		 */
 		if (!(!di->flags.charging && di->bat_cap.level >
-			di->bat_cap.prev_level) || init || battlvl_real) {
+			di->bat_cap.prev_level) || init) {
 			dev_dbg(di->dev, "level changed from %d to %d\n",
 				di->bat_cap.prev_level,
 				di->bat_cap.level);
@@ -1691,8 +1682,7 @@ static void ab8500_fg_check_capacity_limits(struct ab8500_fg *di, bool init)
 					 percent, di->vbat);
 				di->lowbat_poweroff = false;
 				di->lowbat_poweroff_locked = true;
-				if(use_lowbat_wakelock)
-					wake_lock(&di->lowbat_poweroff_wake_lock);
+				wake_lock(&di->lowbat_poweroff_wake_lock);
 			} else {
 				/* battery capacity is exceed 1% and/or
 				   charging is enabled */
@@ -1703,8 +1693,7 @@ static void ab8500_fg_check_capacity_limits(struct ab8500_fg *di, bool init)
 					 percent, di->vbat);
 				di->lowbat_poweroff = false;
 				di->lowbat_poweroff_locked = false;
-				if(use_lowbat_wakelock)
-					wake_unlock(&di->lowbat_poweroff_wake_lock);
+				wake_unlock(&di->lowbat_poweroff_wake_lock);
 			}
 		}
 	}
@@ -1717,8 +1706,7 @@ static void ab8500_fg_check_capacity_limits(struct ab8500_fg *di, bool init)
 		if (di->vbat > 3450) {
 			dev_info(di->dev, "Low bat condition is recovered.\n");
 			di->lowbat_poweroff_locked = false;
-			if(use_lowbat_wakelock)
-				wake_unlock(&di->lowbat_poweroff_wake_lock);
+			wake_unlock(&di->lowbat_poweroff_wake_lock);
 		}
 	}
 
@@ -1736,21 +1724,13 @@ static void ab8500_fg_check_capacity_limits(struct ab8500_fg *di, bool init)
 	 * If we have received the LOW_BAT IRQ, set capacity to 0 to initiate
 	 * shutdown
 	 */
-	if (di->lowbat_poweroff && (di->vbat < pwroff_threshold) ) {
+	if (di->lowbat_poweroff) {
 		dev_info(di->dev, "Battery low, set capacity to 0\n");
 		di->bat_cap.prev_percent = 0;
 		di->bat_cap.permille = 0;
 		di->bat_cap.prev_mah = 0;
 		di->bat_cap.mah = 0;
 		changed = true;
-
-		/*
-		 * FIXME: Samsung battery driver needs some time to fresh
-		 * battery stats. Sometimes it will be powered off by HW, 
-		 * instead of soft-method. So refresh fg to notice Samsung 
-		 * battery driver.
-		 */
-		ab8500_fg_reinit();
 		 
 	} else if (di->bat_cap.prev_percent !=
 			percent) {
@@ -2597,8 +2577,7 @@ static irqreturn_t ab8500_fg_lowbatf_handler(int irq, void *_di)
 	struct ab8500_fg *di = _di;
 
 	if (!di->flags.low_bat_delay) {
-		if (use_lowbat_wakelock)
-			wake_lock_timeout(&di->lowbat_wake_lock, 20 * HZ);
+		wake_lock_timeout(&di->lowbat_wake_lock, 20 * HZ);
 
 		dev_warn(di->dev, "Battery voltage is below LOW threshold\n");
 		di->flags.low_bat_delay = true;
@@ -2714,7 +2693,7 @@ static int ab8500_fg_get_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_CAPACITY_RAW:
 
 		val->intval = (di->bat_cap.mah  * 1000) / di->bat_cap.max_mah ;
-		//printk("raw soc = %d",val->intval);
+		printk("raw soc = %d",val->intval);
 		break;
 
 #endif
@@ -2903,19 +2882,6 @@ static int ab8500_fg_init_hw_registers(struct ab8500_fg *di)
 		ab8500_volt_to_regval(
 			di->bat->fg_params->lowbat_threshold) << 1 |
 		LOW_BAT_ENABLE);
-	if (ret) {
-		dev_err(di->dev, "%s write failed\n", __func__);
-		goto out;
-	}
-
-	/* 
-	 * BATTOK: 
-	 * Disable it now, in order not to let AB8500 shut down by itself
-	 */
-	ret = abx500_set_register_interruptible(di->dev,
-		AB8500_SYS_CTRL2_BLOCK,
-		AB8500_BATT_OK_REG,
-		0x00);
 	if (ret) {
 		dev_err(di->dev, "%s write failed\n", __func__);
 		goto out;
@@ -3328,34 +3294,6 @@ static ssize_t abb_fg_refresh_store(struct kobject *kobj, struct kobj_attribute 
 
 static struct kobj_attribute abb_fg_refresh_interface = __ATTR(fg_refresh, 0644, NULL, abb_fg_refresh_store);
 
-static ssize_t abb_fg_use_wakelock_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
-{
-	sprintf(buf, "%d\n", use_lowbat_wakelock);
-
-	return strlen(buf);
-}
-
-static ssize_t abb_fg_use_wakelock_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
-{
-	int ret, vBuf;
-
-	ret = sscanf(buf, "%u", &vBuf);
-
-	if ((!ret) || (vBuf < 0)) {
-		pr_err("[ABB-FG] Invalid value\n");
-		
-		return count;
-	}
-
-	pr_info("[ABB-FG] LowBat Wakelock %d ==> %d\n", use_lowbat_wakelock, vBuf);
-
-	use_lowbat_wakelock = vBuf;
-
-	return count;
-}
-
-static struct kobj_attribute abb_fg_use_wakelock_interface = __ATTR(lowbat_wakelock, 0644, abb_fg_use_wakelock_show, abb_fg_use_wakelock_store);
-
 static ssize_t abb_fg_cycle_charging_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
 	sprintf(buf,   "Cycle Charging Control:\n\n");
@@ -3428,60 +3366,11 @@ static ssize_t abb_fg_cycle_charging_store(struct kobject *kobj, struct kobj_att
 
 static struct kobj_attribute abb_fg_cycle_charging_interface = __ATTR(fg_cyc, 0644, abb_fg_cycle_charging_show, abb_fg_cycle_charging_store);
 
-static ssize_t abb_fg_pwroff_threshold_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
-{
-	sprintf(buf, "%dmV", pwroff_threshold);
-
-	return strlen(buf);
-}
-
-static ssize_t abb_fg_pwroff_threshold_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
-{
-	int ret, val;
-
-	ret = sscanf(buf, "%d", &val);
-
-	if (!ret)
-		return -EINVAL;
-
-	pwroff_threshold = val;
-
-	return count;
-}
-
-static struct kobj_attribute abb_fg_pwroff_threshold_interface = __ATTR(pwroff_threshold, 0644, abb_fg_pwroff_threshold_show, abb_fg_pwroff_threshold_store);
-
-static ssize_t abb_fg_capacity_real_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
-{
-	sprintf(buf, "%d\n", battlvl_real);
-
-	return strlen(buf);
-}
-
-static ssize_t abb_fg_capacity_real_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
-{
-	int ret, val;
-
-	ret = sscanf(buf, "%d", &val);
-
-	if (!ret)
-		return -EINVAL;
-
-	battlvl_real = val;
-
-	return count;
-}
-
-static struct kobj_attribute abb_fg_capacity_real_interface = __ATTR(capacity_real, 0644, abb_fg_capacity_real_show, abb_fg_capacity_real_store);
-
 static struct attribute *abb_fg_attrs[] = {
 	&abb_fg_lowbat_zero_interface.attr, 
 	&abb_fg_lowbat_tolerance_interface.attr, 
 	&abb_fg_refresh_interface.attr, 
 	&abb_fg_cycle_charging_interface.attr, 
-	&abb_fg_use_wakelock_interface.attr, 
-	&abb_fg_capacity_real_interface.attr, 
-	&abb_fg_pwroff_threshold_interface.attr, 
 	NULL,
 };
 

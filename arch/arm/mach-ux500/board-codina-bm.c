@@ -55,9 +55,9 @@ static struct res_to_temp temp_tbl_B[] = {
 	{65,  82869},
 };
 static struct v_to_cap cap_tbl_A[] = {
-	{4100,	100},
-	{4054,	 92},
-	{4009,	 84},
+	{4171,	100},
+	{4114,	 95},
+	{4009,	 83},
 	{3947,	 74},
 	{3907,	 67},
 	{3863,	 59},
@@ -74,11 +74,11 @@ static struct v_to_cap cap_tbl_A[] = {
 	{3635,	  5},
 	{3560,	  3},
 	{3408,    1},
-	{3300,	  0},
+	{3247,	  0},
 };
 static struct v_to_cap cap_tbl_B[] = {
-	{4100,	100},
-	{4072,	 95},
+	{4161,	100},
+	{4124,	 98},
 	{4044,	 90},
 	{4003,	 85},
 	{3966,	 80},
@@ -96,15 +96,15 @@ static struct v_to_cap cap_tbl_B[] = {
 	{3546,	  7},
 	{3495,	  4},
 	{3404,	  2},
-	{3300,	  0},
+	{3250,	  0},
 };
 #endif
 
 /* UNKNOWN Battery | 3.7V | 1700mA | 4.2V */
 static struct v_to_cap cap_tbl[] = {
-	{4100, 100},
-	{4090, 99},
-	{4068, 95},
+	{4162, 100},
+	{4131, 99},
+	{4088, 95},
 	{4045, 90},
 	{4024, 87},
 	{3955, 80},
@@ -127,15 +127,15 @@ static struct v_to_cap cap_tbl[] = {
 	{3477, 4},
 	{3403, 2},
 	{3361, 1},
-	{3300, 0},
+	{3320, 0},
 };
 
 /* SAMSUNG Battery | 3.8V | 1500mA | 4.35V */
 static struct v_to_cap cap_tbl_5ma[] = {
-	{4250,	100},
-	{4240,	99},
-	{4230,	98},
-	{4210,	95},
+	{4328,	100},
+	{4299,	99},
+	{4281,	98},
+	{4241,	95},
 	{4183,	90},
 	{4150,	87},
 	{4116,	84},
@@ -169,7 +169,7 @@ static struct v_to_cap cap_tbl_5ma[] = {
 	{3614,	3},
 	{3551,	2},
 	{3458,	1},
-	{3300,	0},
+	{3320,	0},
 };
 
 /* Battery voltage to Resistance table*/
@@ -306,21 +306,21 @@ static const struct battery_type bat_type[] = {
 		.termination_vol = 4200,
 #ifdef CONFIG_SAMSUNG_CHARGER_SPEC
 		.termination_curr_1st = 170,
-		.termination_curr_2nd = 170,
-		.recharge_vol = 4090,
+		.termination_curr_2nd = 113,
+		.recharge_vol = 4120,
 #else
 		.termination_curr = 170,
 #endif
 		.normal_cur_lvl = 1500,
 		.normal_vol_lvl = 4200,
-		.maint_a_cur_lvl = 1500,
+		.maint_a_cur_lvl = 700,
 		.maint_a_vol_lvl = 4200,
 		.maint_a_chg_timer_h = 60,
-		.maint_b_cur_lvl = 1500,
+		.maint_b_cur_lvl = 600,
 		.maint_b_vol_lvl = 4200,
 		.maint_b_chg_timer_h = 200,
-		.low_high_cur_lvl = 300,
-		.low_high_vol_lvl = 4000,
+		.low_high_cur_lvl = 500,
+		.low_high_vol_lvl = 4200,
 #ifdef CONFIG_MEASURE_TEMP_BY_ADC_TABLE
 		.n_temp_tbl_elements = ARRAY_SIZE(adc_temp_tbl),
 		.r_to_t_tbl = adc_temp_tbl,
@@ -343,7 +343,7 @@ static const struct battery_type bat_type[] = {
 		.subsequent_timeout_time = HZ*60*90,
 			/* After an error stop charging for a minute. */
 		.error_charge_stoptime = HZ*60,
-		.over_voltage_threshold =  4300,
+		.over_voltage_threshold =  4350,
 #else
 		.n_batres_tbl_elements = ARRAY_SIZE(temp_to_batres_tbl),
 		.batres_tbl = temp_to_batres_tbl,
@@ -371,25 +371,25 @@ static const struct battery_type bat_type[] = {
 		.battery_resistance_for_charging = 200,
 #endif
 		.charge_full_design = 1500,
-		.nominal_voltage = 3800,
+		.nominal_voltage = 3820,
 		.termination_vol =  4350,
 #ifdef CONFIG_SAMSUNG_CHARGER_SPEC
 		.termination_curr_1st = 150,
-		.termination_curr_2nd = 150,
-		.recharge_vol = 4240,
+		.termination_curr_2nd = 100,
+		.recharge_vol = 4281,
 #else
 		.termination_curr = 150,
 #endif
 		.normal_cur_lvl = 1500,
 		.normal_vol_lvl = 4350,
-		.maint_a_cur_lvl = 1500,
+		.maint_a_cur_lvl = 700,
 		.maint_a_vol_lvl = 4350,
 		.maint_a_chg_timer_h = 60,
-		.maint_b_cur_lvl = 1500,
+		.maint_b_cur_lvl = 600,
 		.maint_b_vol_lvl = 4350,
 		.maint_b_chg_timer_h = 200,
-		.low_high_cur_lvl = 300,
-		.low_high_vol_lvl = 4000,
+		.low_high_cur_lvl = 500,
+		.low_high_vol_lvl = 4350,
 #ifdef CONFIG_MEASURE_TEMP_BY_ADC_TABLE
 		.n_temp_tbl_elements = ARRAY_SIZE(adc_temp_tbl),
 		.r_to_t_tbl = adc_temp_tbl,
@@ -412,7 +412,7 @@ static const struct battery_type bat_type[] = {
 		.subsequent_timeout_time = HZ*60*90,
 			/* After an error stop charging for a minute. */
 		.error_charge_stoptime = HZ*60,
-		.over_voltage_threshold =  4450,
+		.over_voltage_threshold =  4500,
 #else
 		.n_batres_tbl_elements = ARRAY_SIZE(temp_to_batres_tbl),
 		.batres_tbl = temp_to_batres_tbl,
@@ -525,8 +525,9 @@ struct ab8500_bm_data ab8500_bm_data = {
 	.temp_interval_nochg	= 120,
 #if defined( CONFIG_USB_SWITCHER ) || defined( CONFIG_INPUT_AB8505_MICRO_USB_DETECT )
 	.ta_chg_current		= 1500,
-	.ta_chg_current_input	= 700,
+	.ta_chg_current_input	= 600,
 	.ta_chg_voltage		= 4350,
+
 	.usb_chg_current	= 1500,
 	.usb_chg_current_input	= 500,
 	.usb_chg_voltage	= 4350,
@@ -541,7 +542,7 @@ struct ab8500_bm_data ab8500_bm_data = {
 #else
 	.adc_therm		= ADC_THERM_BATTEMP,
 #endif
-	.chg_unknown_bat	= false,
+	.chg_unknown_bat	= true,
 	.enable_overshoot	= false,
 	/* Please find the real setting for fg_res
 	   in the ab8500_fg.c probe function  */

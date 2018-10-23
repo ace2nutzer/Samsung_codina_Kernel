@@ -85,7 +85,7 @@
 
 /* to be removed when display works */
 //#define dev_dbg	dev_info
-#define ESD_OPERATION
+//#define ESD_OPERATION
 /*
 #define ESD_TEST
 */
