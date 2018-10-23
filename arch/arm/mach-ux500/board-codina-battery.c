@@ -237,7 +237,10 @@ static int sec_bat_check_cable_callback(void)
  * return : bool
  * true - battery detected, false battery NOT detected
  */
-static bool sec_bat_check_callback(void) {return true; }
+static bool sec_bat_check_callback(void)
+{
+return true;
+}
 
 static bool sec_bat_check_cable_result_callback(
 				int cable_type)
@@ -303,11 +306,11 @@ static sec_charging_current_t charging_current_table[] = {
 	{0,	0,	0,	0},
 	{0,	0,	0,	0},
 	{0,	0,	0,	0},
-	{700,	1500,	195,	40 * 60}, /* POWER_SUPPLY_TYPE_MAINS */
-	{500,	1500,	195,	40 * 60}, /* POWER_SUPPLY_TYPE_USB */
-	{700,	1500,	195,	40 * 60}, /* POWER_SUPPLY_TYPE_DCP */
-	{700,	1500,	195,	40 * 60}, /* POWER_SUPPLY_TYPE_CDP */
-	{700,	1500,	195,	40 * 60},   /* POWER_SUPPLY_TYPE_ACA */
+	{1500,	1500,	195,	40 * 60}, /* POWER_SUPPLY_TYPE_MAINS */
+	{1500,	1500,	195,	40 * 60}, /* POWER_SUPPLY_TYPE_USB */
+	{1500,	1500,	195,	40 * 60}, /* POWER_SUPPLY_TYPE_DCP */
+	{1500,	1500,	195,	40 * 60}, /* POWER_SUPPLY_TYPE_CDP */
+	{1500,	1500,	195,	40 * 60},   /* POWER_SUPPLY_TYPE_ACA */
 	{0,	0,	0,	0},
 	{0,	0,	0,	0},
 	{0,	0,	0,	0},
@@ -319,11 +322,11 @@ static sec_charging_current_t charging_current_recharging_table[] = {
 	{0,	0,	0,	0},
 	{0,	0,	0,	0},
 	{0,	0,	0,	0},
-	{700,	1500,	185,	105}, /* POWER_SUPPLY_TYPE_MAINS */
-	{500,	1500,	185,	105}, /* POWER_SUPPLY_TYPE_USB */
-	{700,	1500,	185,	105}, /* POWER_SUPPLY_TYPE_DCP */
-	{700,	1500,	185,	105}, /* POWER_SUPPLY_TYPE_CDP */
-	{700,	1500,	185,	105},   /* POWER_SUPPLY_TYPE_ACA */
+	{1500,	1500,	185,	105}, /* POWER_SUPPLY_TYPE_MAINS */
+	{1500,	1500,	185,	105}, /* POWER_SUPPLY_TYPE_USB */
+	{1500,	1500,	185,	105}, /* POWER_SUPPLY_TYPE_DCP */
+	{1500,	1500,	185,	105}, /* POWER_SUPPLY_TYPE_CDP */
+	{1500,	1500,	185,	105},   /* POWER_SUPPLY_TYPE_ACA */
 	{0,	0,	0,	0},
 	{0,	0,	0,	0},
 	{0,	0,	0,	0},
@@ -341,9 +344,9 @@ static int polling_time_table[] = {
 
 /* UNKNOWN Battery | 3.7V | 1700mA | 4.2V */
 static struct v_to_cap cap_tbl[] = {
-	{4100, 100},
-	{4090, 99},
-	{4068, 95},
+	{4162, 100},
+	{4131, 99},
+	{4088, 95},
 	{4045, 90},
 	{4024, 87},
 	{3955, 80},
@@ -366,15 +369,15 @@ static struct v_to_cap cap_tbl[] = {
 	{3477, 4},
 	{3403, 2},
 	{3361, 1},
-	{3300, 0},
+	{3320, 0},
 };
 
 /* SAMSUNG Battery | 3.8V | 1500mA | 4.35V */
 static struct v_to_cap cap_tbl_5ma[] = {
-	{4250,	100},
-	{4240,	99},
-	{4230,	98},
-	{4210,	95},
+	{4328,	100},
+	{4299,	99},
+	{4281,	98},
+	{4241,	95},
 	{4183,	90},
 	{4150,	87},
 	{4116,	84},
@@ -408,7 +411,7 @@ static struct v_to_cap cap_tbl_5ma[] = {
 	{3614,	3},
 	{3551,	2},
 	{3458,	1},
-	{3300,	0},
+	{3320,	0},
 };
 
 /* Battery voltage to Resistance table*/
@@ -484,7 +487,7 @@ static const struct fg_parameters fg = {
 	.high_curr_threshold = 50,
 	.lowbat_threshold = 3300,
 	.battok_raising_th_sel0 = 2860,
-	.battok_falling_th_sel1 = 2710,
+	.battok_falling_th_sel1 = 2860,
 	.user_cap_limit = 15,
 	.maint_thres = 97,
 #ifdef CONFIG_AB8505_SMPL
@@ -501,15 +504,23 @@ static const struct chg_parameters chg = {
 };
 
 static const struct battery_info battery_info = {
+if (di->bat->batt_id == BATTERY_UNKNOWN) {
+	.charge_full_design = 1700,
+	.nominal_voltage = 3700,
+	.n_v_cap_tbl_elements = ARRAY_SIZE(cap_tbl),
+	.v_to_cap_tbl = cap_tbl,
+	.resis_high = 0,
+} else {
 	.charge_full_design = 1500,
-	.nominal_voltage = 3800,
+	.nominal_voltage = 3820,
+	.n_v_cap_tbl_elements = ARRAY_SIZE(cap_tbl_5ma),
+	.v_to_cap_tbl = cap_tbl_5ma,
 	.resis_high = 7990,
+}
 	.resis_low = 0,
 	.battery_resistance = 100,
 	.line_impedance = 36,
 	.battery_resistance_for_charging = 200,
-	.n_v_cap_tbl_elements = ARRAY_SIZE(cap_tbl_5ma),
-	.v_to_cap_tbl = cap_tbl_5ma,
 	.n_v_res_tbl_elements = ARRAY_SIZE(res_tbl),
 	.v_to_res_tbl = res_tbl,
 	.n_v_chg_res_tbl_elements = ARRAY_SIZE(chg_res_tbl),
@@ -534,7 +545,7 @@ static struct battery_data_t abb_battery_data[] = {
 
 		.fg_res_chg = 113,
 		.fg_res_dischg = 118,
-		.lowbat_zero_voltage = 3300,
+		.lowbat_zero_voltage = 3320,
 
 		.abb_set_vbus_state = abb_vbus_is_detected,
 		.abb_set_cable_state = abb_change_cable_state,
@@ -672,12 +683,20 @@ sec_battery_platform_data_t sec_battery_pdata = {
 		SEC_BATTERY_FULL_CONDITION_VCELL |
 		SEC_BATTERY_FULL_CONDITION_NOTIMEFULL,
 	.full_condition_soc = 100,
+if (di->bat->batt_id == BATTERY_UNKNOWN) {
+	.full_condition_vcell = 4200,
+} else {
 	.full_condition_vcell = 4350,
+}
 
 	.recharge_condition_type =
 		SEC_BATTERY_RECHARGE_CONDITION_VCELL,
-	.recharge_condition_soc = 99,
-	.recharge_condition_vcell = 4240,
+	.recharge_condition_soc = 98,
+if (di->bat->batt_id == BATTERY_UNKNOWN) {
+	.recharge_condition_vcell = 4120,
+} else {
+	.recharge_condition_vcell = 4281,
+}
 	.recharge_check_count = 4,
 
 	.charging_total_time = 5 * 60 * 60,
@@ -704,8 +723,11 @@ sec_battery_platform_data_t sec_battery_pdata = {
 	.chg_polarity_status = 0,
 	.chg_irq = 0,
 	.chg_irq_attr = 0,
-	.chg_float_voltage = 4250,
-
+if (di->bat->batt_id == BATTERY_UNKNOWN) {
+	.chg_float_voltage = 4200,
+} else {
+	.chg_float_voltage = 4350,
+}
 };
 
 static struct platform_device sec_device_battery = {

@@ -23,7 +23,7 @@
 extern struct class *power_supply_class;
 extern struct class *sec_class;
 
-#if defined(CONFIG_MACH_JANICE_CHN) || defined(CONFIG_MACH_CODINA_CHN) || defined(CONFIG_MACH_GAVINI_CHN) || defined(CONFIG_MACH_CODINA_EURO) || defined(CONFIG_MACH_CODINA) || defined(CONFIG_MACH_JANICE)
+#if defined(CONFIG_MACH_CODINA)
 extern u32 sec_lpm_bootmode;
 #endif
 
@@ -602,7 +602,7 @@ static int battery_get_property(struct power_supply *psy,
 		break;
 	
 	case POWER_SUPPLY_PROP_LPM_MODE:    /* LPM mode */
-#if defined(CONFIG_MACH_JANICE_CHN) || defined(CONFIG_MACH_CODINA_CHN) || defined(CONFIG_MACH_GAVINI_CHN) || defined(CONFIG_MACH_CODINA_EURO) || defined(CONFIG_MACH_CODINA) || defined(CONFIG_MACH_JANICE)
+#if defined(CONFIG_MACH_CODINA)
 		val->intval = sec_lpm_bootmode;
 #else
 		val->intval = charger_extra_sysfs.batt_lp_charging; /* 0 or 1 */
@@ -755,10 +755,7 @@ static int charging_readproc(char *page, char **start, off_t off,
 				ab8500_power_registers[i].region, 
 				ab8500_power_registers[i].address, &c);
 		if (ret>=0) {
-			len+=sprintf(page+len,"(%#04x %#04x)%s = 0x%02x\n", 
-					ab8500_power_registers[i].region, 
-					ab8500_power_registers[i].address, 
-					ab8500_power_registers[i].name, c);
+			len+=sprintf(page+len,"%s = 0x%02x\n",ab8500_power_registers[i].name,c);
 		msleep(10);
 		}
 	}
