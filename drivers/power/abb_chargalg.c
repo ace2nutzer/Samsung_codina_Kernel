@@ -49,7 +49,7 @@
 #include <linux/ab8500-ponkey.h>
 #include <linux/earlysuspend.h>
 
-/* ace2nutzer: bln on eoc_first=1 */
+/* ace2nutzer: bln on eoc_real = 1 */
 #include <linux/bln.h>
 
 static unsigned int eoc_bln = 0;
@@ -994,11 +994,6 @@ static void ab8500_chargalg_end_of_charge(struct ab8500_chargalg *di)
 					in the UI, BUT NOT Real Full charging\n");
 					power_supply_changed(&di->chargalg_psy);
 					eoc_first = 1;
-					if ((eoc_bln & !bln_is_ongoing()) && (is_suspend || is_lpm || is_recovery)) {
-					/* enable BLN */
-					bln_enable_backlights(get_led_mask());
-					eoc_bln_is_ongoing = 1;
-					}
 				} else {
 					dev_dbg(di->dev,
 					"1st Full Charging EOC limit reached \
@@ -1021,6 +1016,11 @@ static void ab8500_chargalg_end_of_charge(struct ab8500_chargalg *di)
 				power_supply_changed(&di->chargalg_psy);
 				dev_dbg(di->dev, "Charging is end\n");
 				eoc_real = 1;
+					/* enable BLN */
+					if ((eoc_bln & !bln_is_ongoing()) && (is_suspend || is_lpm || is_recovery)) {
+						bln_enable_backlights(get_led_mask());
+						eoc_bln_is_ongoing = 1;
+					}
 			} else {
 				dev_dbg(di->dev,
 				" real EOC limit reached for the %d"
@@ -1233,8 +1233,8 @@ static int ab8500_chargalg_get_ext_psy_data(struct device *dev, void *data)
 
 				/* disable EOC BLN */
 				if (eoc_bln_is_ongoing && !bln_is_ongoing()) {
-				bln_disable_backlights(gen_all_leds_mask());
-				eoc_bln_is_ongoing = 0;
+					bln_disable_backlights(gen_all_leds_mask());
+					eoc_bln_is_ongoing = 0;
 				}
 
 			} else if (ret.intval && is_charger) {
