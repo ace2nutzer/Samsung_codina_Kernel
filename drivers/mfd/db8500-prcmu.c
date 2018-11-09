@@ -52,7 +52,7 @@
 #define PRCMU_I2C_TIMEOUT	0x0F000000
 #endif //CONFIG_SAMSUNG_PANIC_DISPLAY_DEVICES
 
-//#define CREATE_TRACE_POINTS
+#define CREATE_TRACE_POINTS
 #ifdef CREATE_TRACE_POINTS
 #include "dbx500-prcmu-trace.h"
 #include <linux/ftrace_event.h>
@@ -4228,15 +4228,19 @@ static int __init late(void)
 	#ifdef CONFIG_DB8500_LIVEOPP
 	int ret;
 	#endif /* CONFIG_DB8500_LIVEOPP */
+
 #ifdef CONFIG_TRACING
 	extern int tracing_update_buffers(void);
 #endif
+
 #ifdef ENABLE_FTRACE_BY_DEFAULT
 	extern int tracing_set_tracer(const char *buf);
 	int err;
 #endif
-#ifdef CREATE_TRACE_POINTS
+
+#ifdef CONFIG_TRACING
 	tracing_update_buffers();
+
 	trace_set_clr_event("irq", "irq_handler_entry", 1);
 	trace_set_clr_event("irq", "irq_handler_exit", 1);
 	//trace_set_clr_event("irq", "softirq_entry", 1);
@@ -4248,6 +4252,7 @@ static int __init late(void)
 	trace_set_clr_event("power", "cpu_frequency", 1);
 	trace_set_clr_event("prcmu", NULL, 1);
 #endif
+
 	#ifdef CONFIG_DB8500_LIVEOPP
 	liveopp_kobject = kobject_create_and_add("liveopp", kernel_kobj);
 	if (!liveopp_kobject) {

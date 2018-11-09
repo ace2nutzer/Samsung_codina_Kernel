@@ -1649,8 +1649,7 @@ static void ab8500_fg_check_capacity_limits(struct ab8500_fg *di, bool init)
 		 * We do not allow reported capacity level to go up
 		 * unless we're charging or if we're in init
 		 */
-		if (!(!di->flags.charging && di->bat_cap.level >
-			di->bat_cap.prev_level) || init) {
+		if (!(!di->flags.charging && di->bat_cap.level > di->bat_cap.prev_level) || init) {
 			dev_dbg(di->dev, "level changed from %d to %d\n",
 				di->bat_cap.prev_level,
 				di->bat_cap.level);
@@ -1703,7 +1702,7 @@ static void ab8500_fg_check_capacity_limits(struct ab8500_fg *di, bool init)
 		    && !changed)
 			di->lowbat_poweroff = true;
 
-		if (di->vbat > 3450) {
+		if (di->vbat > 3400) {
 			dev_info(di->dev, "Low bat condition is recovered.\n");
 			di->lowbat_poweroff_locked = false;
 			wake_unlock(&di->lowbat_poweroff_wake_lock);
@@ -1732,8 +1731,7 @@ static void ab8500_fg_check_capacity_limits(struct ab8500_fg *di, bool init)
 		di->bat_cap.mah = 0;
 		changed = true;
 		 
-	} else if (di->bat_cap.prev_percent !=
-			percent) {
+	} else if (di->bat_cap.prev_percent != percent) {
 		if (percent == 0) {
 			/*
 			 * We will not report 0% unless we've got
@@ -1746,13 +1744,12 @@ static void ab8500_fg_check_capacity_limits(struct ab8500_fg *di, bool init)
 			/* di->bat_cap.mah = 1; */
 
 			changed = true;
-		} else if (!(!di->flags.charging &&
-					percent > di->bat_cap.prev_percent) ||
-				init) {
+
 			/*
 			 * We do not allow reported capacity to go up
 			 * unless we're charging or if we're in init
 			 */
+		} else if (!(!di->flags.charging && percent > di->bat_cap.prev_percent) || init) {
 			dev_dbg(di->dev,
 				"capacity changed from %d to %d (%d)\n",
 				di->bat_cap.prev_percent,

@@ -52,6 +52,8 @@
 /* ace2nutzer: bln on eoc_real = 1 */
 #include <linux/bln.h>
 
+static bool is_charger_present = false;
+
 static unsigned int eoc_bln = 0;
 module_param_named(eoc_bln, eoc_bln, uint, 0644);
 
@@ -74,6 +76,8 @@ static bool eoc_bln_is_ongoing = 0;
 static void ab8500_chargalg_early_suspend(struct early_suspend *h)
 {
 	is_suspend = 1;
+
+	return;
 }
 
 static void ab8500_chargalg_late_resume(struct early_suspend *h)
@@ -82,9 +86,11 @@ static void ab8500_chargalg_late_resume(struct early_suspend *h)
 
 	/* disable EOC BLN */
 	if (eoc_bln_is_ongoing && !bln_is_ongoing()) {
-	bln_disable_backlights(gen_all_leds_mask());
-	eoc_bln_is_ongoing = 0;
+		bln_disable_backlights(gen_all_leds_mask());
+		eoc_bln_is_ongoing = 0;
 	}
+
+	return;
 }
 
 enum ab8500_chargers {
@@ -1163,9 +1169,6 @@ static void handle_maxim_chg_curr(struct ab8500_chargalg *di)
 		break;
 	}
 }
-
-unsigned int is_charger_present = false;
-module_param_named(is_charger_present, is_charger_present, uint, 0644);
 
 static int ab8500_chargalg_get_ext_psy_data(struct device *dev, void *data)
 {

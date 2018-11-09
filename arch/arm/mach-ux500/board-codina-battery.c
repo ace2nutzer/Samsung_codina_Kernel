@@ -682,11 +682,11 @@ sec_battery_platform_data_t sec_battery_pdata = {
 		SEC_BATTERY_FULL_CONDITION_SOC |
 		SEC_BATTERY_FULL_CONDITION_VCELL |
 		SEC_BATTERY_FULL_CONDITION_NOTIMEFULL,
-	.full_condition_soc = 100,
+	.full_condition_soc = 95,
 if (di->bat->batt_id == BATTERY_UNKNOWN) {
-	.full_condition_vcell = 4200,
+	.full_condition_vcell = 4088,
 } else {
-	.full_condition_vcell = 4350,
+	.full_condition_vcell = 4241,
 }
 
 	.recharge_condition_type =

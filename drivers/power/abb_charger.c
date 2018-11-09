@@ -9,6 +9,7 @@
  * Author: Arun R Murthy <arun.murthy@stericsson.com>
  *
  * Modified: Huang Ji (cocafe@xda-developers.com)
+ * Modified:  ace2nutzer @xda
  *
  */
 
@@ -345,14 +346,17 @@ extern void mxt224e_ts_change_vbus_state(bool vbus_status);
 static void (*mxt224e_ts_vbus_state)(bool vbus_status);
 #endif
 
-/* On codina board, the max allowed input current is 1500mA */
+/* Charger Control */
+static unsigned int ac_curr_max = 700;
+static unsigned int usb20_curr_max = 500;
 
-/* VBUS Drop Status - When VBUS dropped, input current will be changed! */
-static bool bVBUSDropped = false;
+module_param(ac_curr_max, uint, 0644);
+module_param(usb20_curr_max, uint, 0644);
 
-/* User AC - USB input current */
-static unsigned int user_ta_chg_current_input = 600;
-static unsigned int user_usb_chg_current_input = 500;
+/* sysfs interfaces read-only */
+static unsigned int stable_curr = 0;
+
+module_param(stable_curr, uint, 0444);
 
 static void ab8500_charger_set_usb_connected(struct ab8500_charger *di,
 	bool connected)
@@ -731,11 +735,8 @@ static int ab8500_charger_detect_chargers(struct ab8500_charger *di)
 		ab8500_enable_disable_sw_fallback(di, false);
 		di->cable_type = POWER_SUPPLY_TYPE_BATTERY;
 		di->vbus_detect_charging = false;
-		if (bVBUSDropped) {
-			pr_warn("[ABB-Chargre] Clear VBUS Drop status\n");
-			bVBUSDropped = false;
-		}
 		result = NO_PW_CONN ;
+		stable_curr = 0;
 		break ;
 	}
 #else
@@ -1261,15 +1262,24 @@ static int ab8500_charger_set_main_in_curr(struct ab8500_charger *di, int ich_in
 	int ret = 0;
 	int input_curr_index;
 	int prev_input_curr_index;
-	int min_value;
+	int min_value, charge_curr;
 
 	/* We should always use to lowest current limit */
-	if (di->cable_type == POWER_SUPPLY_TYPE_MAINS)
+	if (di->cable_type == POWER_SUPPLY_TYPE_MAINS) {
 		min_value = min(di->bat->ta_chg_current_input, ich_in);
-	else
+		charge_curr = di->bat->ta_chg_current;
+	} else {
 		min_value = min(di->bat->usb_chg_current_input, ich_in);
-		input_curr_index = ab8500_main_in_curr_to_regval(min_value);
+		charge_curr = di->bat->usb_chg_current;
+	}
 
+		if (min_value < charge_curr) {
+			stable_curr = min_value;
+		} else {
+			stable_curr = charge_curr;
+		}
+
+	input_curr_index = ab8500_main_in_curr_to_regval(min_value);
 	if (input_curr_index < 0) {
 		pr_err("[ABB-Charger] MAIN input current limit too high, %d\n",
 			input_curr_index);
@@ -1318,7 +1328,7 @@ static int ab8500_charger_set_main_in_curr(struct ab8500_charger *di, int ich_in
 static int ab8500_charger_set_vbus_in_curr(struct ab8500_charger *di,
 		int ich_in)
 {
-	return ab8500_charger_set_main_in_curr(di, ich_in) ; //Samsung have moved all charging to main charger
+	return ab8500_charger_set_main_in_curr(di, ich_in); //Samsung have moved all charging to main charger
 #if 0
 	int ret;
 	int input_curr_index;
@@ -1428,13 +1438,14 @@ static int ab8500_charger_ac_en(struct ux500_charger *charger,
 	charger_status = ab8500_charger_detect_chargers(di);
 	vbus_status = ab8500_vbus_is_detected(di);
 
-//	di->bat->ta_chg_current_input = di->bat->chg_params->ac_curr_max;
-//	di->bat->usb_chg_current_input = di->bat->chg_params->usb_curr_max;
-
 	if (di->bat->batt_id == BATTERY_UNKNOWN) {
 		di->bat->ta_chg_voltage = 4200;
 		di->bat->usb_chg_voltage = 4200;
 	}
+
+	/* Charger Control */
+	di->bat->ta_chg_current_input = ac_curr_max;
+	di->bat->usb_chg_current_input = usb20_curr_max;
 
 	ab8500_charger_init_vdrop_state(di);
 
@@ -2306,20 +2317,14 @@ static void ab8500_charger_check_usbchargernotok_work(struct work_struct *work)
 	
 }
 
-
+/*
 static void ab8500_handle_main_voltage_drop_work(struct work_struct *work)
 {
-/*
 	struct ab8500_charger *di = container_of(work,
 					struct ab8500_charger, 
 					handle_main_voltage_drop_work);
-*/
-
 }
-
-
-
-
+*/
 
 static void ab8500_handle_vbus_voltage_drop_work(struct work_struct *work)
 {
@@ -2358,12 +2363,14 @@ static void ab8500_handle_vbus_voltage_drop_work(struct work_struct *work)
 			if (di->bat->ta_chg_current_input >= 100)
 				di->bat->ta_chg_current_input -= 100;
 
-			bVBUSDropped = true;
+			pr_warn("[ABB-Charger] AC: VBUS Dropped !!!\n");
+
 		} else if (di->cable_type == POWER_SUPPLY_TYPE_USB) {
 			if (di->bat->usb_chg_current_input >= 100)
 				di->bat->usb_chg_current_input -= 100;
 
-			bVBUSDropped = true;
+			pr_warn("[ABB-Charger] USB: VBUS Dropped !!!\n");
+
 		}
 
 		ret = abx500_set_register_interruptible(di->dev,
@@ -2707,10 +2714,6 @@ static irqreturn_t ab8500_charger_chwdexp_handler(int irq, void *_di)
 	return IRQ_HANDLED;
 }
 
-
-
-
-
 static irqreturn_t ab8500_charger_main_drop_handler(int irq, void *_di)
 {
 	struct ab8500_charger *di = _di;
@@ -2728,7 +2731,6 @@ static irqreturn_t ab8500_charger_vbus_drop_handler(int irq, void *_di)
 	/* queue_work(di->charger_wq,&di->handle_vbus_voltage_drop_work); */
 	return IRQ_HANDLED;
 }
-
 
 /**
  * ab8500_charger_vbusovv_handler() - VBUS overvoltage detected
@@ -3110,221 +3112,12 @@ static int ab8500_charger_suspend(struct platform_device *pdev,
 #define ab8500_charger_resume       NULL
 #endif
 
-static ssize_t abb_input_current_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
-{
-	struct ab8500_charger *di = static_di;
-	u8 tmp;
-	int i, CurrNow;
-
-	abx500_get_register_interruptible(di->dev, AB8500_CHARGER, AB8500_MCH_IPT_CURLVL_REG, &tmp);
-	CurrNow = tmp >> 4;
-
-	sprintf(buf, "%sInput Current:\t%d mA\n\n", buf, ab8500_charger_main_in_curr_map[CurrNow]);
-
-	/* Print VBUS dropped warnning */
-	if (bVBUSDropped) {
-		sprintf(buf, "%s*******************\n", buf);
-		sprintf(buf, "%s* VBUS DROPPED!!! *\n", buf);
-		sprintf(buf, "%s*******************\n", buf);
-	}
-
-	return strlen(buf);
-}
-
-static struct kobj_attribute abb_input_current_interface = __ATTR(input_current, 0444, abb_input_current_show, NULL);
-
-static ssize_t abb_input_current_ac_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
-{
-	struct ab8500_charger *di = static_di;
-	u8 tmp;
-	int i, CurrNow;
-
-	abx500_get_register_interruptible(di->dev, AB8500_CHARGER, AB8500_MCH_IPT_CURLVL_REG, &tmp);
-	CurrNow = tmp >> 4;
-
-	/* Charger Current */
-	abx500_get_register_interruptible(di->dev, AB8500_CHARGER, AB8500_CH_OPT_CRNTLVL_REG, &tmp);
-
-	sprintf(buf,   "Charger input Current Control:\n\n");
-	sprintf(buf, "%s[MEM]\n", buf);
-
-	/* Print VBUS dropped warnning */
-	if (bVBUSDropped) {
-		sprintf(buf, "%s*******************\n", buf);
-		sprintf(buf, "%s* VBUS DROPPED!!! *\n", buf);
-		sprintf(buf, "%s*******************\n", buf);
-	}
-
-	sprintf(buf, "%sAC input Current\t%d mA\n", buf, ab8500_charger_main_in_curr_map[CurrNow]);
-	sprintf(buf, "%sAC charge Current\t%d mA\n\n", buf, ab8500_charger_main_in_curr_map[tmp]);
-
-	sprintf(buf, "%s[USR]\n", buf);
-	sprintf(buf, "%sAC input Current\t%d mA\n\n", buf, user_ta_chg_current_input);
-
-	sprintf(buf, "%s[Current Table]\n", buf);
-	for (i = 0; i < ARRAY_SIZE(ab8500_charger_main_in_curr_map); i++) {
-		sprintf(buf, "%s[%02d]\t\t%d mA\n", buf, i, ab8500_charger_main_in_curr_map[i]);
-	}
-
-	return strlen(buf);
-}
-
-static ssize_t abb_input_current_ac_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
-{
-	struct ab8500_charger *di = static_di;
-	int i, val, ret;
-
-	/* Get the current from userspace */
-	ret = sscanf(buf, "%d", &val);
-
-	/* Check the main charger current map */
-	for (i = 0; i < ARRAY_SIZE(ab8500_charger_main_in_curr_map); i++) {
-		if (val == ab8500_charger_main_in_curr_map[i]) {
-			pr_info("[ABB-Charger] AC Charger input Current %d ==> %d\n", user_ta_chg_current_input, val);
-
-			user_ta_chg_current_input = val;
-
-			di->bat->ta_chg_current_input = user_ta_chg_current_input;
-
-			return count;
-		}
-	}
-
-	pr_err("[ABB-Charger] The current inputed doesn't match current map\n");
-
-	return count;
-
-}
-
-static struct kobj_attribute abb_input_current_ac_interface = __ATTR(input_curr_ac, 0644, abb_input_current_ac_show, abb_input_current_ac_store);
-
-static ssize_t abb_input_current_usb_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
-{
-	struct ab8500_charger *di = static_di;
-	u8 tmp;
-	int i, CurrNow;
-
-	abx500_get_register_interruptible(di->dev, AB8500_CHARGER, AB8500_MCH_IPT_CURLVL_REG, &tmp);
-	CurrNow = tmp >> 4;
-
-	/* Charger Current */
-	abx500_get_register_interruptible(di->dev, AB8500_CHARGER, AB8500_CH_OPT_CRNTLVL_REG, &tmp);
-
-	sprintf(buf,   "Charger input Current Control:\n\n");
-	sprintf(buf, "%s[MEM]\n", buf);
-
-	/* Print VBUS dropped warnning */
-	if (bVBUSDropped) {
-		sprintf(buf, "%s*******************\n", buf);
-		sprintf(buf, "%s* VBUS DROPPED!!! *\n", buf);
-		sprintf(buf, "%s*******************\n", buf);
-	}
-
-	sprintf(buf, "%sUSB input Current\t%d mA\n", buf, ab8500_charger_main_in_curr_map[CurrNow]);
-	sprintf(buf, "%sUSB charge Current\t%d mA\n\n", buf, ab8500_charger_main_in_curr_map[tmp]);
-
-	sprintf(buf, "%s[USR]\n", buf);
-	sprintf(buf, "%sUSB input Current\t%d mA\n\n", buf, user_usb_chg_current_input);
-
-	sprintf(buf, "%s[Current Table]\n", buf);
-	for (i = 0; i < ARRAY_SIZE(ab8500_charger_main_in_curr_map); i++) {
-		sprintf(buf, "%s[%02d]\t\t%d mA\n", buf, i, ab8500_charger_main_in_curr_map[i]);
-	}
-
-	return strlen(buf);
-}
-
-static ssize_t abb_input_current_usb_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
-{
-	struct ab8500_charger *di = static_di;
-	int i, val, ret;
-
-	/* Get the current from userspace */
-	ret = sscanf(buf, "%d", &val);
-
-	/* Check the main charger current map */
-	for (i = 0; i < ARRAY_SIZE(ab8500_charger_main_in_curr_map); i++) {
-		if (val == ab8500_charger_main_in_curr_map[i]) {
-			pr_info("[ABB-Charger] USB Charger input Current %d ==> %d\n", user_usb_chg_current_input, val);
-
-			user_usb_chg_current_input = val;
-
-			di->bat->usb_chg_current_input = user_usb_chg_current_input;
-
-			return count;
-		}
-	}
-
-	pr_err("[ABB-Charger] The current inputed doesn't match current map\n");
-
-	return count;
-
-}
-
-static struct kobj_attribute abb_input_current_usb_interface = __ATTR(input_curr_usb, 0644, abb_input_current_usb_show, abb_input_current_usb_store);
-
-static ssize_t abb_charger_control_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
-{
-	struct ab8500_charger *di = static_di;
-	u8 tmp;
-	int MainChEna;
-
-	/* Get MainCharger status */
-	abx500_get_register_interruptible(di->dev, AB8500_CHARGER, AB8500_MCH_CTRL1, &tmp);
-	MainChEna = tmp & 1;
-
-	sprintf(buf,   "Charger HW Control:\n\n");
-	sprintf(buf, "%sChargerEnabled\t[%s]\n", buf, MainChEna ? "*" : " ");
-
-	return strlen(buf);
-}
-
-static ssize_t abb_charger_control_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
-{
-	struct ab8500_charger *di = static_di;
-	int val, ret;
-	char tmp;
-
-	/* We can control the charger register here 
-	 * To transfer data only, we can disable it
-	 */
-
-	if (!strncmp(buf, "on", 2)) {
-		abx500_get_register_interruptible(di->dev, AB8500_CHARGER, AB8500_MCH_CTRL1, &tmp);
-		val = tmp | MAIN_CH_ENA;
-
-		pr_info("[ABB-Charger] Enable Charger %#04x ==> %#04x\n", tmp, val);
-
-		ret = abx500_set_register_interruptible(di->dev, AB8500_CHARGER, AB8500_MCH_CTRL1, val);
-		if (ret)
-			pr_err("[ABB-Charger] Failed to Enable Charger!!!\n");
-
-		return count;
-	}
-
-	if (!strncmp(buf, "off", 3)) {
-		abx500_get_register_interruptible(di->dev, AB8500_CHARGER, AB8500_MCH_CTRL1, &tmp);
-		val = tmp & 0xFE;		/* 0xFE: 1111 1110 */
-
-		pr_info("[ABB-Charger] Disable Charger %#04x ==> %#04x\n", tmp, val);
-
-		ret = abx500_set_register_interruptible(di->dev, AB8500_CHARGER, AB8500_MCH_CTRL1, val);
-		if (ret)
-			pr_err("[ABB-Charger] Failed to Disable Charger!!!\n");
-
-		return count;
-	}
-
-	return count;
-}
-
-static struct kobj_attribute abb_charger_control_interface = __ATTR(charger_hw, 0644, abb_charger_control_show, abb_charger_control_store);
-
 static ssize_t abb_charger_data_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
 	struct ab8500_charger *di = static_di;
 
 	sprintf(buf, "Charger Driver Data:\n\n");
+
 	sprintf(buf, "%s[ta_chg_voltage]\t%d\n", buf, di->bat->ta_chg_voltage);
 	sprintf(buf, "%s[ta_chg_current_input]\t%d\n", buf, di->bat->ta_chg_current_input);
 	sprintf(buf, "%s[ta_chg_current]\t%d\n\n", buf, di->bat->ta_chg_current);
@@ -3341,11 +3134,7 @@ static ssize_t abb_charger_data_show(struct kobject *kobj, struct kobj_attribute
 static struct kobj_attribute abb_charger_data_interface = __ATTR(charger_data, 0444, abb_charger_data_show, NULL);
 
 static struct attribute *abb_charger_attrs[] = {
-	&abb_input_current_ac_interface.attr, 
-	&abb_input_current_usb_interface.attr, 
-	&abb_charger_control_interface.attr, 
 	&abb_charger_data_interface.attr, 
-	&abb_input_current_interface.attr, 
 	NULL,
 };
 
@@ -3692,8 +3481,8 @@ static int __devinit ab8500_charger_probe(struct platform_device *pdev)
 
 
 	/* Init work for handling charger voltage drop  */
-	INIT_WORK(&di->handle_main_voltage_drop_work,
-		ab8500_handle_main_voltage_drop_work);
+//	INIT_WORK(&di->handle_main_voltage_drop_work,
+//		ab8500_handle_main_voltage_drop_work);
 	INIT_WORK(&di->handle_vbus_voltage_drop_work,
 		ab8500_handle_vbus_voltage_drop_work);
 
@@ -3807,10 +3596,6 @@ static int __devinit ab8500_charger_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, di);
 	di->parent->charger = di;
-
-	ab8500_vbus_wake_lock = di->ab8500_vbus_wake_lock;
-	ab8500_vbus_detect_charging_lock = di->ab8500_vbus_detect_charging_lock;
-	charger_attached_lock = di->charger_attached_lock;
 
 	return ret;
 
