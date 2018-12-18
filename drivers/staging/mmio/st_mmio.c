@@ -25,6 +25,8 @@
 #include <mach/board-sec-u8500.h> // Include STE Board Revision
 #include "st_mmio.h"
 
+#include <linux/moduleparam.h>
+
 #define ISP_REGION_IO				(0xE0000000)
 #define SIA_ISP_REG_ADDR			(0x521E4)
 #define SIA_BASE_ADDR				(0x54000)
@@ -93,6 +95,11 @@
 int vt_id;    // Global variable  (VT_CAM_ID) value
 int vendorID; // Global variable for 5M SOC Camera vendor ID
 int assistive_mode;
+
+/* assistive power 1 - 16 */
+static unsigned int assistive_power = 3;
+
+module_param(assistive_power, uint, 0644);
 
 #if defined (CONFIG_TORCH_FLASH)
 extern int Torch_Flash_mode;
@@ -2284,7 +2291,13 @@ rear_flash_enable_store(struct device *dev,
 #if defined CONFIG_MACH_GAVINI
 		mmio_cam_flash_on_off(info, 2, (100+5));
 #else
-		mmio_cam_flash_on_off(info, 3, (100+5));
+			if (assistive_power < 1) {
+				assistive_power = 1;
+			} else if (assistive_power > 16) {
+				assistive_power = 16;
+			}
+
+		mmio_cam_flash_on_off(info, 3, (100 + assistive_power));
 		#if defined(CONFIG_MACH_SEC_SKOMER)
 		printk(KERN_DEBUG "rear_flash_enable_store, Control Value = [100+3]\n");
 		#endif
