@@ -1454,8 +1454,8 @@ config HOTPLUG_CPU
 	bool "Support for hot-pluggable CPUs (EXPERIMENTAL)"
 	depends on SMP && HOTPLUG && EXPERIMENTAL
 	help
-	Say Y here to experiment with turning CPUs off and on. CPUs
-	can be controlled through /sys/devices/system/cpu.
+	  Say Y here to experiment with turning CPUs off and on. CPUs
+	  can be controlled through /sys/devices/system/cpu.
 
 config LOCAL_TIMERS
 	bool "Use local timer interrupts"
@@ -1523,7 +1523,7 @@ config THUMB2_AVOID_R_ARM_THM_JUMP11
 	  Unless you are sure your tools don't have this problem, say Y.
 
 config ARM_ASM_UNIFIED
-bool
+	bool
 
 config AEABI
 	bool "Use the ARM EABI to compile the kernel"
@@ -1543,7 +1543,7 @@ config AEABI
 config OABI_COMPAT
 	bool "Allow old ABI binaries to run with this kernel (EXPERIMENTAL)"
 	depends on AEABI && EXPERIMENTAL && !THUMB2_KERNEL
-	default n
+	default y
 	help
 	  This option preserves the old syscall interface along with the
 	  new (ARM EABI) one. It also provides a compatibility layer to
@@ -1555,7 +1555,7 @@ config OABI_COMPAT
 	  can say N here. If this option is not selected and you attempt
 	  to execute a legacy ABI binary then the result will be
 	  UNPREDICTABLE (in fact it can be predicted that it won't work
-	  at all). If in doubt say N.
+	  at all). If in doubt say Y.
 
 config ARCH_HAS_HOLES_MEMORYMODEL
 	bool
