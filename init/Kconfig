@@ -14,7 +14,7 @@ config DEFCONFIG_LIST
 	default "/etc/kernel-config"
 	default "/boot/config-$UNAME_RELEASE"
 	default "$ARCH_DEFCONFIG"
-default "arch/$ARCH/defconfig"
+	default "arch/$ARCH/defconfig"
 
 config CONSTRUCTORS
 	bool
@@ -1321,7 +1321,7 @@ config HAVE_GENERIC_DMA_COHERENT
 	default n
 
 config SLABINFO
-	bool
+	bool "Slab Info"
 	depends on PROC_FS
 	depends on SLAB || SLUB_DEBUG
 	default n
