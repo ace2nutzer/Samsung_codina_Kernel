@@ -93,6 +93,7 @@ static struct regulator *regulator;
 static struct clk *clk_sga;
 static struct work_struct mali_utilization_work;
 static struct workqueue_struct *mali_utilization_workqueue;
+void mali_utilization_function(struct work_struct *ptr);
 
 #if CONFIG_HAS_WAKELOCK
 static struct wake_lock wakelock;
@@ -238,6 +239,8 @@ static void mali_boost_init(void)
 static _mali_osk_errcode_t mali_platform_powerdown(void)
 {
 	if (is_running) {
+		last_utilization = 0;
+		mali_utilization_function(NULL);
 #if CONFIG_HAS_WAKELOCK
 		wake_unlock(&wakelock);
 #endif
@@ -259,6 +262,8 @@ static _mali_osk_errcode_t mali_platform_powerdown(void)
 static _mali_osk_errcode_t mali_platform_powerup(void)
 {
 	if (!is_running) {
+		last_utilization = 255;
+		mali_utilization_function(NULL);
 		int ret = regulator_enable(regulator);
 		if (ret < 0) {
 			MALI_DEBUG_PRINT(2, ("%s: Failed to enable regulator %s\n", __func__, "v-mali"));
