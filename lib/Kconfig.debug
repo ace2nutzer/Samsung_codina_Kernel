@@ -398,6 +398,14 @@ config SLUB_DEBUG_ON
 	  off in a kernel built with CONFIG_SLUB_DEBUG_ON by specifying
 	  "slub_debug=-".
 
+config SLABINFO
+	bool "Slab Info (proc/slabinfo)" if EXPERT
+	depends on PROC_FS
+	depends on SLAB || SLUB_DEBUG
+	default y
+	help
+	  Allows to disable the Interface /proc/slabinfo.
+
 config SLUB_STATS
 	default n
 	bool "Enable SLUB performance statistics"
