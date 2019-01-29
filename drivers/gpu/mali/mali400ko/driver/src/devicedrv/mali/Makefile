@@ -8,7 +8,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
-USE_UMPV2=0
+USE_UMPV2=1
 
 # The Makefile sets up "arch" based on the CONFIG, creates the version info
 # string and the __malidrv_build_info.c file, and then call the Linux build
@@ -30,7 +30,7 @@ check_cc2 = \
 	fi ;)
 
 # This conditional makefile exports the global definition ARM_INTERNAL_BUILD. Customer releases will not include arm_internal.mak
--include ../../../arm_internal.mak
+#-include ../../../arm_internal.mak
 
 # Check that required parameters are supplied.
 ifeq ($(CONFIG),)
@@ -79,7 +79,7 @@ $(warning OS_MEMORY $(USING_OS_MEMORY))
 endif
 
 # Set up build config
-export CONFIG_MALI400=y
+export CONFIG_MALI400=m
 
 ifeq ($(USING_GPU_UTILIZATION),1)
 export EXTRA_DEFINES += -DCONFIG_MALI400_GPU_UTILIZATION=1

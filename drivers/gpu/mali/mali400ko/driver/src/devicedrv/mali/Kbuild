@@ -10,6 +10,7 @@
 
 # This file is called by the Linux build system.
 
+OSKOS=linux
 
 #these are the build options for the ST-Ericsson Ux500 platforms.
 
@@ -17,18 +18,39 @@ ifeq ($(CONFIG_UX500_SOC_DB5500),y)
 DEFINES += -DSOC_DB5500=1
 endif
 
+ifeq ($(CONFIG_UX500_SOC_DB8500),y)
+DEFINES += -DSOC_DB8500=1
+endif
+
 CONFIG = ux500
 CPU = $(CONFIG)
 TARGET_PLATFORM = $(CONFIG)
 ARCH = arm
+
 USING_MMU = 1
 USING_PMM = 1
-USING_MALI_RUN_TIME_PM = 0
 USING_UMP = 1
+USE_UMPV2 = 1
 USING_HWMEM = 1
 USING_OS_MEMORY = 1
-USING_GPU_UTILIZATION = 1
+OS_MEMORY_KERNEL_BUFFER_SIZE_IN_MB = 0
+USING_MALI_RUN_TIME_PM = 1
+KERNEL_RUNTIME_PM_ENABLED = 1
+TIMESTAMP = arm11-cc
+
+ifeq ($(CONFIG_MALI400_PROFILING),y)
+USING_PROFILING = 1
+USING_INTERNAL_PROFILING = 1
+else
 USING_PROFILING = 0
+USING_INTERNAL_PROFILING = 0
+endif
+
+ifeq ($(CONFIG_MALI400_GPU_UTILIZATION),y)
+USING_GPU_UTILIZATION = 1
+else
+USING_GPU_UTILIZATION = 0
+endif
 
 ifeq ($(CONFIG_MALI400_DEBUG),y)
 BUILD = debug
@@ -36,23 +58,21 @@ else
 BUILD = release
 endif
 
+ifeq ($(CONFIG_MALI400),y)
+ccflags-y += -DUSING_MALI400
+endif
+
 KDIR-$(CPU)=$(srctree)
 
 EXTRA_CFLAGS += -I$(realpath $(DRIVER_DIR)/../../../include/ump)
 EXTRA_CFLAGS += -I$(realpath $(DRIVER_DIR)/../ump/common)
-
-# END Ux500
-
-
-OSKOS=linux
-
 
 # set up defaults if not defined by the user
 USING_UMP ?= 0
 USING_OS_MEMORY ?= 0
 USING_MALI_PMM_TESTSUITE ?= 0
 OS_MEMORY_KERNEL_BUFFER_SIZE_IN_MB ?= 16
-USING_PROFILING ?= 1
+USING_PROFILING ?= 0
 USING_INTERNAL_PROFILING ?= 0
 DISABLE_PP0 ?= 0
 DISABLE_PP1 ?= 0
@@ -62,6 +82,7 @@ PROFILING_SKIP_PP_JOBS ?= 0
 PROFILING_SKIP_PP_AND_GP_JOBS ?= 0
 PROFILING_PRINT_L2_HITRATE_ON_GP_FINISH ?= 0
 TIMESTAMP ?= default
+BUILD ?= debug
 TARGET_PLATFORM ?= default
 KERNEL_RUNTIME_PM_ENABLED ?= 0
 CONFIG ?= pb-virtex5-m200
@@ -160,7 +181,7 @@ endif
 
 # Set up our defines, which will be passed to gcc
 DEFINES += -DUSING_OS_MEMORY=$(USING_OS_MEMORY)
-DEFINES += -DUSING_MMU=1
+DEFINES += -DUSING_MMU=$(USING_MMU)
 DEFINES += -DUSING_UMP=$(USING_UMP)
 DEFINES += -D_MALI_OSK_SPECIFIC_INDIRECT_MMAP
 DEFINES += -DMALI_INTERNAL_TIMELINE_PROFILING_ENABLED=$(USING_INTERNAL_PROFILING)
@@ -179,7 +200,7 @@ DEFINES += -DMALI_TIMELINE_PROFILING_ENABLED=$(USING_PROFILING)
 DEFINES += -DMALI_POWER_MGMT_TEST_SUITE=$(USING_MALI_PMM_TESTSUITE)
 ifeq ($(shell test $(SUBLEVEL) -gt 32 -a $(PATCHLEVEL) = 6 -a $(VERSION) = 2 -o $(VERSION) -gt 2 && echo "OK"),OK)
 # MALI_STATE_TRACKING is only supported on Linux kernels from version 2.6.32.
-DEFINES += -DMALI_STATE_TRACKING=0
+DEFINES += -DMALI_STATE_TRACKING=1
 else
 DEFINES += -DMALI_STATE_TRACKING=0
 endif
@@ -209,8 +230,10 @@ DEFINES += -DMALI_UKK_HAS_IMPLICIT_MMAP_CLEANUP
 ifeq ($(USING_UMP),1)
 	DEFINES += -DMALI_USE_UNIFIED_MEMORY_PROVIDER=1
 	ccflags-y += -I$(DRIVER_DIR)/../../ump/include/ump
+	MALI_USE_UNIFIED_MEMORY_PROVIDER = 1
 else
 	DEFINES += -DMALI_USE_UNIFIED_MEMORY_PROVIDER=0
+	MALI_USE_UNIFIED_MEMORY_PROVIDER = 0
 endif
 
 # Use our defines when compiling
@@ -278,21 +301,6 @@ endif
 
 mali-$(CONFIG_MALI400_GPU_UTILIZATION) += common/mali_kernel_utilization.o
 mali-$(CONFIG_DMA_SHARED_BUFFER) += linux/mali_dma_buf.o
-
-ifneq ($(call submodule_enabled, $(DRIVER_DIR), MALI400PP),0)
-	# Mali-400 PP in use
-	ccflags-y += -DUSING_MALI400
-endif
-
-ifneq ($(call submodule_enabled, $(DRIVER_DIR), MALI300PP),0)
-	# Mali-400 PP in use
-	ccflags-y += -DUSING_MALI400
-endif
-
-ifneq ($(call submodule_enabled, $(DRIVER_DIR), MALI200),0)
-	# Mali200 in use
-	ccflags-y += -DUSING_MALI200
-endif
 
 # Always build in support for Mali L2 cache
 SRC += common/mali_l2_cache.c
