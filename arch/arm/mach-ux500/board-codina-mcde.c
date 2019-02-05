@@ -501,11 +501,11 @@ int __init init_codina_display_devices(void)
 		codina_dpi_pri_display_info.video_mode.hfp = 8;
 		codina_dpi_pri_display_info.video_mode.vfp = 8;
 		if (is_lpm || is_recovery) {
-		codina_dpi_pri_display_info.sleep_in_delay = 200;
-		codina_dpi_pri_display_info.sleep_out_delay = 50;
+			codina_dpi_pri_display_info.sleep_in_delay = 200;
+			codina_dpi_pri_display_info.sleep_out_delay = 50;
 		} else {
-		codina_dpi_pri_display_info.sleep_in_delay = 50;
-		codina_dpi_pri_display_info.sleep_out_delay = 200;
+			codina_dpi_pri_display_info.sleep_in_delay = 50;
+			codina_dpi_pri_display_info.sleep_out_delay = 200;
 		}
 	}
 
