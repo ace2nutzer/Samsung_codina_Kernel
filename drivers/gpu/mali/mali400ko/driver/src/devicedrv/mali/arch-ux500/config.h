@@ -23,8 +23,8 @@
 #endif
 
 #define MEGABYTE (1024*1024)
-#define MALI_MEM_BASE (32 * MEGABYTE)
-#define MALI_MEM_SIZE ( 32 * MEGABYTE)
+#define MALI_MEM_BASE (512 * MEGABYTE)
+#define MALI_MEM_SIZE ( 512 * MEGABYTE)
 #define OS_MEM_SIZE   (512 * MEGABYTE)
 
 /* Hardware revision u8500 v1: GX570-BU-00000-r0p1
@@ -96,7 +96,7 @@ static _mali_osk_resource_t arch_configuration [] =
 		.type = MEM_VALIDATION,
 		.description = "Framebuffer",
 		.base = 0x00000000, /* Validate all memory for now */
-		.size = 0,
+		.size = MALI_MEM_SIZE,
 		.flags = _MALI_CPU_WRITEABLE | _MALI_CPU_READABLE | _MALI_PP_WRITEABLE | _MALI_PP_READABLE
 	},
 	{
