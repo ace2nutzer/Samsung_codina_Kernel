@@ -177,17 +177,23 @@ static unsigned long ksm_pages_shared;
 /* The number of page slots additionally sharing those nodes */
 static unsigned long ksm_pages_sharing;
 
+/* Sharing in MB */
+static unsigned long ksm_sharing_in_mb;
+
 /* The number of nodes in the unstable tree */
 static unsigned long ksm_pages_unshared;
 
 /* The number of rmap_items in use: to calculate pages_volatile */
 static unsigned long ksm_rmap_items;
 
-/* Number of pages ksmd should scan in one batch */
-static unsigned int ksm_thread_pages_to_scan = 100;
+/* Number of pages ksmd should scan in one batch for first full scan */
+static unsigned int ksm_thread_pages_to_scan = 2000;
+
+/* Number of pages ksmd should scan in one batch after full scan */
+static unsigned int ksm_thread_pages_to_scan_after_full_scan = 100;
 
 /* Milliseconds ksmd should sleep between batches */
-static unsigned int ksm_thread_sleep_millisecs = 20;
+static unsigned int ksm_thread_sleep_millisecs = 1000;
 
 #define KSM_RUN_STOP	0
 #define KSM_RUN_MERGE	1
@@ -1435,8 +1441,14 @@ static int ksm_scan_thread(void *nothing)
 
 	while (!kthread_should_stop()) {
 		mutex_lock(&ksm_thread_mutex);
-		if (ksmd_should_run())
-			ksm_do_scan(ksm_thread_pages_to_scan);
+		if (ksmd_should_run()) {
+			if (ksm_scan.seqnr < 2) {
+				ksm_do_scan(ksm_thread_pages_to_scan);
+			} else {
+				ksm_do_scan(ksm_thread_pages_to_scan_after_full_scan);
+			}
+		}
+
 		mutex_unlock(&ksm_thread_mutex);
 
 		try_to_freeze();
@@ -1872,6 +1884,29 @@ static ssize_t pages_to_scan_store(struct kobject *kobj,
 }
 KSM_ATTR(pages_to_scan);
 
+static ssize_t pages_to_scan_after_full_scan_show(struct kobject *kobj,
+				  struct kobj_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", ksm_thread_pages_to_scan_after_full_scan);
+}
+
+static ssize_t pages_to_scan_after_full_scan_store(struct kobject *kobj,
+				   struct kobj_attribute *attr,
+				   const char *buf, size_t count)
+{
+	int err;
+	unsigned long nr_pages;
+
+	err = strict_strtoul(buf, 10, &nr_pages);
+	if (err || nr_pages > UINT_MAX)
+		return -EINVAL;
+
+	ksm_thread_pages_to_scan_after_full_scan = nr_pages;
+
+	return count;
+}
+KSM_ATTR(pages_to_scan_after_full_scan);
+
 static ssize_t run_show(struct kobject *kobj, struct kobj_attribute *attr,
 			char *buf)
 {
@@ -1935,6 +1970,13 @@ static ssize_t pages_sharing_show(struct kobject *kobj,
 }
 KSM_ATTR_RO(pages_sharing);
 
+static ssize_t sharing_in_mb_show(struct kobject *kobj,
+				  struct kobj_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%lu\n", ksm_pages_sharing / 256);
+}
+KSM_ATTR_RO(sharing_in_mb);
+
 static ssize_t pages_unshared_show(struct kobject *kobj,
 				   struct kobj_attribute *attr, char *buf)
 {
@@ -1969,9 +2011,11 @@ KSM_ATTR_RO(full_scans);
 static struct attribute *ksm_attrs[] = {
 	&sleep_millisecs_attr.attr,
 	&pages_to_scan_attr.attr,
+	&pages_to_scan_after_full_scan_attr.attr,
 	&run_attr.attr,
 	&pages_shared_attr.attr,
 	&pages_sharing_attr.attr,
+	&sharing_in_mb_attr.attr,
 	&pages_unshared_attr.attr,
 	&pages_volatile_attr.attr,
 	&full_scans_attr.attr,
