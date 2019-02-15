@@ -1216,15 +1216,8 @@ static int wait_for_vsync(struct mcde_chnl_state *chnl)
 	}
 }
 /* PRCMU LCDCLK
- * 30720000	[S6D27A1 - Stock]
- * 33280000	[S6D27A1 - Tuned]
- * 36305454	[S6D27A1]
- * 39936000	[S6D27A1]
- * 44373333	[S6D27A1]
- * 49920000	[WS2401 - Stock]
- * 57051428	[WS2401]
- * 66560000	[WS2401 - Tuned]
- * 79872000	[WS2401]
+ * 30720000	[S6D27A1]
+ * 49920000	[WS2401]
  */
 #include <linux/kobject.h>
 #include <linux/mfd/dbx500-prcmu.h>
@@ -1240,48 +1233,25 @@ struct lcdclk_prop
 
 static struct lcdclk_prop lcdclk_prop[] = {
   	[1] = {
-		.name = "30.72 Mhz (30720000) [S6D27A1 - Stock]",
+		.name = "30.72 Mhz (30720000) [S6D27A1]",
 		.clk = 30720000,
 	},
   	[2] = {
-		.name = "33.28 Mhz (33280000) [S6D27A1 - Tuned]",
-		.clk = 33280000,
-	},
-  	[3] = {
-		.name = "36.30 Mhz (36305454) [S6D27A1]",
-		.clk = 36305454,
-	},
-  	[4] = {
-		.name = "39.93 Mhz (39936000) [S6D27A1]",
-		.clk = 39936000,
-	},
-  	[5] = {
-		.name = "44.37 Mhz (44373333) [S6D27A1]",
-		.clk = 44373333,
-	},
-  	[6] = {
-		.name = "49.92 Mhz (49920000) [WS2401 - Stock]",
+		.name = "49.92 Mhz (49920000) [WS2401]",
 		.clk = 49920000,
-	},
-  	[7] = {
-		.name = "57.05 Mhz (57051428) [WS2401]",
-		.clk = 57051428,
-	},
-  	[8] = {
-		.name = "66.56 Mhz (66560000) [WS2401 - Tuned]",
-		.clk = 66560000,
-	},
-  	[9] = {
-		.name = "79.87 Mhz (79872000) [WS2401]",
-		.clk = 79872000,
 	},
 };
 
-static int lcdclk_usr;
+static unsigned int lcdclk_usr = 0;
+static unsigned int custom_lcdclk = 0;
 
 static void lcdclk_thread(struct work_struct *ws2401_lcdclk_work)
 {
+	if ((custom_lcdclk != 0) && (lcdclk_usr == 0)) {
+		LCDCLK_SET(custom_lcdclk);
+	} else {
 		LCDCLK_SET(lcdclk_prop[lcdclk_usr].clk);
+	}
 }
 static DECLARE_WORK(lcdclk_work, lcdclk_thread);
 
@@ -1308,6 +1278,8 @@ static ssize_t lcd_clk_show(struct kobject *kobj, struct kobj_attribute *attr, c
 
 	sprintf(buf, "%sCurrent LCDCLK freq: %d\n", buf, (int) prcmu_clock_rate(PRCMU_LCDCLK));
 
+	sprintf(buf, "%s[0][%s] Custom\n", buf, lcdclk_usr == 0 ? "*" : " ");
+
 	for (i = 1; i < ARRAY_SIZE(lcdclk_prop); i++) {
 		sprintf(buf, "%s[%d][%s] %s\n", buf, i, i == lcdclk_usr ? "*" : " ", lcdclk_prop[i].name);
 }
@@ -1319,12 +1291,13 @@ static ssize_t lcd_clk_store(struct kobject *kobj, struct kobj_attribute *attr, 
 	int ret, tmp;
 	
 	if (sscanf(buf, "lcdclk=%d", &tmp)) {
-		lcdclk_usr = tmp;
+		custom_lcdclk = tmp;
+		lcdclk_usr = 0;
 		goto out;
 	}
 
 	ret = sscanf(buf, "%d", &tmp);
-	if (!ret || (tmp < 1) || (tmp > 9)) {
+	if (!ret || (tmp < 1) || (tmp > ARRAY_SIZE(lcdclk_prop) - 1)) {
 		  pr_err("[MCDE] Bad cmd\n");
 		  return -EINVAL;
 	}
