@@ -1421,9 +1421,12 @@ static int s6d27a1_dpi_mcde_suspend(
 }
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
+/* suspend min/max cpu freq tunables */
+extern unsigned int suspend_min_freq;
 extern unsigned int suspend_max_freq;
-static unsigned int user_min = 0;
-static unsigned int user_max = 0;
+static unsigned int set_suspend_max_freq = 0;
+static unsigned int tmp_min_freq = 0;
+static unsigned int tmp_max_freq = 0;
 
 static void s6d27a1_dpi_mcde_early_suspend(
 		struct early_suspend *earlysuspend)
@@ -1431,20 +1434,22 @@ static void s6d27a1_dpi_mcde_early_suspend(
 	struct s6d27a1_dpi *lcd = container_of(earlysuspend,
 						struct s6d27a1_dpi,
 						earlysuspend);
-	
+	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
 	pm_message_t dummy;
 
 	s6d27a1_dpi_mcde_suspend(lcd->mdd, dummy);
 
-	if (suspend_max_freq) {
-	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
+	/* save current min/max cpu freq */
+	tmp_min_freq = policy->min;
+	tmp_max_freq = policy->max;
 
-	/* save current user min max freq */
-	user_min = policy->min;
-	user_max = policy->max;
-
-	cpufreq_update_freq(0, 200000, suspend_max_freq);
+	if (!suspend_max_freq) {
+		set_suspend_max_freq = tmp_max_freq;
+	} else {
+		set_suspend_max_freq = suspend_max_freq;
 	}
+
+	cpufreq_update_freq(0, suspend_min_freq, set_suspend_max_freq);
 }
 
 static void s6d27a1_dpi_mcde_late_resume(
@@ -1454,10 +1459,8 @@ static void s6d27a1_dpi_mcde_late_resume(
 						struct s6d27a1_dpi,
 						earlysuspend);
 
-	if (suspend_max_freq) {
-	/* restore user min max freq */
-	cpufreq_update_freq(0, user_min, user_max);
-	}
+	/* restore previous min/max cpu freq */
+	cpufreq_update_freq(0, tmp_min_freq, tmp_max_freq);
 
 	s6d27a1_dpi_mcde_resume(lcd->mdd);
 }

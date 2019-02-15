@@ -1511,9 +1511,12 @@ static int ws2401_dpi_mcde_suspend(
 }
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
+/* suspend min/max cpu freq tunables */
+extern unsigned int suspend_min_freq;
 extern unsigned int suspend_max_freq;
-static unsigned int user_min = 0;
-static unsigned int user_max = 0;
+static unsigned int set_suspend_max_freq = 0;
+static unsigned int tmp_min_freq = 0;
+static unsigned int tmp_max_freq = 0;
 
 static void ws2401_dpi_mcde_early_suspend(
 		struct early_suspend *earlysuspend)
@@ -1521,6 +1524,7 @@ static void ws2401_dpi_mcde_early_suspend(
 	struct ws2401_dpi *lcd = container_of(earlysuspend,
 						struct ws2401_dpi,
 						earlysuspend);
+	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
 	pm_message_t dummy;
 
 	#ifdef ESD_OPERATION
@@ -1542,15 +1546,18 @@ static void ws2401_dpi_mcde_early_suspend(
 
 	ws2401_dpi_mcde_suspend(lcd->mdd, dummy);
 
-	if (suspend_max_freq) {
-	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
+	/* save current min/max cpu freq */
+	tmp_min_freq = policy->min;
+	tmp_max_freq = policy->max;
 
-	/* save current user min max freq */
-	user_min = policy->min;
-	user_max = policy->max;
-
-	cpufreq_update_freq(0, 200000, suspend_max_freq);
+	if (!suspend_max_freq) {
+		set_suspend_max_freq = tmp_max_freq;
+	} else {
+		set_suspend_max_freq = suspend_max_freq;
 	}
+
+	cpufreq_update_freq(0, suspend_min_freq, set_suspend_max_freq);
+
 }
 
 static void ws2401_dpi_mcde_late_resume(
@@ -1560,10 +1567,8 @@ static void ws2401_dpi_mcde_late_resume(
 						struct ws2401_dpi,
 						earlysuspend);
 
-	if (suspend_max_freq) {
-	/* restore user min max freq */
-	cpufreq_update_freq(0, user_min, user_max);
-	}
+	/* restore previous min/max cpu freq */
+	cpufreq_update_freq(0, tmp_min_freq, tmp_max_freq);
 
 	#ifdef ESD_OPERATION
 	if (lcd->lcd_connected)
