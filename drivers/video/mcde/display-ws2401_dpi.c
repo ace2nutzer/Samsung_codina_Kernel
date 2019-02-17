@@ -477,9 +477,9 @@ static void ws2401_request_opp(struct ws2401_dpi *lcd)
 
 		if (prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
 						LCD_DRIVER_NAME_WS2401,
-						PRCMU_QOS_DEFAULT_VALUE)) {
+						PRCMU_QOS_HALF_VALUE)) {
 			dev_err(lcd->dev, "add APE OPP %d failed\n",
-						PRCMU_QOS_DEFAULT_VALUE);
+						PRCMU_QOS_HALF_VALUE);
 		}
 
 		if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
@@ -489,7 +489,7 @@ static void ws2401_request_opp(struct ws2401_dpi *lcd)
 				lcd->pd->min_ddr_opp);
 		}
 
-		dev_dbg(lcd->dev, "APE OPP requested at %d%%\n",PRCMU_QOS_DEFAULT_VALUE);
+		dev_dbg(lcd->dev, "APE OPP requested at %d%%\n",PRCMU_QOS_HALF_VALUE);
 		dev_dbg(lcd->dev, "DDR OPP requested at %d%%\n",lcd->pd->min_ddr_opp);
 		lcd->opp_is_requested = true;
 	}

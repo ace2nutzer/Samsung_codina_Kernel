@@ -146,7 +146,7 @@ struct ssg_dpi_display_platform_data codina_dpi_pri_display_info = {
 	.reset_delay = 10,
 	.display_off_delay = 25,
 
-	.min_ddr_opp		= 25,
+	.min_ddr_opp		= 50,
 
 	.video_mode.xres	= 480,
 	.video_mode.yres	= 800,
