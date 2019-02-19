@@ -92,7 +92,7 @@ static struct dbs_tuners {
 	.down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD,
 	.sampling_down_factor = DEF_SAMPLING_DOWN_FACTOR,
 	.ignore_nice = 0,
-	.freq_step = 3,
+	.freq_step = 4,
 };
 
 static inline cputime64_t get_cpu_idle_time_jiffy(unsigned int cpu,
@@ -236,7 +236,8 @@ static ssize_t store_down_threshold(struct kobject *a, struct attribute *b,
 	int ret;
 	ret = sscanf(buf, "%u", &input);
 
-	if (ret != 1 || input > 100 ||
+	/* cannot be lower than 1 otherwise freq will not fall */
+	if (ret != 1 || input < 1 || input > 100 ||
 			input >= dbs_tuners_ins.up_threshold)
 		return -EINVAL;
 
