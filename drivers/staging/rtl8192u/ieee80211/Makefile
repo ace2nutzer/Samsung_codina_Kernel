@@ -68,7 +68,7 @@ LD := ld
 KSRC := /lib/modules/$(KVER)/build
 CONFIG_FILE := $(KSRC)/include/linux/autoconf.h
 
-CFLAGS += -DLINUX -D__KERNEL__ -DMODULE -O2 -pipe -Wall
+CFLAGS += -DLINUX -D__KERNEL__ -DMODULE -O3 -pipe -Wall
 CFLAGS += -I$(KSRC)/include -I.
 #Kernel 2.4.31
 CFLAGS += -DMODVERSIONS -DEXPORT_SYMTAB -include $(KSRC)/include/linux/modversions.h
