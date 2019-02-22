@@ -1,7 +1,7 @@
 # Makefile for create_fw
 #
 CC=gcc
-CFLAGS=-c -Wall -O2 -g
+CFLAGS=-c -Wall -O3
 LDFLAGS=
 SOURCES=create_fw.c
 OBJECTS=$(SOURCES:.cpp=.o)
