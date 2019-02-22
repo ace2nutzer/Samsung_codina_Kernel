@@ -123,6 +123,7 @@ static int __init early_cachepolicy(char *p)
 	 * page tables.
 	 */
 	if (cpu_architecture() >= CPU_ARCH_ARMv6) {
+		printk(KERN_WARNING "Only cachepolicy=writeback supported on ARMv6 and later\n");
 		cachepolicy = CPOLICY_WRITEBACK;
 	}
 	flush_cache_all();
@@ -319,8 +320,8 @@ static void __init build_mem_type_table(void)
 			cachepolicy = CPOLICY_WRITEBACK;
 		ecc_mask = 0;
 	}
-       if (is_smp())
-               cachepolicy = CPOLICY_WRITEALLOC;
+	if (is_smp())
+		cachepolicy = CPOLICY_WRITEALLOC;
 
 	/*
 	 * Strip out features not present on earlier architectures.
