@@ -193,7 +193,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
 export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH		?=arm
-CROSS_COMPILE	?=/home/ace2nutzer/codinap/android_tools/gcc-linaro-4.9.4-2017.01-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf-
+CROSS_COMPILE	?=/home/ace2nutzer/codinap/android_tools/gcc-linaro-4.9.4-2017.01-x86_64_arm-linux-gnueabi/bin/arm-linux-gnueabi-
 
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
@@ -245,16 +245,12 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   := -Wall -Werror -Wmissing-prototypes -Wstrict-prototypes -O2 \
-		-fomit-frame-pointer -std=gnu89 -m64 \
-		-fno-strict-aliasing -fno-strict-overflow \
-		-DNDEBUG -pipe -march=core2 -mtune=core2 -mhard-float \
-		-mfpmath=sse -ftree-vectorize -Wno-format-overflow
+HOSTCFLAGS   := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer
+HOSTCXXFLAGS := -O2
 
-HOSTCXXFLAGS := -Wall -Werror -O2 -fomit-frame-pointer \
-		-fno-strict-aliasing -fno-strict-overflow \
-		-DNDEBUG -pipe -m64 -march=core2 -mtune=core2 -mhard-float \
-		-mfpmath=sse -ftree-vectorize -Wno-format-overflow
+# Host specifc Flags
+HOSTCFLAGS   += -m64 -march=core2 -mtune=core2 -Wno-format-overflow -pipe
+HOSTCXXFLAGS += -m64 -march=core2 -mtune=core2 -Wno-format-overflow -pipe
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -372,24 +368,25 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
 
 KBUILD_CPPFLAGS := -D__KERNEL__
 
-KBUILD_CFLAGS   := -Wall -Werror -Wundef -Wstrict-prototypes -Wno-trigraphs \
-		   -fno-strict-aliasing -fno-common -Wno-format \
+KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
+		   -fno-strict-aliasing -fno-common \
+		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
 		   -std=gnu89 \
 		   -D_FORTIFY_SOURCE=1 \
-		   -march=armv7-a \
-		   -mcpu=cortex-a9 \
-		   -mtune=cortex-a9 \
-		   -mfpu=neon \
-		   -mfloat-abi=hard \
-		   -marm \
-		   -mno-thumb-interwork \
-		   -ftree-vectorize \
-		   -mvectorize-with-neon-quad \
 		   -DNDEBUG \
 		   -pipe \
 		   -fdiagnostics-color=auto
+
+# Target specific Flags
+KBUILD_CFLAGS   += \
+		   -march=armv7-a \
+		   -mcpu=cortex-a9 \
+		   -mtune=cortex-a9 \
+		   -mfloat-abi=soft \
+		   -marm \
+		   -mno-thumb-interwork
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
@@ -638,7 +635,6 @@ KBUILD_CFLAGS += $(stackp-flag)
 # This warning generated too much noise in a regular build.
 # Use make W=1 to enable this warning (see scripts/Makefile.build)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-but-set-variable)
-
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-const-variable)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-variable)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-label)
@@ -676,6 +672,14 @@ ifdef CONFIG_DYNAMIC_FTRACE
 	endif
 endif
 endif
+
+#
+# The Scalar Replacement of Aggregates (SRA) optimization pass in GCC 4.9 and
+# later may result in code being generated that handles signed short and signed
+# char struct members incorrectly. So disable it.
+# (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=65932)
+#
+KBUILD_CFLAGS	+= $(call cc-option,-fno-ipa-sra)
 
 # We trigger additional mismatches with less inlining
 ifdef CONFIG_DEBUG_SECTION_MISMATCH
