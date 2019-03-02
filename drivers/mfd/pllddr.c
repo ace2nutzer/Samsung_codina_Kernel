@@ -53,12 +53,18 @@
  * Original PRCMU registers frequency
  */
 
-#define PERX_ORIG_CLK 159744
-#define MCDE_ORIG_CLK 159744
-#define ACLK_ORIG_CLK 199680
-#define SIACLK_ORIG_CLK 399360
-#define SVACLK_ORIG_CLK 399360
-#define DMACLK_ORIG_CLK 199680
+#define PERX_ORIG_CLK		133120
+#define MCDE_ORIG_CLK		159744
+#define ACLK_ORIG_CLK		199680
+#define SIACLK_ORIG_CLK		399360
+#define SVACLK_ORIG_CLK		399360
+#define DMACLK_ORIG_CLK		199680
+#define APEATCLK_ORIG_CLK		199680
+#define APETRACECLK_ORIG_CLK	159744
+#define BMLCLK_ORIG_CLK		199680
+#define B2R2CLK_ORIG_CLK	199680
+#define PLLSOC1_ORIG_CLK	99840
+#define SDMMCCLK_ORIG_CLK		99840
 
 static __iomem void *prcmu_base;
 
@@ -88,22 +94,34 @@ struct prcmu_regs_table
  */
 
 static struct prcmu_regs_table prcmu_regs[] = {
-        // PRCMU reg            | Boost val   | Unboost val|      Name
-	{PRCMU_ACLK_REG,	0x184,       0x184,	       "aclk"},
-	{PRCMU_SVACLK_REG,	0x002,       0x002,	     "svaclk"},
-	{PRCMU_SIACLK_REG,	0x002,       0x002,	     "siaclk"},
-	{PRCMU_PER1CLK_REG,	0x186,       0x186,	    "per1clk"},
-	{PRCMU_PER2CLK_REG,	0x186,       0x186,	    "per2clk"},
-	{PRCMU_PER3CLK_REG,	0x186,       0x186,	    "per3clk"},
-	{PRCMU_PER5CLK_REG,	0x186,       0x186,	    "per5clk"},
-	{PRCMU_PER6CLK_REG,	0x186,       0x186,	    "per6clk"},
-	{PRCMU_APEATCLK_REG,	0x004,       0x004,	   "apeatclk"},
-	{PRCMU_APETRACECLK_REG,	0x005,       0x005,	"apetraceclk"},
-	{PRCMU_MCDECLK_REG,	0x185,       0x185,	    "mcdeclk"},
-	{PRCMU_DMACLK_REG,	0x184,       0x184,          "dmaclk"},
+        // PRCMU reg		| Boost val	| Unboost val	| Name
+	{PRCMU_ARMFIX_REG,	0x741,		0x741,		"armfix"},
+	{PRCMU_SGACLK_REG,	0x121,		0x121,		"sgaclk"},
+	{PRCMU_SDMMCCLK_REG,	0x008,		0x008,		"sdmmcclk"},
+	{PRCMU_BMLCLK_REG,	0x004,		0x004,		"bmlclk"},
+	{PRCMU_B2R2CLK_REG,	0x004,		0x004,		"b2r2clk"},
+	{PRCMU_PLLSOC1_REG,	0x40128,	0x40128,	"pllsoc1"},
+	{PRCMU_ACLK_REG,	0x184,		0x184,		"aclk"},
+	{PRCMU_SVACLK_REG,	0x002,		0x002,		"svaclk"},
+	{PRCMU_SIACLK_REG,	0x002,		0x002,		"siaclk"},
+	{PRCMU_PER1CLK_REG,	0x186,		0x186,		"per1clk"},
+	{PRCMU_PER2CLK_REG,	0x186,		0x186,		"per2clk"},
+	{PRCMU_PER3CLK_REG,	0x186,		0x186,		"per3clk"},
+	{PRCMU_PER5CLK_REG,	0x186,		0x186,		"per5clk"},
+	{PRCMU_PER6CLK_REG,	0x186,		0x186,		"per6clk"},
+	{PRCMU_APEATCLK_REG,	0x004,		0x004,		"apeatclk"},
+	{PRCMU_APETRACECLK_REG,	0x005,		0x005,		"apetraceclk"},
+	{PRCMU_MCDECLK_REG,	0x185,		0x185,		"mcdeclk"},
+	{PRCMU_DMACLK_REG,	0x184,		0x184,		"dmaclk"},
 };
 
 enum {
+      ARMFIX,
+      SGACLK,
+      SDMMCCLK,
+      BMLCLK,
+      B2R2CLK,
+      PLLSOC1,
       ACLK,
       SVACLK,
       SIACLK,
@@ -155,7 +173,7 @@ static void ddr_cross_clocks_boost(bool state)
 
 		new_val = base | new_divider;
 
-		pr_err("[PLLDDR] set %s=%#05x -> %#05x\n", prcmu_regs[i].name, 
+		pr_info("[PLLDDR] set %s=%#05x -> %#05x\n", prcmu_regs[i].name,
 							      old_val, new_val);
 
 		for (val = old_val;
@@ -202,11 +220,16 @@ static void do_oc_ddr(int new_val_)
 	int i;
 	int mcdeclk_is_enabled = 0, sdmmcclk_is_enabled = 0;
 	int pllddr_freq;
+	int apeat_new_divider;
+	int apetrace_new_divider;
+	int bml_new_divider;
+	int b2r2_new_divider;
+	int pllsoc1_new_divider;
 	int sdmmc_old_divider, sdmmc_new_divider,
 	    mcde_new_divider, perx_new_divider,
-#if 0
-	    dma_new_divider, // used for ACLK and DMACLK since its orig. values are same
-#endif
+
+//	    dma_new_divider, // used for ACLK and DMACLK since its orig. values are same
+
 	    sxa_new_divider; // used for SIACLK and SVACLK;
 
 	old_val_ = readl(prcmu_base + PRCMU_PLLDDR_REG);
@@ -214,19 +237,17 @@ static void do_oc_ddr(int new_val_)
 	pllddr_freq = pllarm_freq(new_val_);
 
 	if (!perx_is_calibrated) {
+/*
 		// Recalibrate DMACLK and ACLK
-
-#if 0
 		dma_new_divider = (pllddr_freq - (pllddr_freq % DMACLK_ORIG_CLK)) / DMACLK_ORIG_CLK;
 		if (pllddr_freq % DMACLK_ORIG_CLK) dma_new_divider++;
 		if (dma_new_divider > 15) dma_new_divider = 15;
 
 		prcmu_regs[DMACLK].boost_value = dma_new_divider;
 		prcmu_regs[ACLK].boost_value = dma_new_divider;
-#endif
+*/
 		// Recalibrate SIACLK and SVACLK
 		sxa_new_divider = (pllddr_freq - (pllddr_freq % SIACLK_ORIG_CLK)) / SIACLK_ORIG_CLK;
-		if (pllddr_freq % SIACLK_ORIG_CLK) sxa_new_divider++;
 		if (sxa_new_divider > 15) sxa_new_divider = 15;
 
 		prcmu_regs[SIACLK].boost_value = sxa_new_divider;
@@ -234,19 +255,49 @@ static void do_oc_ddr(int new_val_)
 
 		// Recalibrate PER1CLK-PER6CLK
 		perx_new_divider = (pllddr_freq - (pllddr_freq % PERX_ORIG_CLK)) / PERX_ORIG_CLK;
-		if (pllddr_freq % PERX_ORIG_CLK) perx_new_divider++;
 		if (perx_new_divider > 15) perx_new_divider = 15;
+
 		prcmu_regs[PER1CLK].boost_value = perx_new_divider;
 		prcmu_regs[PER2CLK].boost_value = perx_new_divider;
 		prcmu_regs[PER3CLK].boost_value = perx_new_divider;
 		prcmu_regs[PER5CLK].boost_value = perx_new_divider;
 		prcmu_regs[PER6CLK].boost_value = perx_new_divider;
 
-		// Recalibrate MCDE clk
+		// Recalibrate MCDECLK
 		mcde_new_divider = (pllddr_freq - (pllddr_freq % MCDE_ORIG_CLK)) / MCDE_ORIG_CLK;
-		if (pllddr_freq % MCDE_ORIG_CLK) mcde_new_divider++;
 		if (mcde_new_divider > 15) mcde_new_divider = 15;
+
 		prcmu_regs[MCDECLK].boost_value = mcde_new_divider;
+
+		// Recalibrate APEATCLK
+		apeat_new_divider = (pllddr_freq - (pllddr_freq % APEATCLK_ORIG_CLK)) / APEATCLK_ORIG_CLK;
+		if (apeat_new_divider > 15) apeat_new_divider = 15;
+
+		prcmu_regs[APEATCLK].boost_value = apeat_new_divider;
+
+		// Recalibrate APETRACECLK
+		apetrace_new_divider = (pllddr_freq - (pllddr_freq % APETRACECLK_ORIG_CLK)) / APETRACECLK_ORIG_CLK;
+		if (apetrace_new_divider > 15) apetrace_new_divider = 15;
+
+		prcmu_regs[APETRACECLK].boost_value = apetrace_new_divider;
+
+		// Recalibrate BMLCLK
+		bml_new_divider = (pllddr_freq - (pllddr_freq % BMLCLK_ORIG_CLK)) / BMLCLK_ORIG_CLK;
+		if (bml_new_divider > 15) bml_new_divider = 15;
+
+		prcmu_regs[BMLCLK].boost_value = bml_new_divider;
+
+		// Recalibrate B2R2CLK
+		b2r2_new_divider = (pllddr_freq - (pllddr_freq % B2R2CLK_ORIG_CLK)) / B2R2CLK_ORIG_CLK;
+		if (b2r2_new_divider > 15) b2r2_new_divider = 15;
+
+		prcmu_regs[B2R2CLK].boost_value = b2r2_new_divider;
+
+		// Recalibrate PLLSOC1
+		pllsoc1_new_divider = (pllddr_freq - (pllddr_freq % PLLSOC1_ORIG_CLK)) / PLLSOC1_ORIG_CLK;
+		if (pllsoc1_new_divider > 15) pllsoc1_new_divider = 15;
+
+		prcmu_regs[PLLSOC1].boost_value = pllsoc1_new_divider;
 
 		mcdeclk_is_enabled = readl(prcmu_base + PRCMU_MCDECLK_REG) & 0x100; 
 		sdmmcclk_is_enabled = readl(prcmu_base + PRCMU_SDMMCCLK_REG) & 0x100;  
@@ -255,7 +306,7 @@ static void do_oc_ddr(int new_val_)
 			return;
 		}
 
-		pr_err("[PLLDDR] recalibrating PERXCLK and MCDECLK\n");
+		pr_info("[PLLDDR] recalibrating PERXCLK and MCDECLK\n");
 		ddr_cross_clocks_boost(1); // apply settings above
 		perx_is_calibrated = true;
 		udelay(50);
@@ -263,8 +314,7 @@ static void do_oc_ddr(int new_val_)
 
 	if (!sdmmc_is_calibrated) {
 		sdmmc_old_divider = readl(prcmu_base + PRCMU_SDMMCCLK_REG) & 0x0f;
-		sdmmc_new_divider = (pllddr_freq - (pllddr_freq % 100000)) / 100000;
-		if (pllddr_freq % 100000) sdmmc_new_divider++;
+		sdmmc_new_divider = (pllddr_freq - (pllddr_freq % SDMMCCLK_ORIG_CLK)) / SDMMCCLK_ORIG_CLK;
 		if (sdmmc_new_divider > 15) sdmmc_new_divider = 15;
 
 		mcdeclk_is_enabled = readl(prcmu_base + PRCMU_MCDECLK_REG) & 0x100; 
@@ -275,7 +325,7 @@ static void do_oc_ddr(int new_val_)
 		}
 
 		if (sdmmc_new_divider && (sdmmc_old_divider != sdmmc_new_divider)) {
-			pr_err("[PLLDDR] mmc_clk_div %d -> %d\n", sdmmc_old_divider, sdmmc_new_divider);
+			pr_info("[PLLDDR] mmc_clk_div %d -> %d\n", sdmmc_old_divider, sdmmc_new_divider);
 			sdmmc_val_base = readl(prcmu_base + PRCMU_SDMMCCLK_REG) ^ sdmmc_old_divider;
 			writel_relaxed(sdmmc_val_base | sdmmc_new_divider,
 					prcmu_base + PRCMU_SDMMCCLK_REG);
@@ -293,12 +343,12 @@ static void do_oc_ddr(int new_val_)
 			return;
 		}
 
-		pr_err("[PLLDDR] changing PLLDDR %#010x -> %#010x\n", old_val_, new_val_);
+		pr_info("[PLLDDR] changing PLLDDR %#010x -> %#010x\n", old_val_, new_val_);
 		preempt_disable();
 		local_irq_disable();
 		local_fiq_disable();
 
-		pr_err("[pllddr] (mcdeclk_is_enabled || sdmmcclk_is_enabled) = %d", (mcdeclk_is_enabled || sdmmcclk_is_enabled));
+		pr_info("[pllddr] (mcdeclk_is_enabled || sdmmcclk_is_enabled) = %d", (mcdeclk_is_enabled || sdmmcclk_is_enabled));
 		for (i = 0; i < 20 && (mcdeclk_is_enabled || sdmmcclk_is_enabled); i++) {
 			udelay(100);
 			mcdeclk_is_enabled = readl(prcmu_base + PRCMU_MCDECLK_REG) & 0x100; 
@@ -320,7 +370,7 @@ static void do_oc_ddr(int new_val_)
 					return;
 				}
 			}
-			//pr_err("[PLLDRR] val=%#010x", val);
+			//pr_info("[PLLDRR] val=%#010x", val);
 			writel_relaxed(val, prcmu_base + PRCMU_PLLDDR_REG);
 			udelay(pllddr_oc_delay_us);
 		}
@@ -370,10 +420,10 @@ module_param(ddr_oc_delay_ms, uint, 0644);
 static void pllddr_early_suspend(struct early_suspend *h)
 {
 	is_suspend = true;
-	//pr_err("[PLLDDR] %s\n", __func__);
+	//pr_info("[PLLDDR] %s\n", __func__);
 
 	if (pending_pllddr_val && ddr_oc_on_suspend) {
-		pr_err("[PLLDDR] pending_pllddr_val=%#010x\n", pending_pllddr_val);
+		pr_info("[PLLDDR] pending_pllddr_val=%#010x\n", pending_pllddr_val);
 		schedule_delayed_work(&do_oc_ddr_delayedwork, msecs_to_jiffies(ddr_oc_delay_ms));
 	}
 }
@@ -382,10 +432,10 @@ static void pllddr_late_resume(struct early_suspend *h)
 {
 	is_suspend = false;
 
-	//pr_err("[PLLDDR] %s\n", __func__);
+	//pr_info("[PLLDDR] %s\n", __func__);
 	if (pending_pllddr_val && ddr_oc_on_suspend) {
 		cancel_delayed_work(&do_oc_ddr_delayedwork);
-		//pr_err("canceled\n");
+		//pr_info("canceled\n");
 		if (wake_lock_active(&pllddr_oc_lock))
 			wake_unlock(&pllddr_oc_lock);
 	}
@@ -419,7 +469,7 @@ static ssize_t pllddr_store(struct kobject *kobj, struct kobj_attribute *attr, c
 	int ret = 0;
 
 	if (unlikely(pending_pllddr_val > 0)) {
-		pr_err("%s: PLLDDR OC is already scheduled.\n", __func__);
+		pr_info("%s: PLLDDR OC is already scheduled.\n", __func__);
 		return -EBUSY;
 	}
 
@@ -586,7 +636,7 @@ static ssize_t prcmu_mcdeclk_reg_store(struct kobject *kobj, struct kobj_attribu
 		reg_val = 0x100 | reg_val;
 	}
 
-	//pr_err("%#010x\n", reg_val);
+	//pr_info("%#010x\n", reg_val);
 
 	writel(reg_val, prcmu_base + PRCMU_MCDECLK_REG);
 
@@ -619,7 +669,7 @@ static ssize_t prcmu_sdmmcclk_reg_store(struct kobject *kobj, struct kobj_attrib
 		reg_val = 0x100 | reg_val;
 	}
 
-	//pr_err("%#010x\n", reg_val);
+	//pr_info("%#010x\n", reg_val);
 
 	writel(reg_val, prcmu_base + PRCMU_SDMMCCLK_REG);
 
@@ -644,7 +694,7 @@ static int __init pllddr_oc_start(void)
 {
 	int ret = 0;
 
-	pr_err("[PLLDDR OC]: initialized");
+	pr_info("[PLLDDR OC]: initialized");
 
 	prcmu_base = __io_address(U8500_PRCMU_BASE);
 
