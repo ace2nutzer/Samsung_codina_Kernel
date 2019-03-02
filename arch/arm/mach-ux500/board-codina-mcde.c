@@ -42,8 +42,8 @@
  * 30720000	[S6D27A1]
  * 49920000	[WS2401]
  */
-#define PRCMU_DPI_CLK_SHARP_FREQ	33280000		/* sd627a1 */
-#define PRCMU_DPI_CLK_SMD_FREQ		49920000		/* ws2401 */
+#define PRCMU_DPI_CLK_SHARP_FREQ	36305454		/* sd627a1 */
+#define PRCMU_DPI_CLK_SMD_FREQ		66560000		/* ws2401 */
 
 enum {
 	PRIMARY_DISPLAY_ID,
@@ -464,14 +464,19 @@ int __init init_codina_display_devices(void)
 
 	if (lcd_type == LCD_PANEL_TYPE_SMD) {
 		generic_display0.name = LCD_DRIVER_NAME_WS2401;
-		codina_dpi_pri_display_info.video_mode.vsw = 2;
+		codina_dpi_pri_display_info.video_mode.vsw = 4;
 		codina_dpi_pri_display_info.video_mode.vbp = 8;
-		codina_dpi_pri_display_info.video_mode.hsw = 2;
+		codina_dpi_pri_display_info.video_mode.hsw = 4;
 		codina_dpi_pri_display_info.video_mode.hbp = 8;
 		codina_dpi_pri_display_info.video_mode.hfp = 4;
 		codina_dpi_pri_display_info.video_mode.vfp = 4;
-		codina_dpi_pri_display_info.sleep_in_delay = 50;
-		codina_dpi_pri_display_info.sleep_out_delay = 120;
+		if (is_lpm || is_recovery) {
+			codina_dpi_pri_display_info.sleep_in_delay = 120;
+			codina_dpi_pri_display_info.sleep_out_delay = 50;
+		} else {
+			codina_dpi_pri_display_info.sleep_in_delay = 50;
+			codina_dpi_pri_display_info.sleep_out_delay = 120;
+		}
 
 	} else {
 
