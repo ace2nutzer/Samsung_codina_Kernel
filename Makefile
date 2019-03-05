@@ -384,6 +384,7 @@ KBUILD_CFLAGS   += \
 		   -march=armv7-a \
 		   -mcpu=cortex-a9 \
 		   -mtune=cortex-a9 \
+		   -msoft-float \
 		   -mfloat-abi=soft \
 		   -marm \
 		   -mno-thumb-interwork
