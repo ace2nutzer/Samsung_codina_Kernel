@@ -240,7 +240,7 @@ static void do_oc_ddr(int new_val_)
 /*
 		// Recalibrate DMACLK and ACLK
 		dma_new_divider = (pllddr_freq - (pllddr_freq % DMACLK_ORIG_CLK)) / DMACLK_ORIG_CLK;
-		if (pllddr_freq % DMACLK_ORIG_CLK) dma_new_divider++;
+//		if (pllddr_freq % DMACLK_ORIG_CLK) dma_new_divider++;
 		if (dma_new_divider > 15) dma_new_divider = 15;
 
 		prcmu_regs[DMACLK].boost_value = dma_new_divider;
@@ -248,6 +248,7 @@ static void do_oc_ddr(int new_val_)
 */
 		// Recalibrate SIACLK and SVACLK
 		sxa_new_divider = (pllddr_freq - (pllddr_freq % SIACLK_ORIG_CLK)) / SIACLK_ORIG_CLK;
+		if (pllddr_freq % SIACLK_ORIG_CLK) sxa_new_divider++;
 		if (sxa_new_divider > 15) sxa_new_divider = 15;
 
 		prcmu_regs[SIACLK].boost_value = sxa_new_divider;
