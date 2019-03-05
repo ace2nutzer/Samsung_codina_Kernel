@@ -32,6 +32,16 @@
 #define AB8500_VAPESEL1_REG 0x0E   /* APE OPP 100 voltage */
 #define AB8500_VAPESEL2_REG 0x0F   /* APE OPP 50 voltage  */
 
+#define LPA_OVERRIDE_VOLTAGE 0x20 /* 1.1 V for VAPESEL2 when sxa engine is running */
+
+static bool lpa_override_enabled;
+static u8 opp50_voltage_val;
+static u8 override_voltage_val;
+
+/* LPA vape2 in Suspend */
+extern bool lpa_mode_enabled;
+extern u8 lpa_vape2;
+
 static int qos_delayed_cpufreq_notifier(struct notifier_block *,
 					unsigned long, void *);
 
@@ -217,9 +227,6 @@ static bool ape_opp_50_partly_25_enabled;
 static unsigned long cpufreq_opp_delay = CPUFREQ_OPP_DELAY;
 
 static bool prcmu_qos_cpufreq_init_done;
-
-static bool lpa_override_enabled;
-static u8 opp50_voltage_val;
 
 unsigned long prcmu_qos_get_cpufreq_opp_delay(void)
 {
@@ -462,8 +469,6 @@ void prcmu_qos_force_opp(int prcmu_qos_class, s32 i)
 	update_target(prcmu_qos_class, true);
 }
 
-#define LPA_OVERRIDE_VOLTAGE_SETTING 0x1c /* 1.05 V */
-
 int prcmu_qos_lpa_override(bool enable)
 {
 	int ret = 0;
@@ -471,36 +476,34 @@ int prcmu_qos_lpa_override(bool enable)
 	mutex_lock(&prcmu_qos_mutex);
 
 	if (enable) {
-		if (!lpa_override_enabled) {
-			u8 opp100_voltage_val;
-			u8 override_voltage_val;
-
-			/* Get the APE OPP 100% setting. */
-			ret = prcmu_abb_read(AB8500_REGU_CTRL2,
-					     AB8500_VAPESEL1_REG,
-					     &opp100_voltage_val, 1);
-			if (ret)
-				goto out;
 
 			/* Save the APE OPP 50% setting. */
-			ret = prcmu_abb_read(AB8500_REGU_CTRL2,
+			if (!lpa_mode_enabled  && !lpa_override_enabled) {
+				ret = prcmu_abb_read(AB8500_REGU_CTRL2,
 					     AB8500_VAPESEL2_REG,
 					     &opp50_voltage_val, 1);
-			if (ret)
-				goto out;
+				if (ret)
+					goto out;
+			}
 
-			override_voltage_val = min(opp100_voltage_val,
-						(u8)LPA_OVERRIDE_VOLTAGE_SETTING);
+			// LPA in Suspend ?
+			if (lpa_mode_enabled) {
+				override_voltage_val = lpa_vape2;
+			} else {
+				override_voltage_val = (u8)LPA_OVERRIDE_VOLTAGE;
+			}
 
-			/* Use the APE OPP 100% setting also for APE OPP 50%. */
+			/* Override VAPESEL2 */
 			ret = prcmu_abb_write(AB8500_REGU_CTRL2,
 					      AB8500_VAPESEL2_REG,
 					      &override_voltage_val, 1);
 
 			lpa_override_enabled = true;
-		}
+
 	} else {
+
 		if (lpa_override_enabled) {
+
 			/* Restore the original APE OPP 50% setting. */
 			ret = prcmu_abb_write(AB8500_REGU_CTRL2,
 					      AB8500_VAPESEL2_REG,
