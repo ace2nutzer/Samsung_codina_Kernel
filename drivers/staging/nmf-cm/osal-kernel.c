@@ -37,7 +37,7 @@ __iomem void *prcmu_tcdm_base = NULL;
 #define FULL_OPP 100
 #define HALF_OPP 50
 static unsigned long running_dsp = 0;
-static unsigned int dspLoadMonitorPeriod = 67;
+static unsigned int dspLoadMonitorPeriod = 1000;
 module_param(dspLoadMonitorPeriod, uint, S_IWUSR|S_IRUGO);
 MODULE_PARM_DESC(dspLoadMonitorPeriod, "Period of the DSP-Load monitoring in ms");
 static unsigned int dspLoadHighThreshold = 75;
@@ -744,6 +744,10 @@ static int dspload_monitor(void *idx)
 #ifdef CONFIG_DEBUG_FS
 	mpc->opp_request = current_opp_request;
 #endif
+
+	// Override vape2 voltage when sxa engine is running
+	prcmu_qos_lpa_override(true);
+
 	if (prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
 				      (char*)mpc->name,
 				      PRCMU_QOS_DEFAULT_VALUE))
@@ -843,6 +847,10 @@ static int dspload_monitor(void *idx)
 				     (char*)mpc->name);
 	prcmu_qos_remove_requirement(PRCMU_QOS_APE_OPP,
 				     (char*)mpc->name);
+
+	// Restore vape2 voltage when sxa engine is down
+	prcmu_qos_lpa_override(false);
+
  	return 0;
 }
 

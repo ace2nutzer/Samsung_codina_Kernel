@@ -111,7 +111,7 @@ static struct delayed_work mali_boost_delayedwork;
 
 static int vape_voltage(u8 raw)
 {
-	if (raw <= 0x37) {
+	if (raw <= 0x36) {
 		return (AB8500_VAPE_MIN_UV + (raw * AB8500_VAPE_STEP_UV));
 	} else {
 		return AB8500_VAPE_MAX_UV;

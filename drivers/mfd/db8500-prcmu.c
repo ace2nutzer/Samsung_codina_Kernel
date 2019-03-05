@@ -1148,7 +1148,7 @@ static const char *armopp_name[] =
 
 static int varm_uv(u8 raw)
 {
-	if (raw <= 0x37) {
+	if (raw <= 0x36) {
 		return (AB8500_VARM_MIN_UV + (raw * AB8500_VARM_STEP_UV));
 	} else {
 		return AB8500_VARM_MAX_UV;
