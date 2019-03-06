@@ -383,11 +383,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 KBUILD_CFLAGS   += \
 		   -march=armv7-a \
 		   -mcpu=cortex-a9 \
-		   -mtune=cortex-a9 \
-		   -msoft-float \
-		   -mfloat-abi=soft \
-		   -marm \
-		   -mno-thumb-interwork
+		   -mtune=cortex-a9
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
