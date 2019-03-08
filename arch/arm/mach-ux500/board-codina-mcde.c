@@ -271,6 +271,9 @@ static int lcd_gpio_cfg_earlysuspend(void)
 	if (boost) {
 	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
 				"mcde", PRCMU_QOS_DEFAULT_VALUE);
+
+	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
+				"mcde", PRCMU_QOS_DEFAULT_VALUE);
 	}
 
 	return ret;
@@ -282,6 +285,9 @@ static int lcd_gpio_cfg_lateresume(void)
 
 	if (boost) {
 	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
+				"mcde", PRCMU_QOS_MAX_VALUE);
+
+	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
 				"mcde", PRCMU_QOS_MAX_VALUE);
 	}
 
@@ -379,18 +385,31 @@ static void update_mcde_opp(struct device *dev,
 	static s32 requested_qos;
 	s32 req_ape = PRCMU_QOS_DEFAULT_VALUE;
 	static bool update_first = true;
+	s32 req_ddr = PRCMU_QOS_DEFAULT_VALUE;
 
 	static u8 prev_rot_channels;
+	static ktime_t rot_time;
+	s64 diff;
 
 	/* If a rotation is detected, clock up CPU to max */
 	if (reqs->num_rot_channels != prev_rot_channels) {
 		prev_rot_channels = reqs->num_rot_channels;
+		rot_time = ktime_get();
 	}
-if ((reqs->num_rot_channels)) {
+	diff = ktime_to_ms(ktime_sub(ktime_get(),rot_time));
+
+/*
+ * Wait a while before clocking down again
+	 * unless we have an overlay
+ */
+if ((reqs->num_rot_channels && reqs->num_overlays > 1) ||
+		 (diff < 5000)) {
 		req_ape = PRCMU_QOS_MAX_VALUE;
+		req_ddr = PRCMU_QOS_MAX_VALUE;
 			boost = true;
 	} else {
 		req_ape = PRCMU_QOS_DEFAULT_VALUE;
+		req_ddr = PRCMU_QOS_DEFAULT_VALUE;
 			boost = false;
 	}
 
@@ -398,6 +417,8 @@ if ((reqs->num_rot_channels)) {
 		requested_qos = req_ape;
 		prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
 						"mcde", req_ape);
+		prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
+						"mcde", req_ddr);
 		pr_info("Requested APE QOS = %d\n", req_ape);
 
 		if (update_first == true) {
@@ -497,6 +518,8 @@ int __init init_codina_display_devices(void)
 	}
 
 	prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
+				"mcde", PRCMU_QOS_DEFAULT_VALUE);
+	prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
 				"mcde", PRCMU_QOS_DEFAULT_VALUE);
 
 	ret = mcde_display_device_register(&generic_display0);
