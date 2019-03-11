@@ -349,7 +349,7 @@ static void do_oc_ddr(int new_val_)
 		local_irq_disable();
 		local_fiq_disable();
 
-		pr_info("[pllddr] (mcdeclk_is_enabled || sdmmcclk_is_enabled) = %d", (mcdeclk_is_enabled || sdmmcclk_is_enabled));
+		pr_info("[PLLDDR] (mcdeclk_is_enabled || sdmmcclk_is_enabled) = %d", (mcdeclk_is_enabled || sdmmcclk_is_enabled));
 		for (i = 0; i < 20 && (mcdeclk_is_enabled || sdmmcclk_is_enabled); i++) {
 			udelay(100);
 			mcdeclk_is_enabled = readl(prcmu_base + PRCMU_MCDECLK_REG) & 0x100; 
@@ -415,7 +415,7 @@ static void do_oc_ddr_fn(struct work_struct *work)
 
 static struct early_suspend early_suspend;
 
-static unsigned int ddr_oc_delay_ms = 1000;
+static unsigned int ddr_oc_delay_ms = 1500;
 module_param(ddr_oc_delay_ms, uint, 0644);
 
 static void pllddr_early_suspend(struct early_suspend *h)
