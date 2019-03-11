@@ -1511,11 +1511,9 @@ static int ws2401_dpi_mcde_suspend(
 }
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
-/* suspend min/max cpu freq tunables */
-extern unsigned int suspend_min_freq;
+/* suspend max cpu freq tunables */
 extern unsigned int suspend_max_freq;
 static unsigned int set_suspend_max_freq = 0;
-static unsigned int tmp_min_freq = 0;
 static unsigned int tmp_max_freq = 0;
 
 static void ws2401_dpi_mcde_early_suspend(
@@ -1546,8 +1544,7 @@ static void ws2401_dpi_mcde_early_suspend(
 
 	ws2401_dpi_mcde_suspend(lcd->mdd, dummy);
 
-	/* save current min/max cpu freq */
-	tmp_min_freq = policy->min;
+	/* save current max cpu freq */
 	tmp_max_freq = policy->max;
 
 	if (!suspend_max_freq) {
@@ -1556,7 +1553,7 @@ static void ws2401_dpi_mcde_early_suspend(
 		set_suspend_max_freq = suspend_max_freq;
 	}
 
-	cpufreq_update_freq(0, suspend_min_freq, set_suspend_max_freq);
+	cpufreq_update_freq(0, 200000, set_suspend_max_freq);
 
 }
 
@@ -1567,8 +1564,8 @@ static void ws2401_dpi_mcde_late_resume(
 						struct ws2401_dpi,
 						earlysuspend);
 
-	/* restore previous min/max cpu freq */
-	cpufreq_update_freq(0, tmp_min_freq, tmp_max_freq);
+	/* restore previous max cpu freq */
+	cpufreq_update_freq(0, 400000, tmp_max_freq);
 
 	#ifdef ESD_OPERATION
 	if (lcd->lcd_connected)
