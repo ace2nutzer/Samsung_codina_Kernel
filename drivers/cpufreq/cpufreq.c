@@ -67,11 +67,9 @@ static DEFINE_SPINLOCK(cpufreq_driver_lock);
 static DEFINE_PER_CPU(int, cpufreq_policy_cpu);
 static DEFINE_PER_CPU(struct rw_semaphore, cpu_policy_rwsem);
 
-/* suspend min/max cpu freq tunable */
-unsigned int suspend_min_freq = 200000;
+/* suspend max cpu freq tunable */
 unsigned int suspend_max_freq = 0;
 
-module_param(suspend_min_freq, uint, 0644);
 module_param(suspend_max_freq, uint, 0644);
 
 #define lock_policy_rwsem(mode, cpu)					\
