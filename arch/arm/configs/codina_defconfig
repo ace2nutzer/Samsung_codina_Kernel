@@ -484,7 +484,7 @@ CONFIG_CC_STACKPROTECTOR_STRONG=y
 # CONFIG_USE_OF is not set
 CONFIG_ZBOOT_ROM_TEXT=0
 CONFIG_ZBOOT_ROM_BSS=0
-CONFIG_CMDLINE="cachepolicy=writealloc root=/dev/ram0 rw rootwait crash_reboot=yes crash_dump=no init=init console='null' mem=96M@0 mem_mtrace=15M@96M mem_mshared=1M@111M mem_modem=16M@112M hwmem=84M@128M mem=171M@212M mem_issw=1M@383M mem=383M@384M mem_ram_console=1M@767M vmalloc=0M jig_smd=0 lpm_boot=0 checksum_pass=1 checksum_done=1 sec_debug.enable=0 sec_debug.enable_user=0 androidboot.serialno=0123456789ABCDEF board_id=12 startup_graphics=1 logo. sbl_copy=1 androidboot.selinux=permissive"
+CONFIG_CMDLINE="cachepolicy=writealloc root=/dev/ram0 rw rootwait crash_reboot=yes crash_dump=no init=init console='null' mem=96M@0 mem_mtrace=15M@96M mem_mshared=1M@111M mem_modem=16M@112M hwmem=84M@128M mem=171M@212M mem_issw=1M@383M mem_ram_console=1M@384M mem=383M@385M vmalloc=0M jig_smd=0 lpm_boot=0 checksum_pass=1 checksum_done=1 sec_debug.enable=0 sec_debug.enable_user=0 androidboot.serialno=0123456789ABCDEF board_id=12 startup_graphics=1 logo. sbl_copy=1 androidboot.selinux=permissive"
 # CONFIG_CMDLINE_FROM_BOOTLOADER is not set
 # CONFIG_CMDLINE_EXTEND is not set
 CONFIG_CMDLINE_FORCE=y
@@ -908,8 +908,11 @@ CONFIG_XPS=y
 CONFIG_BT=y
 CONFIG_BT_L2CAP=y
 CONFIG_BT_SCO=y
-# CONFIG_BT_RFCOMM is not set
-# CONFIG_BT_BNEP is not set
+CONFIG_BT_RFCOMM=y
+CONFIG_BT_RFCOMM_TTY=y
+CONFIG_BT_BNEP=y
+CONFIG_BT_BNEP_MC_FILTER=y
+CONFIG_BT_BNEP_PROTO_FILTER=y
 CONFIG_BT_HIDP=y
 
 #
@@ -2666,7 +2669,7 @@ CONFIG_CRYPTO_DEFLATE=y
 # CONFIG_CRYPTO_USER_API_SKCIPHER is not set
 CONFIG_CRYPTO_HW=y
 CONFIG_CRYPTO_DEV_UX500=y
-CONFIG_CRYPTO_DEV_UX500_CRYP=y
+# CONFIG_CRYPTO_DEV_UX500_CRYP is not set
 CONFIG_CRYPTO_DEV_UX500_HASH=y
 # CONFIG_CRYPTO_DEV_UX500_DEBUG is not set
 # CONFIG_BINARY_PRINTF is not set
