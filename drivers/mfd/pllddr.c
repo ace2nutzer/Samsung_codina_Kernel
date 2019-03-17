@@ -39,8 +39,6 @@
 #define PRCMU_PER5CLK_REG		0x0038
 #define PRCMU_PER6CLK_REG		0x003c
 #define PRCMU_BMLCLK_REG		0x004c
-#define PRCMU_APEATCLK_REG		0x005c
-#define PRCMU_APETRACECLK_REG		0x0060
 #define PRCMU_MCDECLK_REG		0x0064
 #define PRCMU_DMACLK_REG		0x0074
 #define PRCMU_B2R2CLK_REG		0x0078
@@ -59,8 +57,6 @@
 #define SIACLK_ORIG_CLK		399360
 #define SVACLK_ORIG_CLK		399360
 #define DMACLK_ORIG_CLK		199680
-#define APEATCLK_ORIG_CLK		199680
-#define APETRACECLK_ORIG_CLK	159744
 #define BMLCLK_ORIG_CLK		199680
 #define B2R2CLK_ORIG_CLK	199680
 #define PLLSOC1_ORIG_CLK	99840
@@ -96,22 +92,20 @@ struct prcmu_regs_table
 static struct prcmu_regs_table prcmu_regs[] = {
         // PRCMU reg		| Boost val	| Unboost val	| Name
 	{PRCMU_ARMFIX_REG,	0x741,		0x741,		"armfix"},
-	{PRCMU_SGACLK_REG,	0x121,		0x121,		"sgaclk"},
-	{PRCMU_SDMMCCLK_REG,	0x008,		0x008,		"sdmmcclk"},
-	{PRCMU_BMLCLK_REG,	0x004,		0x004,		"bmlclk"},
-	{PRCMU_B2R2CLK_REG,	0x004,		0x004,		"b2r2clk"},
+	{PRCMU_SGACLK_REG,	0x1,		0x1,		"sgaclk"},
+	{PRCMU_SDMMCCLK_REG,	0x8,		0x8,		"sdmmcclk"},
+	{PRCMU_BMLCLK_REG,	0x4,		0x4,		"bmlclk"},
+	{PRCMU_B2R2CLK_REG,	0x4,		0x4,		"b2r2clk"},
 	{PRCMU_PLLSOC1_REG,	0x40128,	0x40128,	"pllsoc1"},
 	{PRCMU_ACLK_REG,	0x184,		0x184,		"aclk"},
-	{PRCMU_SVACLK_REG,	0x002,		0x002,		"svaclk"},
-	{PRCMU_SIACLK_REG,	0x002,		0x002,		"siaclk"},
+	{PRCMU_SVACLK_REG,	0x2,		0x2,		"svaclk"},
+	{PRCMU_SIACLK_REG,	0x2,		0x2,		"siaclk"},
 	{PRCMU_PER1CLK_REG,	0x186,		0x186,		"per1clk"},
 	{PRCMU_PER2CLK_REG,	0x186,		0x186,		"per2clk"},
 	{PRCMU_PER3CLK_REG,	0x186,		0x186,		"per3clk"},
 	{PRCMU_PER5CLK_REG,	0x186,		0x186,		"per5clk"},
 	{PRCMU_PER6CLK_REG,	0x186,		0x186,		"per6clk"},
-	{PRCMU_APEATCLK_REG,	0x004,		0x004,		"apeatclk"},
-	{PRCMU_APETRACECLK_REG,	0x005,		0x005,		"apetraceclk"},
-	{PRCMU_MCDECLK_REG,	0x185,		0x185,		"mcdeclk"},
+	{PRCMU_MCDECLK_REG,	0x5,		0x5,		"mcdeclk"},
 	{PRCMU_DMACLK_REG,	0x184,		0x184,		"dmaclk"},
 };
 
@@ -130,8 +124,6 @@ enum {
       PER3CLK,
       PER5CLK,
       PER6CLK,
-      APEATCLK,
-      APETRACECLK,
       MCDECLK,
       DMACLK,
 } clkddr;
@@ -220,8 +212,6 @@ static void do_oc_ddr(int new_val_)
 	int i;
 	int mcdeclk_is_enabled = 0, sdmmcclk_is_enabled = 0;
 	int pllddr_freq;
-	int apeat_new_divider;
-	int apetrace_new_divider;
 	int bml_new_divider;
 	int b2r2_new_divider;
 	int pllsoc1_new_divider;
@@ -269,18 +259,6 @@ static void do_oc_ddr(int new_val_)
 		if (mcde_new_divider > 15) mcde_new_divider = 15;
 
 		prcmu_regs[MCDECLK].boost_value = mcde_new_divider;
-
-		// Recalibrate APEATCLK
-		apeat_new_divider = (pllddr_freq - (pllddr_freq % APEATCLK_ORIG_CLK)) / APEATCLK_ORIG_CLK;
-		if (apeat_new_divider > 15) apeat_new_divider = 15;
-
-		prcmu_regs[APEATCLK].boost_value = apeat_new_divider;
-
-		// Recalibrate APETRACECLK
-		apetrace_new_divider = (pllddr_freq - (pllddr_freq % APETRACECLK_ORIG_CLK)) / APETRACECLK_ORIG_CLK;
-		if (apetrace_new_divider > 15) apetrace_new_divider = 15;
-
-		prcmu_regs[APETRACECLK].boost_value = apetrace_new_divider;
 
 		// Recalibrate BMLCLK
 		bml_new_divider = (pllddr_freq - (pllddr_freq % BMLCLK_ORIG_CLK)) / BMLCLK_ORIG_CLK;
