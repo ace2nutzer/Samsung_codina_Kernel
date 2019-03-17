@@ -1144,7 +1144,7 @@ static struct clk ab9540_usbclkint = {
 	.parent = &ab9540_sysclk12Parent,
 };
 
-static DEF_PRCMU_CLK(sgaclk, PRCMU_SGACLK, 320000000);
+static DEF_PRCMU_CLK(sgaclk, PRCMU_SGACLK, 800000000);
 static DEF_PRCMU_CLK(uartclk, PRCMU_UARTCLK, 38400000);
 static DEF_PRCMU_CLK(msp02clk, PRCMU_MSP02CLK, 19200000);
 static DEF_PRCMU_CLK(msp1clk, PRCMU_MSP1CLK, 19200000);
@@ -1155,7 +1155,7 @@ static DEF_PRCMU_CLK(per2clk, PRCMU_PER2CLK, 133330000);
 static DEF_PRCMU_CLK(per3clk, PRCMU_PER3CLK, 133330000);
 static DEF_PRCMU_CLK(per5clk, PRCMU_PER5CLK, 133330000);
 static DEF_PRCMU_CLK(per6clk, PRCMU_PER6CLK, 133330000);
-static DEF_PRCMU_CLK(per7clk, PRCMU_PER7CLK, 100000000);
+static DEF_PRCMU_CLK(per7clk, PRCMU_PER7CLK, 133330000);
 static DEF_PRCMU_SCALABLE_CLK(lcdclk, PRCMU_LCDCLK);
 static DEF_PRCMU_OPP100_CLK(bmlclk, PRCMU_BMLCLK, 200000000);
 static DEF_PRCMU_SCALABLE_CLK(hsitxclk, PRCMU_HSITXCLK);
@@ -2011,6 +2011,10 @@ static int __init init_clock_states(void)
 	 * APEATCLK and APETRACECLK are enabled at boot and needed
 	 * in order to debug with Lauterbach
 	 */
+#ifdef CONFIG_UX500_DEBUG_NO_LAUTERBACH
+	clk_disable(&apeatclk);
+	clk_disable(&apetraceclk);
+#else
 	if (!clk_enable(&apeatclk)) {
 		if (!ux500_jtag_enabled())
 			clk_disable(&apeatclk);
@@ -2019,6 +2023,7 @@ static int __init init_clock_states(void)
 		if (!ux500_jtag_enabled())
 			clk_disable(&apetraceclk);
 	}
+#endif
 
 	if (cpu_is_u9540())
 		INIT_DELAYED_WORK(&sysclk_disable_work,
@@ -2070,7 +2075,7 @@ int __init db8500_clk_init(void)
 			break;
 		}
 	/*
-	 * Set sdmmcclk to 100MHz instead of the default 50MHz from PRCMU.
+	 * Set sdmmcclk to 100 MHz instead of the default 50 MHz from PRCMU.
 	 * When/if PRCMU fw is changed to use 100 MHz, this shall be removed.
 	 */
 	if (clk_set_rate(&sdmmcclk, 100000000))
