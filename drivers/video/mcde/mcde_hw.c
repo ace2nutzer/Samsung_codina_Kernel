@@ -41,12 +41,12 @@
 
 #include "mcde_debugfs.h"
 
-//#define CREATE_TRACE_POINTS
+#define CREATE_TRACE_POINTS
 #ifdef CREATE_TRACE_POINTS
 #include "mcde_trace.h"
 #endif
 
-//#define MCDE_DPI_UNDERFLOW
+#define MCDE_DPI_UNDERFLOW
 #ifdef MCDE_DPI_UNDERFLOW
 #include <linux/fb.h>
 #include <video/mcde_fb.h>
@@ -1877,7 +1877,7 @@ static void enable_flow(struct mcde_chnl_state *chnl, bool setstate)
 	 */
 	switch (chnl->id) {
 	case MCDE_CHNL_A:
-		WARN_ON_ONCE(mcde_rfld(MCDE_CRA0, FLOEN)); /* BUG */
+		WARN_ON_ONCE(mcde_rfld(MCDE_CRA0, FLOEN));
 		mcde_wfld(MCDE_CRA0, ROTEN, chnl->regs.roten);
 		mcde_wfld(MCDE_CRA0, FLOEN, true);
 		break;
