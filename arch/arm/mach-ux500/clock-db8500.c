@@ -2011,10 +2011,6 @@ static int __init init_clock_states(void)
 	 * APEATCLK and APETRACECLK are enabled at boot and needed
 	 * in order to debug with Lauterbach
 	 */
-#ifdef CONFIG_UX500_DEBUG_NO_LAUTERBACH
-	clk_disable(&apeatclk);
-	clk_disable(&apetraceclk);
-#else
 	if (!clk_enable(&apeatclk)) {
 		if (!ux500_jtag_enabled())
 			clk_disable(&apeatclk);
@@ -2023,7 +2019,6 @@ static int __init init_clock_states(void)
 		if (!ux500_jtag_enabled())
 			clk_disable(&apetraceclk);
 	}
-#endif
 
 	if (cpu_is_u9540())
 		INIT_DELAYED_WORK(&sysclk_disable_work,
