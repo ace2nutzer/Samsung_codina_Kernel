@@ -1274,17 +1274,33 @@ static unsigned int custom_lcdclk = 0;
 
 static void lcdclk_thread(struct work_struct *ws2401_lcdclk_work)
 {
+
+int ret;
+
+	msleep(1);
 	if ((custom_lcdclk != 0) && (lcdclk_usr == 0)) {
-		LCDCLK_SET(custom_lcdclk);
-		pr_info("[MCDE] Set LCDCLK to %d Hz\n",  custom_lcdclk);
+		ret = LCDCLK_SET(custom_lcdclk);
+			if (ret) {
+				pr_err("[MCDE] Failed to set Custom LCDCLK to %d Hz\n",  custom_lcdclk);
+			} else {
+				pr_info("[MCDE] Set Custom LCDCLK to %d Hz\n",  custom_lcdclk);
+			}
 
 	} else {
 		if (is_s6d()) {
-			LCDCLK_SET(lcdclk_s6d_prop[lcdclk_usr].clk);
-			pr_info("[MCDE] Set LCDCLK to %d Hz\n",  lcdclk_s6d_prop[lcdclk_usr].clk);
+			ret = LCDCLK_SET(lcdclk_s6d_prop[lcdclk_usr].clk);
+			if (ret) {
+				pr_err("[MCDE] Failed to set LCDCLK to %d Hz\n",  lcdclk_s6d_prop[lcdclk_usr].clk);
+			} else {
+				pr_info("[MCDE] Set LCDCLK to %d Hz\n",  lcdclk_s6d_prop[lcdclk_usr].clk);
+			}
 		} else {
-			LCDCLK_SET(lcdclk_prop[lcdclk_usr].clk);
-			pr_info("[MCDE] Set LCDCLK to %d Hz\n",  lcdclk_prop[lcdclk_usr].clk);
+			ret = LCDCLK_SET(lcdclk_prop[lcdclk_usr].clk);
+			if (ret) {
+				pr_err("[MCDE] Failed to set LCDCLK to %d Hz\n",  lcdclk_prop[lcdclk_usr].clk);
+			} else {
+				pr_info("[MCDE] Set LCDCLK to %d Hz\n",  lcdclk_prop[lcdclk_usr].clk);
+			}
 		}
 	}
 }
@@ -1359,7 +1375,6 @@ static struct attribute *mcde_attrs[] = {
 };
 
 static struct attribute_group mcde_interface_group = {
-	 /* .name  = "governor", */ /* Not using subfolder now */
 	.attrs = mcde_attrs,
 };
 
@@ -1455,22 +1470,14 @@ static int update_channel_static_registers(struct mcde_chnl_state *chnl)
 	}
 
 	if (port->type == MCDE_PORTTYPE_DPI) {
-
-		if (lcdclk_usr || custom_lcdclk) {
-			schedule_work(&lcdclk_work);
-
-		} else {
-
-			if (port->phy.dpi.lcd_freq != clk_round_rate(chnl->clk_dpi,
-								port->phy.dpi.lcd_freq)) {
-				dev_warn(&mcde_dev->dev, "Could not set lcd freq"
-						" to %d\n", port->phy.dpi.lcd_freq);
-			}
-		}
-
+		if (port->phy.dpi.lcd_freq != clk_round_rate(chnl->clk_dpi,
+							port->phy.dpi.lcd_freq))
+			dev_warn(&mcde_dev->dev, "Could not set lcd freq"
+					" to %d\n", port->phy.dpi.lcd_freq);
 		WARN_ON_ONCE(clk_set_rate(chnl->clk_dpi,
 						port->phy.dpi.lcd_freq));
 		WARN_ON_ONCE(clk_enable(chnl->clk_dpi));
+		schedule_work(&lcdclk_work);
 	}
 
 	mcde_wfld(MCDE_CR, MCDEEN, true);
