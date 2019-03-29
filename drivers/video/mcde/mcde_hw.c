@@ -1907,8 +1907,6 @@ static void enable_flow(struct mcde_chnl_state *chnl, bool setstate)
 		set_channel_state_atomic(chnl, CHNLSTATE_RUNNING);
 }
 
-/* TODO get from register */
-#define MCDE_CLK_FREQ_MHZ 160
 static u32 get_pkt_div(u32 disp_ppl,
 		struct mcde_port *port,
 		enum mcde_fifo fifo)

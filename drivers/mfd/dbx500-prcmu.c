@@ -335,6 +335,7 @@ unsigned long prcmu_clock_rate(u8 clock)
 {
 	return   dbx500_prcmu_context.pearly->clock_rate(clock);
 }
+EXPORT_SYMBOL(prcmu_clock_rate);
 
 long prcmu_round_clock_rate(u8 clock, unsigned long rate)
 {
@@ -345,6 +346,7 @@ int prcmu_set_clock_rate(u8 clock, unsigned long rate)
 {
 	return  dbx500_prcmu_context.pearly->set_clock_rate(clock, rate);
 }
+EXPORT_SYMBOL(prcmu_set_clock_rate);
 
 int prcmu_set_val(enum prcmu_val type, u32 value)
 {
