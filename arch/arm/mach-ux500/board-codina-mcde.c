@@ -259,8 +259,6 @@ static pin_cfg_t codina_lcd_spi_pins_enable[] = {
 	GPIO224_GPIO | PIN_OUTPUT_HIGH, /* LCD_SDA */
 };
 
-static bool boost = false;
-
 static int lcd_gpio_cfg_earlysuspend(void)
 {
 	int ret = 0;
@@ -268,28 +266,12 @@ static int lcd_gpio_cfg_earlysuspend(void)
 	ret = nmk_config_pins(codina_lcd_spi_pins_disable,
 		ARRAY_SIZE(codina_lcd_spi_pins_disable));
 
-	if (boost) {
-	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
-				"mcde", PRCMU_QOS_DEFAULT_VALUE);
-
-	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
-				"mcde", PRCMU_QOS_DEFAULT_VALUE);
-	}
-
 	return ret;
 }
 
 static int lcd_gpio_cfg_lateresume(void)
 {
 	int ret = 0;
-
-	if (boost) {
-	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
-				"mcde", PRCMU_QOS_MAX_VALUE);
-
-	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
-				"mcde", PRCMU_QOS_MAX_VALUE);
-	}
 
 	ret = nmk_config_pins(codina_lcd_spi_pins_enable,
 		ARRAY_SIZE(codina_lcd_spi_pins_enable));
@@ -406,11 +388,9 @@ if ((reqs->num_rot_channels && reqs->num_overlays > 1) ||
 		 (diff < 5000)) {
 		req_ape = PRCMU_QOS_MAX_VALUE;
 		req_ddr = PRCMU_QOS_MAX_VALUE;
-			boost = true;
 	} else {
 		req_ape = PRCMU_QOS_DEFAULT_VALUE;
 		req_ddr = PRCMU_QOS_DEFAULT_VALUE;
-			boost = false;
 	}
 
 	if (req_ape != requested_qos) {
