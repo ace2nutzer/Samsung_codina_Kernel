@@ -27,40 +27,43 @@
  * PRCMU registers
  */
 
-#define PRCMU_ARMFIX_REG		0x0000
-#define PRCMU_ACLK_REG			0x0004
-#define PRCMU_SVACLK_REG		0x0008
-#define PRCMU_SIACLK_REG		0x000c
-#define PRCMU_SGACLK_REG		0x0014
-#define PRCMU_SDMMCCLK_REG		0x0024
-#define PRCMU_PER1CLK_REG		0x002c
-#define PRCMU_PER2CLK_REG		0x0030
-#define PRCMU_PER3CLK_REG		0x0034
-#define PRCMU_PER5CLK_REG		0x0038
-#define PRCMU_PER6CLK_REG		0x003c
-#define PRCMU_BMLCLK_REG		0x004c
-#define PRCMU_MCDECLK_REG		0x0064
-#define PRCMU_DMACLK_REG		0x0074
-#define PRCMU_B2R2CLK_REG		0x0078
-#define PRCMU_PLLSOC0_REG		0x0080
-#define PRCMU_PLLSOC1_REG		0x0084
-#define PRCMU_PLLARM_REG		0x0088
-#define PRCMU_PLLDDR_REG		0x008C
+#define PRCMU_ACLK_REG						0x0004
+#define PRCMU_SVACLK_REG					0x0008
+#define PRCMU_SIACLK_REG					0x000c
+#define PRCMU_SDMMCCLK_REG				0x0024
+#define PRCMU_PER1CLK_REG					0x002c
+#define PRCMU_PER2CLK_REG					0x0030
+#define PRCMU_PER3CLK_REG					0x0034
+#define PRCMU_PER5CLK_REG					0x0038
+#define PRCMU_PER6CLK_REG					0x003c
+#define PRCMU_BMLCLK_REG					0x004c
+#define PRCMU_HSIRXCLK_REG				0x0054
+#define PRCMU_HDMICLK_REG					0x0058
+#define PRCMU_MCDECLK_REG				0x0064
+#define PRCMU_DMACLK_REG					0x0074
+#define PRCMU_B2R2CLK_REG					0x0078
+#define PRCMU_MODECLK_REG				0x00e8
+#define PRCMU_UNIPROCLK_REG				0x0278
+#define PRCMU_UICCCLK_REG					0x027c
+#define PRCMU_PLLSOC1_REG					0x0084
+#define PRCMU_PLLDDR_REG					0x008C
+#define PRCMU_PLLDSICLK_REG				0x0500
+
 
 /*
  * Original PRCMU registers frequency
  */
 
-#define PERX_ORIG_CLK		133120
-#define MCDE_ORIG_CLK		159744
-#define ACLK_ORIG_CLK		199680
-#define SIACLK_ORIG_CLK		399360
-#define SVACLK_ORIG_CLK		399360
-#define DMACLK_ORIG_CLK		199680
-#define BMLCLK_ORIG_CLK		199680
-#define B2R2CLK_ORIG_CLK	199680
-#define PLLSOC1_ORIG_CLK	99840
-#define SDMMCCLK_ORIG_CLK		99840
+#define ORIG_SXACLK				399360
+#define ORIG_SDMMCCLK			99840
+#define ORIG_PERXCLK				133120
+#define ORIG_MCDECLK				159744
+#define ORIG_HSIRXCLK				99840
+#define ORIG_HDMICLK				66560
+#define ORIG_UNIPROCLK			133120
+#define ORIG_PLLSOC1				99840
+#define ORIG_PLLDSICLK			159744
+
 
 static __iomem void *prcmu_base;
 
@@ -86,46 +89,54 @@ struct prcmu_regs_table
 
 /*
  * PRCMU registers table
- * Registers above are depends on PLLDDR
+ * Registers above are partly depends on PLLDDR
  */
 
 static struct prcmu_regs_table prcmu_regs[] = {
         // PRCMU reg		| Boost val	| Unboost val	| Name
-	{PRCMU_ARMFIX_REG,	0x741,		0x741,		"armfix"},
-	{PRCMU_SGACLK_REG,	0x1,		0x1,		"sgaclk"},
-	{PRCMU_SDMMCCLK_REG,	0x8,		0x8,		"sdmmcclk"},
-	{PRCMU_BMLCLK_REG,	0x4,		0x4,		"bmlclk"},
-	{PRCMU_B2R2CLK_REG,	0x4,		0x4,		"b2r2clk"},
-	{PRCMU_PLLSOC1_REG,	0x40128,	0x40128,	"pllsoc1"},
 	{PRCMU_ACLK_REG,	0x184,		0x184,		"aclk"},
 	{PRCMU_SVACLK_REG,	0x2,		0x2,		"svaclk"},
 	{PRCMU_SIACLK_REG,	0x2,		0x2,		"siaclk"},
+	{PRCMU_SDMMCCLK_REG,	0x8,		0x8,		"sdmmcclk"},
 	{PRCMU_PER1CLK_REG,	0x186,		0x186,		"per1clk"},
 	{PRCMU_PER2CLK_REG,	0x186,		0x186,		"per2clk"},
 	{PRCMU_PER3CLK_REG,	0x186,		0x186,		"per3clk"},
 	{PRCMU_PER5CLK_REG,	0x186,		0x186,		"per5clk"},
 	{PRCMU_PER6CLK_REG,	0x186,		0x186,		"per6clk"},
-	{PRCMU_MCDECLK_REG,	0x5,		0x5,		"mcdeclk"},
+	{PRCMU_BMLCLK_REG,	0x4,		0x4,		"bmlclk"},
+	{PRCMU_HSIRXCLK_REG,	0x8,		0x8,		"hsirxclk"},
+	{PRCMU_HDMICLK_REG,	0x8c,		0x8c,		"hdmiclk"},
+	{PRCMU_MCDECLK_REG,	0x185,		0x185,		"mcdeclk"},
 	{PRCMU_DMACLK_REG,	0x184,		0x184,		"dmaclk"},
+	{PRCMU_B2R2CLK_REG,	0x4,		0x4,		"b2r2clk"},
+	{PRCMU_MODECLK_REG,	0x4,		0x4,		"modeclk"},
+	{PRCMU_UNIPROCLK_REG,	0x126,		0x126,		"uniproclk"},
+	{PRCMU_UICCCLK_REG,	0x8,		0x8,		"uiccclk"},
+	{PRCMU_PLLSOC1_REG,     0x40128,        0x40128,        "pllsoc1"},
+	{PRCMU_PLLDSICLK_REG,     0x40165,        0x40165,        "plldsiclk"},
 };
 
 enum {
-      ARMFIX,
-      SGACLK,
-      SDMMCCLK,
-      BMLCLK,
-      B2R2CLK,
-      PLLSOC1,
       ACLK,
       SVACLK,
       SIACLK,
+      SDMMCCLK,
       PER1CLK,
       PER2CLK,
       PER3CLK,
       PER5CLK,
       PER6CLK,
+      BMLCLK,
+      HSIRXCLK,
+      HDMICLK,
       MCDECLK,
       DMACLK,
+      B2R2CLK,
+      MODECLK,
+      UNIPROCLK,
+      UICCCLK,
+      PLLSOC1,
+      PLLDSICLK,
 } clkddr;
 
 static void ddr_cross_clocks_boost(bool state)
@@ -212,40 +223,29 @@ static void do_oc_ddr(int new_val_)
 	int i;
 	int mcdeclk_is_enabled = 0, sdmmcclk_is_enabled = 0;
 	int pllddr_freq;
-	int bml_new_divider;
-	int b2r2_new_divider;
-	int pllsoc1_new_divider;
 	int sdmmc_old_divider, sdmmc_new_divider,
 	    mcde_new_divider, perx_new_divider,
-
-//	    dma_new_divider, // used for ACLK and DMACLK since its orig. values are same
-
-	    sxa_new_divider; // used for SIACLK and SVACLK;
+	    hdmi_new_divider, unipro_new_divider,
+	    pllsoc1_new_divider, plldsi_new_divider,
+	    sxa_new_divider, // used for SIACLK and SVACLK
+	    hsirx_new_divider; // used also for uiccclk
 
 	old_val_ = readl(prcmu_base + PRCMU_PLLDDR_REG);
 
 	pllddr_freq = pllarm_freq(new_val_);
 
 	if (!perx_is_calibrated) {
-/*
-		// Recalibrate DMACLK and ACLK
-		dma_new_divider = (pllddr_freq - (pllddr_freq % DMACLK_ORIG_CLK)) / DMACLK_ORIG_CLK;
-//		if (pllddr_freq % DMACLK_ORIG_CLK) dma_new_divider++;
-		if (dma_new_divider > 15) dma_new_divider = 15;
 
-		prcmu_regs[DMACLK].boost_value = dma_new_divider;
-		prcmu_regs[ACLK].boost_value = dma_new_divider;
-*/
 		// Recalibrate SIACLK and SVACLK
-		sxa_new_divider = (pllddr_freq - (pllddr_freq % SIACLK_ORIG_CLK)) / SIACLK_ORIG_CLK;
-		if (pllddr_freq % SIACLK_ORIG_CLK) sxa_new_divider++;
+		sxa_new_divider = (pllddr_freq - (pllddr_freq % ORIG_SXACLK)) / ORIG_SXACLK;
+		if (pllddr_freq % ORIG_SXACLK) sxa_new_divider++;
 		if (sxa_new_divider > 15) sxa_new_divider = 15;
 
 		prcmu_regs[SIACLK].boost_value = sxa_new_divider;
-		prcmu_regs[SVACLK].boost_value = sxa_new_divider;
+		//prcmu_regs[SVACLK].boost_value = sxa_new_divider;
 
-		// Recalibrate PER1CLK-PER6CLK
-		perx_new_divider = (pllddr_freq - (pllddr_freq % PERX_ORIG_CLK)) / PERX_ORIG_CLK;
+		// Recalibrate PER1CLK - PER6CLK
+		perx_new_divider = (pllddr_freq - (pllddr_freq % ORIG_PERXCLK)) / ORIG_PERXCLK;
 		if (perx_new_divider > 15) perx_new_divider = 15;
 
 		prcmu_regs[PER1CLK].boost_value = perx_new_divider;
@@ -255,28 +255,42 @@ static void do_oc_ddr(int new_val_)
 		prcmu_regs[PER6CLK].boost_value = perx_new_divider;
 
 		// Recalibrate MCDECLK
-		mcde_new_divider = (pllddr_freq - (pllddr_freq % MCDE_ORIG_CLK)) / MCDE_ORIG_CLK;
+		mcde_new_divider = (pllddr_freq - (pllddr_freq % ORIG_MCDECLK)) / ORIG_MCDECLK;
 		if (mcde_new_divider > 15) mcde_new_divider = 15;
 
 		prcmu_regs[MCDECLK].boost_value = mcde_new_divider;
 
-		// Recalibrate BMLCLK
-		bml_new_divider = (pllddr_freq - (pllddr_freq % BMLCLK_ORIG_CLK)) / BMLCLK_ORIG_CLK;
-		if (bml_new_divider > 15) bml_new_divider = 15;
+		// Recalibrate HSIRXCLK && UICCCLK
+		hsirx_new_divider = (pllddr_freq - (pllddr_freq % ORIG_HSIRXCLK)) / ORIG_HSIRXCLK;
+		if (hsirx_new_divider > 15) hsirx_new_divider = 15;
 
-		prcmu_regs[BMLCLK].boost_value = bml_new_divider;
+		prcmu_regs[HSIRXCLK].boost_value = hsirx_new_divider;
+		prcmu_regs[UICCCLK].boost_value = hsirx_new_divider;
 
-		// Recalibrate B2R2CLK
-		b2r2_new_divider = (pllddr_freq - (pllddr_freq % B2R2CLK_ORIG_CLK)) / B2R2CLK_ORIG_CLK;
-		if (b2r2_new_divider > 15) b2r2_new_divider = 15;
+		// Recalibrate HDMICLK
+		hdmi_new_divider = (pllddr_freq - (pllddr_freq % ORIG_HDMICLK)) / ORIG_HDMICLK;
+		if (hdmi_new_divider > 15) hdmi_new_divider = 15;
 
-		prcmu_regs[B2R2CLK].boost_value = b2r2_new_divider;
+		prcmu_regs[HDMICLK].boost_value = hdmi_new_divider;
+
+		// Recalibrate UNIPROCLK
+		unipro_new_divider = (pllddr_freq - (pllddr_freq % ORIG_UNIPROCLK)) / ORIG_UNIPROCLK;
+		if (unipro_new_divider > 15) unipro_new_divider = 15;
+
+		prcmu_regs[UNIPROCLK].boost_value = unipro_new_divider;
 
 		// Recalibrate PLLSOC1
-		pllsoc1_new_divider = (pllddr_freq - (pllddr_freq % PLLSOC1_ORIG_CLK)) / PLLSOC1_ORIG_CLK;
+		pllsoc1_new_divider = (pllddr_freq - (pllddr_freq % ORIG_PLLSOC1)) / ORIG_PLLSOC1;
 		if (pllsoc1_new_divider > 15) pllsoc1_new_divider = 15;
 
 		prcmu_regs[PLLSOC1].boost_value = pllsoc1_new_divider;
+
+		// Recalibrate PLLDSICLK
+		plldsi_new_divider = (pllddr_freq - (pllddr_freq % ORIG_PLLDSICLK)) / ORIG_PLLDSICLK;
+		if (plldsi_new_divider > 15) plldsi_new_divider = 15;
+
+		prcmu_regs[PLLDSICLK].boost_value = plldsi_new_divider;
+
 
 		mcdeclk_is_enabled = readl(prcmu_base + PRCMU_MCDECLK_REG) & 0x100; 
 		sdmmcclk_is_enabled = readl(prcmu_base + PRCMU_SDMMCCLK_REG) & 0x100;  
@@ -285,7 +299,7 @@ static void do_oc_ddr(int new_val_)
 			return;
 		}
 
-		pr_info("[PLLDDR] recalibrating PERXCLK and MCDECLK\n");
+		pr_info("[PLLDDR] recalibrating some system clocks ...\n");
 		ddr_cross_clocks_boost(1); // apply settings above
 		perx_is_calibrated = true;
 		udelay(50);
@@ -293,7 +307,7 @@ static void do_oc_ddr(int new_val_)
 
 	if (!sdmmc_is_calibrated) {
 		sdmmc_old_divider = readl(prcmu_base + PRCMU_SDMMCCLK_REG) & 0x0f;
-		sdmmc_new_divider = (pllddr_freq - (pllddr_freq % SDMMCCLK_ORIG_CLK)) / SDMMCCLK_ORIG_CLK;
+		sdmmc_new_divider = (pllddr_freq - (pllddr_freq % ORIG_SDMMCCLK)) / ORIG_SDMMCCLK;
 		if (sdmmc_new_divider > 15) sdmmc_new_divider = 15;
 
 		mcdeclk_is_enabled = readl(prcmu_base + PRCMU_MCDECLK_REG) & 0x100; 
