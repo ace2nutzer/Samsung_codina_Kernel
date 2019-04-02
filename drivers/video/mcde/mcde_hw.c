@@ -1247,10 +1247,6 @@ static struct lcdclk_prop lcdclk_prop[] = {
 			.name = "72 MHz",
 			.clk = 71520000,
 		},
-		[4] = {
-			.name = "82 MHz",
-			.clk = 81737142,
-		},
 };
 
 // S6D27A1
@@ -1277,7 +1273,8 @@ static void lcdclk_thread(struct work_struct *ws2401_lcdclk_work)
 
 int ret;
 
-	msleep(1);
+	msleep(200);
+
 	if ((custom_lcdclk != 0) && (lcdclk_usr == 0)) {
 		ret = LCDCLK_SET(custom_lcdclk);
 			if (ret) {
@@ -1472,11 +1469,12 @@ static int update_channel_static_registers(struct mcde_chnl_state *chnl)
 	if (port->type == MCDE_PORTTYPE_DPI) {
 		if (port->phy.dpi.lcd_freq != clk_round_rate(chnl->clk_dpi,
 							port->phy.dpi.lcd_freq))
-			dev_warn(&mcde_dev->dev, "Could not set lcd freq"
-					" to %d\n", port->phy.dpi.lcd_freq);
+			//dev_warn(&mcde_dev->dev, "Could not set lcd freq"
+					//" to %d\n", port->phy.dpi.lcd_freq);
 		WARN_ON_ONCE(clk_set_rate(chnl->clk_dpi,
 						port->phy.dpi.lcd_freq));
 		WARN_ON_ONCE(clk_enable(chnl->clk_dpi));
+
 		schedule_work(&lcdclk_work);
 	}
 
