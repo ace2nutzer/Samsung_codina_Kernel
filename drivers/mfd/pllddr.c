@@ -54,15 +54,12 @@
  * Original PRCMU registers frequency
  */
 
-#define ORIG_SXACLK				399360
 #define ORIG_SDMMCCLK			99840
 #define ORIG_PERXCLK				133120
-#define ORIG_MCDECLK				159744
 #define ORIG_HSIRXCLK				99840
 #define ORIG_HDMICLK				66560
 #define ORIG_UNIPROCLK			133120
 #define ORIG_PLLSOC1				99840
-#define ORIG_PLLDSICLK			159744
 
 
 static __iomem void *prcmu_base;
@@ -224,10 +221,8 @@ static void do_oc_ddr(int new_val_)
 	int mcdeclk_is_enabled = 0, sdmmcclk_is_enabled = 0;
 	int pllddr_freq;
 	int sdmmc_old_divider, sdmmc_new_divider,
-	    mcde_new_divider, perx_new_divider,
+	    perx_new_divider, pllsoc1_new_divider,
 	    hdmi_new_divider, unipro_new_divider,
-	    pllsoc1_new_divider, plldsi_new_divider,
-	    sxa_new_divider, // used for SIACLK and SVACLK
 	    hsirx_new_divider; // used also for uiccclk
 
 	old_val_ = readl(prcmu_base + PRCMU_PLLDDR_REG);
@@ -235,14 +230,6 @@ static void do_oc_ddr(int new_val_)
 	pllddr_freq = pllarm_freq(new_val_);
 
 	if (!perx_is_calibrated) {
-
-		// Recalibrate SIACLK and SVACLK
-		sxa_new_divider = (pllddr_freq - (pllddr_freq % ORIG_SXACLK)) / ORIG_SXACLK;
-		if (pllddr_freq % ORIG_SXACLK) sxa_new_divider++;
-		if (sxa_new_divider > 15) sxa_new_divider = 15;
-
-		prcmu_regs[SIACLK].boost_value = sxa_new_divider;
-		//prcmu_regs[SVACLK].boost_value = sxa_new_divider;
 
 		// Recalibrate PER1CLK - PER6CLK
 		perx_new_divider = (pllddr_freq - (pllddr_freq % ORIG_PERXCLK)) / ORIG_PERXCLK;
@@ -253,12 +240,6 @@ static void do_oc_ddr(int new_val_)
 		prcmu_regs[PER3CLK].boost_value = perx_new_divider;
 		prcmu_regs[PER5CLK].boost_value = perx_new_divider;
 		prcmu_regs[PER6CLK].boost_value = perx_new_divider;
-
-		// Recalibrate MCDECLK
-		mcde_new_divider = (pllddr_freq - (pllddr_freq % ORIG_MCDECLK)) / ORIG_MCDECLK;
-		if (mcde_new_divider > 15) mcde_new_divider = 15;
-
-		prcmu_regs[MCDECLK].boost_value = mcde_new_divider;
 
 		// Recalibrate HSIRXCLK && UICCCLK
 		hsirx_new_divider = (pllddr_freq - (pllddr_freq % ORIG_HSIRXCLK)) / ORIG_HSIRXCLK;
@@ -284,12 +265,6 @@ static void do_oc_ddr(int new_val_)
 		if (pllsoc1_new_divider > 15) pllsoc1_new_divider = 15;
 
 		prcmu_regs[PLLSOC1].boost_value = pllsoc1_new_divider;
-
-		// Recalibrate PLLDSICLK
-		plldsi_new_divider = (pllddr_freq - (pllddr_freq % ORIG_PLLDSICLK)) / ORIG_PLLDSICLK;
-		if (plldsi_new_divider > 15) plldsi_new_divider = 15;
-
-		prcmu_regs[PLLDSICLK].boost_value = plldsi_new_divider;
 
 
 		mcdeclk_is_enabled = readl(prcmu_base + PRCMU_MCDECLK_REG) & 0x100; 
