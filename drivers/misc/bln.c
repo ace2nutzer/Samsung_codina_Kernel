@@ -169,7 +169,7 @@ static void enable_led_notification(void)
 	* If we already have a blink thread going
 	* don't start another one.
 	*/
-	if(bln_ongoing & bln_blink_mode)
+	if(bln_ongoing && bln_blink_mode)
 		return;
 
 	bln_ongoing = true;

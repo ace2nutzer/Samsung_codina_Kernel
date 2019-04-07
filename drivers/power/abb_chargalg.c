@@ -894,7 +894,7 @@ static int ab8500_temp_too_low(struct ab8500_chargalg *di)
 static void ab8500_chargalg_check_temp(struct ab8500_chargalg *di)
 {	
 	di->events.btemp_lowhigh = false;	
-	di->events.btemp_underover = (ab8500_temp_too_low(di)||ab8500_temp_too_high(di))?true:false;
+	di->events.btemp_underover = (ab8500_temp_too_low(di) || ab8500_temp_too_high(di)) ? true : false;
 }
 
 
@@ -1028,11 +1028,13 @@ static void ab8500_chargalg_end_of_charge(struct ab8500_chargalg *di)
 				power_supply_changed(&di->chargalg_psy);
 				dev_dbg(di->dev, "Charging is end\n");
 				eoc_real = 1;
-					/* enable BLN */
-					if ((eoc_bln & !bln_is_ongoing()) && (is_suspend || is_lpm || is_recovery)) {
-						bln_enable_backlights(get_led_mask());
-						eoc_bln_is_ongoing = 1;
-					}
+
+				/* enable BLN */
+				if ((eoc_bln && !bln_is_ongoing() && !eoc_bln_is_ongoing) && (is_suspend || is_lpm || is_recovery)) {
+					bln_enable_backlights(get_led_mask());
+					eoc_bln_is_ongoing = 1;
+				}
+
 			} else {
 				dev_dbg(di->dev,
 				" real EOC limit reached for the %d"
