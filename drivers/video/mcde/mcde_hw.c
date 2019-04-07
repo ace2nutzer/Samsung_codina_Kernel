@@ -1271,9 +1271,9 @@ static unsigned int custom_lcdclk = 0;
 static void lcdclk_thread(struct work_struct *ws2401_lcdclk_work)
 {
 
-int ret;
+int ret = 0;
 
-	msleep(200);
+	msleep(500);
 
 	if ((custom_lcdclk != 0) && (lcdclk_usr == 0)) {
 		ret = LCDCLK_SET(custom_lcdclk);
