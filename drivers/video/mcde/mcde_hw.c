@@ -1233,6 +1233,8 @@ struct lcdclk_prop
 	unsigned int clk;
 };
 
+/* LCD Freqs in () are valid for PLLDDR_FREQ 1000 */
+
 // WS2401
 static struct lcdclk_prop lcdclk_prop[] = {
 		[1] = {
@@ -1240,32 +1242,61 @@ static struct lcdclk_prop lcdclk_prop[] = {
 			.clk = 49920000,
 		},
 		[2] = {
-			.name = "67 MHz",
-			.clk = 66560000,
+			.name = "57(55) MHz",
+			.clk = 57051428,
 		},
 		[3] = {
-			.name = "72 MHz",
-			.clk = 71520000,
+			.name = "67(62) MHz",
+			.clk = 66560000,
+		},
+		[4] = {
+			.name = "67(71) MHz",
+			.clk = 71314285,
+		},
+		[5] = {
+			.name = "80(83) MHz",
+			.clk = 83200000,
+		},
+		[6] = {
+			.name = "100 MHz",
+			.clk = 99840000,
 		},
 };
 
 // S6D27A1
 static struct lcdclk_prop lcdclk_s6d_prop[] = {
 		[1] = {
-			.name = "34 MHz",
-			.clk = 33656470,
+			.name = "31 MHz",
+			.clk = 31200000,
 		},
 		[2] = {
+			.name = "33 MHz",
+			.clk = 33280000,
+		},
+		[3] = {
 			.name = "36 MHz",
 			.clk = 36305454,
 		},
-		[3] = {
-			.name = "40 MHz",
+		[4] = {
+			.name = "40(38) MHz",
 			.clk = 39936000,
+		},
+		[5] = {
+			.name = "44(42) MHz",
+			.clk = 44373333,
+		},
+		[6] = {
+			.name = "(45) MHz",
+			.clk = 45381818,
+		},
+		[7] = {
+			.name = "50 MHz",
+			.clk = 49920000,
 		},
 };
 
-static unsigned int lcdclk_usr = 2;
+static unsigned int lcdclk_usr = 4;
+static unsigned int lcdclk_s6d_usr = 2;
 static unsigned int custom_lcdclk = 0;
 
 static void lcdclk_thread(struct work_struct *ws2401_lcdclk_work)
@@ -1273,9 +1304,9 @@ static void lcdclk_thread(struct work_struct *ws2401_lcdclk_work)
 
 int ret = 0;
 
-	msleep(500);
+	msleep(400);
 
-	if ((custom_lcdclk != 0) && (lcdclk_usr == 0)) {
+	if ((custom_lcdclk != 0) && (lcdclk_usr == 0 || lcdclk_s6d_usr == 0)) {
 		ret = LCDCLK_SET(custom_lcdclk);
 			if (ret) {
 				pr_err("[MCDE] Failed to set Custom LCDCLK to %d Hz\n",  custom_lcdclk);
@@ -1285,11 +1316,11 @@ int ret = 0;
 
 	} else {
 		if (is_s6d()) {
-			ret = LCDCLK_SET(lcdclk_s6d_prop[lcdclk_usr].clk);
+			ret = LCDCLK_SET(lcdclk_s6d_prop[lcdclk_s6d_usr].clk);
 			if (ret) {
-				pr_err("[MCDE] Failed to set LCDCLK to %d Hz\n",  lcdclk_s6d_prop[lcdclk_usr].clk);
+				pr_err("[MCDE] Failed to set LCDCLK to %d Hz\n",  lcdclk_s6d_prop[lcdclk_s6d_usr].clk);
 			} else {
-				pr_info("[MCDE] Set LCDCLK to %d Hz\n",  lcdclk_s6d_prop[lcdclk_usr].clk);
+				pr_info("[MCDE] Set LCDCLK to %d Hz\n",  lcdclk_s6d_prop[lcdclk_s6d_usr].clk);
 			}
 		} else {
 			ret = LCDCLK_SET(lcdclk_prop[lcdclk_usr].clk);
@@ -1317,18 +1348,21 @@ static ssize_t lcd_clk_show(struct kobject *kobj, struct kobj_attribute *attr, c
 {
 	int i;
 
-        if (is_s6d())
-                sprintf(buf, "%sLCD type: %s\n", buf,  "S6D27A1");
-        else
-                sprintf(buf, "%sLCD type: %s\n", buf,  "WS2401");
+	if (is_s6d())
+		sprintf(buf, "%sLCD type: %s\n", buf,  "S6D27A1");
+	else
+		sprintf(buf, "%sLCD type: %s\n", buf,  "WS2401");
 
 	sprintf(buf, "%sCurrent LCDCLK freq: %d\n", buf, (int) prcmu_clock_rate(PRCMU_LCDCLK));
 
-	sprintf(buf, "%s[0][%s] Custom\n", buf, lcdclk_usr == 0 ? "*" : " ");
+	if (is_s6d())
+		sprintf(buf, "%s[0][%s] Custom\n", buf, lcdclk_s6d_usr == 0 ? "*" : " ");
+	else
+		sprintf(buf, "%s[0][%s] Custom\n", buf, lcdclk_usr == 0 ? "*" : " ");
 
-        if (is_s6d()) {
+	if (is_s6d()) {
 		for (i = 1; i < ARRAY_SIZE(lcdclk_s6d_prop); i++) {
-			sprintf(buf, "%s[%d][%s] %s\n", buf, i, i == lcdclk_usr ? "*" : " ", lcdclk_s6d_prop[i].name);
+			sprintf(buf, "%s[%d][%s] %s\n", buf, i, i == lcdclk_s6d_usr ? "*" : " ", lcdclk_s6d_prop[i].name);
 		}
 
 	} else {
@@ -1347,16 +1381,30 @@ static ssize_t lcd_clk_store(struct kobject *kobj, struct kobj_attribute *attr, 
 	
 	if (sscanf(buf, "lcdclk=%d", &tmp)) {
 		custom_lcdclk = tmp;
-		lcdclk_usr = 0;
+		if (is_s6d())
+			lcdclk_s6d_usr = 0;
+		else
+			lcdclk_usr = 0;
 		goto out;
 	}
 
 	ret = sscanf(buf, "%d", &tmp);
-	if (!ret || (tmp < 1) || (tmp > ARRAY_SIZE(lcdclk_prop) - 1)) {
-		  pr_err("[MCDE] Bad cmd\n");
-		  return -EINVAL;
+	if (is_s6d()) {
+		if (!ret || (tmp < 1) || (tmp > ARRAY_SIZE(lcdclk_s6d_prop) - 1)) {
+			pr_err("[MCDE] Bad cmd\n");
+			return -EINVAL;
+		}
+	} else {
+		if (!ret || (tmp < 1) || (tmp > ARRAY_SIZE(lcdclk_prop) - 1)) {
+			pr_err("[MCDE] Bad cmd\n");
+			return -EINVAL;
+		}
 	}
-	lcdclk_usr = tmp;
+
+	if (is_s6d())
+		lcdclk_s6d_usr = tmp;
+	else
+		lcdclk_usr = tmp;
 
 out:
 	schedule_work(&lcdclk_work);
