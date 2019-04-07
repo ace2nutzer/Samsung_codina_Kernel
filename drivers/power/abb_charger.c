@@ -820,7 +820,7 @@ static int ab8500_charger_max_usb_curr(struct ab8500_charger *di,
 	connection = usb_switch_get_current_connection() ;
 	vbus_status = ab8500_vbus_is_detected(di);
 
-	if ((connection & (EXTERNAL_USB_CHARGER|EXTERNAL_DEDICATED_CHARGER|EXTERNAL_CAR_KIT))
+	if ((connection & (EXTERNAL_USB_CHARGER | EXTERNAL_DEDICATED_CHARGER | EXTERNAL_CAR_KIT))
 		|| ((connection & EXTERNAL_JIG_UART_OFF) && vbus_status))
 	{
 		di->max_usb_in_curr = di->bat->usb_chg_current_input;
