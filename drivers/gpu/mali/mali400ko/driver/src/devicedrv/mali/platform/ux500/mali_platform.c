@@ -38,7 +38,7 @@
 #endif
 
 #define MALI_LOW_TO_HIGH_LEVEL_UTILIZATION_LIMIT 50
-#define MALI_HIGH_TO_LOW_LEVEL_UTILIZATION_LIMIT 15
+#define MALI_HIGH_TO_LOW_LEVEL_UTILIZATION_LIMIT 20
 
 #define MALI_UX500_VERSION		"1.0.1"
 
@@ -103,7 +103,7 @@ static u32 boost_delay 		= 0;
 static u32 boost_low 		= 0;
 static u32 boost_high 		= 0;
 static u32 boost_upthreshold 	= 243; /* 95% */
-static u32 boost_downthreshold	= 115; /* 45% */
+static u32 boost_downthreshold	= 133; /* 52% */
 //mutex to protect above variables
 static DEFINE_MUTEX(mali_boost_lock);
 
