@@ -90,6 +90,8 @@
 #define ESD_TEST
 */
 
+static unsigned int ape_opp = PRCMU_QOS_HALF_VALUE;
+
 struct s6d27a1_dpi {
 	struct device				*dev;
 	struct spi_device			*spi;
@@ -353,9 +355,9 @@ static void s6d27a1_request_opp(struct s6d27a1_dpi *lcd)
 
 		if (prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
 						LCD_DRIVER_NAME_S6D27A1,
-						PRCMU_QOS_HALF_VALUE)) {
+						ape_opp)) {
 			dev_err(lcd->dev, "add APE OPP %d failed\n",
-						PRCMU_QOS_HALF_VALUE);
+						ape_opp);
 		}
 
 		if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
@@ -365,10 +367,22 @@ static void s6d27a1_request_opp(struct s6d27a1_dpi *lcd)
 				lcd->pd->min_ddr_opp);
 		}
 
-		dev_dbg(lcd->dev, "APE OPP requested at %d%%\n",PRCMU_QOS_HALF_VALUE);
+		dev_dbg(lcd->dev, "APE OPP requested at %d%%\n",ape_opp);
 		dev_dbg(lcd->dev, "DDR OPP requested at %d%%\n",lcd->pd->min_ddr_opp);
 		lcd->opp_is_requested = true;
 	}
+}
+
+static void s6d27a1_update_opp(struct s6d27a1_dpi *lcd)
+{
+	if (prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
+				LCD_DRIVER_NAME_S6D27A1,
+				ape_opp)) {
+		dev_err(lcd->dev, "update user APE OPP %d failed\n",
+						ape_opp);
+	}
+
+		dev_warn(lcd->dev, "APE OPP requested by user at %d%%\n",ape_opp);
 }
 
 static void s6d27a1_release_opp(struct s6d27a1_dpi *lcd)
@@ -858,6 +872,7 @@ static ssize_t s6d27a1_sysfs_show_mcde_chnl(struct device *dev,
 	sprintf(buf, "%svbp: %d\n", buf, lcd->mdd->video_mode.vbp);
 	sprintf(buf, "%svfp: %d\n", buf, lcd->mdd->video_mode.vfp);
 	sprintf(buf, "%svsw: %d\n", buf, lcd->mdd->video_mode.vsw);
+	sprintf(buf, "%sape_opp: %d\n", buf, ape_opp);
 
 	return strlen(buf);
 }
@@ -867,7 +882,7 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 				       const char *buf, size_t len)
 {
 	struct s6d27a1_dpi *lcd = dev_get_drvdata(dev);
-	int ret;
+	int ret, tmp;
 	u32 hbp;	/* horizontal back porch: left margin (excl. hsync) */
 	u32 hfp;	/* horizontal front porch: right margin (excl. hsync) */
 	u32 hsw;	/* horizontal sync width */
@@ -875,6 +890,19 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 	u32 vfp;	/* vertical front porch: lower margin (excl. vsync) */
 	u32 vsw;	/* vertical sync width */
 	u32 enable;
+
+	if (sscanf(buf, "apeopp=%d", &tmp)) {
+
+		if (tmp < 25 || tmp > 100) {
+			pr_warning("[s6d27a1] Invaild input\n");
+			return -EINVAL;
+		}
+
+		ape_opp = tmp;
+		s6d27a1_update_opp(lcd);
+
+		return len;
+	}
 
 	if (!strncmp(buf, "set_vmode", 8))
 	{
@@ -888,7 +916,7 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 	{
 		pr_err("[s6d27a1] Apply chnl config!\n");
 		mcde_chnl_apply(lcd->mdd->chnl_state);
-		
+
 		return len;
 	}
 
@@ -896,7 +924,7 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 	{
 		pr_err("[s6d27a1] MCDE chnl stop flow!\n");
 		mcde_chnl_stop_flow(lcd->mdd->chnl_state);
-		
+
 		return len;
 	}
 
@@ -906,7 +934,7 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 		mcde_chnl_set_video_mode(lcd->mdd->chnl_state, &lcd->mdd->video_mode);
 		mcde_chnl_apply(lcd->mdd->chnl_state);
 		mcde_chnl_stop_flow(lcd->mdd->chnl_state);
-		
+
 		return len;
 	}
 
@@ -919,7 +947,7 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 			mcde_chnl_disable(lcd->mdd->chnl_state);
 		else
 			mcde_chnl_enable(lcd->mdd->chnl_state);
-		
+
 		return len;
 	}
 
@@ -928,7 +956,7 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 		ret = sscanf(&buf[4], "%d", &hbp);
 		if (!ret) {
 			pr_err("[s6d27a1] Invaild param\n");
-	
+
 			return -EINVAL;
 		}
 
@@ -943,7 +971,7 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 		ret = sscanf(&buf[4], "%d", &hfp);
 		if (!ret) {
 			pr_err("[s6d27a1] Invaild param\n");
-	
+
 			return -EINVAL;
 		}
 
@@ -958,7 +986,7 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 		ret = sscanf(&buf[4], "%d", &hsw);
 		if (!ret) {
 			pr_err("[s6d27a1] Invaild param\n");
-	
+
 			return -EINVAL;
 		}
 
@@ -973,7 +1001,7 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 		ret = sscanf(&buf[4], "%d", &vbp);
 		if (!ret) {
 			pr_err("[s6d27a1] Invaild param\n");
-	
+
 			return -EINVAL;
 		}
 
@@ -988,7 +1016,7 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 		ret = sscanf(&buf[4], "%d", &vfp);
 		if (!ret) {
 			pr_err("[s6d27a1] Invaild param\n");
-	
+
 			return -EINVAL;
 		}
 
@@ -1003,7 +1031,7 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 		ret = sscanf(&buf[4], "%d", &vsw);
 		if (!ret) {
 			pr_err("[s6d27a1] Invaild param\n");
-	
+
 			return -EINVAL;
 		}
 
