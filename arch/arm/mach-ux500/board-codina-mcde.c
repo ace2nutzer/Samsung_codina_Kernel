@@ -480,8 +480,8 @@ int __init init_codina_display_devices(void)
 		codina_dpi_pri_display_info.video_mode.vbp = 6;
 		codina_dpi_pri_display_info.video_mode.hsw = 6;
 		codina_dpi_pri_display_info.video_mode.hbp = 6;
-		codina_dpi_pri_display_info.video_mode.hfp = 6;
-		codina_dpi_pri_display_info.video_mode.vfp = 6;
+		codina_dpi_pri_display_info.video_mode.hfp = 5;
+		codina_dpi_pri_display_info.video_mode.vfp = 5;
 		if (is_lpm || is_recovery) {
 			codina_dpi_pri_display_info.sleep_in_delay = 200;
 			codina_dpi_pri_display_info.sleep_out_delay = 50;
