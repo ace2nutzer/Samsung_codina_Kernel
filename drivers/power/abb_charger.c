@@ -350,13 +350,10 @@ static void (*mxt224e_ts_vbus_state)(bool vbus_status);
 static unsigned int ac_curr_max = 700;
 static unsigned int usb20_curr_max = 500;
 
-module_param(ac_curr_max, uint, 0644);
-module_param(usb20_curr_max, uint, 0644);
-
 /* sysfs interfaces read-only */
-static unsigned int stable_curr = 0;
+static unsigned int charging_curr = 0;
 
-module_param(stable_curr, uint, 0444);
+module_param(charging_curr, uint, 0444);
 
 static void ab8500_charger_set_usb_connected(struct ab8500_charger *di,
 	bool connected)
@@ -736,7 +733,7 @@ static int ab8500_charger_detect_chargers(struct ab8500_charger *di)
 		di->cable_type = POWER_SUPPLY_TYPE_BATTERY;
 		di->vbus_detect_charging = false;
 		result = NO_PW_CONN ;
-		stable_curr = 0;
+		charging_curr = 0;
 		break ;
 	}
 #else
@@ -1273,11 +1270,11 @@ static int ab8500_charger_set_main_in_curr(struct ab8500_charger *di, int ich_in
 		charge_curr = di->bat->usb_chg_current;
 	}
 
-		if (min_value < charge_curr) {
-			stable_curr = min_value;
-		} else {
-			stable_curr = charge_curr;
-		}
+	if (min_value < charge_curr) {
+		charging_curr = min_value;
+	} else {
+		charging_curr = charge_curr;
+	}
 
 	input_curr_index = ab8500_main_in_curr_to_regval(min_value);
 	if (input_curr_index < 0) {
@@ -3112,6 +3109,47 @@ static int ab8500_charger_suspend(struct platform_device *pdev,
 #define ab8500_charger_resume       NULL
 #endif
 
+static ssize_t abb_current_max_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+{
+	sprintf(buf, "%sAC input current: \t%d\n", buf, ac_curr_max);
+
+	sprintf(buf, "%sUSB 2.0 input current: \t%d\n\n", buf, usb20_curr_max);
+
+	sprintf(buf, "%sCharging current: \t%d\n", buf, charging_curr);
+
+	return strlen(buf);
+}
+
+static ssize_t abb_current_max_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
+{
+	struct ab8500_charger *di = static_di;
+	int ac, usb;
+
+	if (sscanf(buf, "ac=%d", &ac)) {
+		if (ac < 100 || ac > 1500) {
+			pr_err("[ABB-Charger] Bad cmd\n");
+			return -EINVAL;
+		}
+		ac_curr_max = ac;
+
+		di->bat->ta_chg_current_input = ac_curr_max;
+	}
+
+	if (sscanf(buf, "usb=%d", &usb)) {
+		if (usb < 100 || usb > 1500) {
+			pr_err("[ABB-Charger] Bad cmd\n");
+			return -EINVAL;
+		}
+		usb20_curr_max = usb;
+
+		di->bat->usb_chg_current_input = usb20_curr_max;
+	}
+
+	return count;
+}
+
+static struct kobj_attribute abb_current_max_interface = __ATTR(curr_max, 0666, abb_current_max_show, abb_current_max_store);
+
 static ssize_t abb_charger_data_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
 	struct ab8500_charger *di = static_di;
@@ -3126,7 +3164,7 @@ static ssize_t abb_charger_data_show(struct kobject *kobj, struct kobj_attribute
 	sprintf(buf, "%s[usb_chg_current_input]\t%d\n", buf, di->bat->usb_chg_current_input);
 	sprintf(buf, "%s[usb_chg_current]\t%d\n\n", buf, di->bat->usb_chg_current);
 
-	sprintf(buf, "%s[batt_id]\t%d\n", buf, di->bat->batt_id);
+	sprintf(buf, "%s[Original Battery ?]\t[%s]\n", buf, (int) di->bat->batt_id == 1 ? "*" : " ");
 
 	return strlen(buf);
 }
@@ -3134,6 +3172,7 @@ static ssize_t abb_charger_data_show(struct kobject *kobj, struct kobj_attribute
 static struct kobj_attribute abb_charger_data_interface = __ATTR(charger_data, 0444, abb_charger_data_show, NULL);
 
 static struct attribute *abb_charger_attrs[] = {
+	&abb_current_max_interface.attr, 
 	&abb_charger_data_interface.attr, 
 	NULL,
 };
