@@ -55,7 +55,6 @@
 static bool is_charger_present = false;
 
 static unsigned int eoc_bln = 0;
-module_param_named(eoc_bln, eoc_bln, uint, 0644);
 
 extern unsigned int is_lpm;
 extern unsigned int is_recovery;
