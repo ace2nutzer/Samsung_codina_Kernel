@@ -31,6 +31,7 @@
 
 #define TORCH_FLASH_DEBUG	1
 #define TORCH_TIME_EXPIRE	1
+#define USE_WAKELOCK	1
 
 #if	TORCH_FLASH_DEBUG
 #define	torch_debug_msg(fmt, args...)	printk(KERN_INFO "[TORCH: %-18s:%5d]" fmt, __FUNCTION__, __LINE__, ## args)
@@ -44,7 +45,9 @@ struct work_struct  torch_work;
 static struct workqueue_struct *torch_wq;
 #endif
 
+#if USE_WAKELOCK
 struct wake_lock torch_wake_lock;
+#endif
 
 int Torch_Flash_mode = 0;
 
@@ -57,7 +60,7 @@ EXPORT_SYMBOL(torch_dev);
 #define FLASH_EN  140
 #define FLASH_MODE  141
 
-static ssize_t Torch_Flash_Control(struct device *dev, struct device_attribute *attr, char *buf, size_t size);
+static ssize_t Torch_Flash_Control(struct device *dev, struct device_attribute *attr, const char *buf, size_t size);
 static DEVICE_ATTR(torch_ctl, 0220, NULL, Torch_Flash_Control);
 
 void Torch_Flash_OnOff(int lux_val)
@@ -98,17 +101,19 @@ void Torch_Flash_OnOff(int lux_val)
 	}
 }
 
-void Torch_Flash_Off_by_cam()
+void Torch_Flash_Off_by_cam(void)
 {
 	torch_debug_msg("Torch_Flash_Off_by_cam\n");
 	Torch_Flash_mode = 0;
+#if USE_WAKELOCK
 	wake_unlock(&torch_wake_lock);
+#endif
 #if TORCH_TIME_EXPIRE
 	hrtimer_cancel(&torch_timer);
 #endif
 }
 
-static ssize_t Torch_Flash_Control(struct device *dev, struct device_attribute *attr, char *buf, size_t size)
+static ssize_t Torch_Flash_Control(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
 {
 	long val = simple_strtol(buf, NULL, 10);
 	
@@ -116,7 +121,9 @@ static ssize_t Torch_Flash_Control(struct device *dev, struct device_attribute *
 		torch_debug_msg("Torch_Flash_Off\n");
 		Torch_Flash_mode = 0;
 		Torch_Flash_OnOff(0);
+#if USE_WAKELOCK
 		wake_unlock(&torch_wake_lock);
+#endif
 #if TORCH_TIME_EXPIRE
 		hrtimer_cancel(&torch_timer);
 #endif
@@ -124,16 +131,18 @@ static ssize_t Torch_Flash_Control(struct device *dev, struct device_attribute *
 		torch_debug_msg("Torch_Flash is already On!!\n");
 #if TORCH_TIME_EXPIRE
 		hrtimer_start(&torch_timer, ktime_set(val, 0), HRTIMER_MODE_REL);
-		torch_debug_msg("timer set to %d\n", val);
+		torch_debug_msg("timer set to %ld\n", val);
 #endif
 	} else {
 		torch_debug_msg("Torch_Flash_On\n");
 		Torch_Flash_mode = 1;
 		Torch_Flash_OnOff(200);
+#if USE_WAKELOCK
 		wake_lock(&torch_wake_lock);
+#endif
 #if TORCH_TIME_EXPIRE
 		hrtimer_start(&torch_timer, ktime_set(val, 0), HRTIMER_MODE_REL);
-		torch_debug_msg("timer set to %d\n", val);
+		torch_debug_msg("timer set to %ld\n", val);
 #endif
 	}
 	return size;
@@ -151,17 +160,19 @@ static void time_expire_work_func(struct work_struct *work)
 	torch_debug_msg("Torch_Flash_timer_Off\n");
 	Torch_Flash_mode = 0;
 	Torch_Flash_OnOff(0);
+#if USE_WAKELOCK
 	wake_unlock(&torch_wake_lock);
+#endif
 }
 #endif
 
-static int __init torch_flash_probe(struct platform_device *pdev)
+static int __devinit torch_flash_probe(struct platform_device *pdev)
 {
-
 	torch_debug_msg("------->torch_flash_probe\n");
 
+#if USE_WAKELOCK
 	wake_lock_init(&torch_wake_lock, WAKE_LOCK_SUSPEND, "torch_wake_lock");
-
+#endif
 	gpio_request(FLASH_EN, "FLASH_EN"); /* GPIO PIN Request*/
 	gpio_request(FLASH_MODE, "FLASH_MODE"); /* GPIO PIN Request*/
 
@@ -180,17 +191,20 @@ static int __init torch_flash_probe(struct platform_device *pdev)
 
 static int torch_flash_remove(struct platform_device *pdev)
 {
+#if USE_WAKELOCK
 	wake_lock_destroy(&torch_wake_lock);
+#endif
 	destroy_workqueue(torch_wq);
 	return 0;
 }
 
-static struct platform_driver torch_flash_driver = {
-	.probe		= torch_flash_probe,
-	.remove		= torch_flash_remove,
-	.driver		= {
-		.name	= "torch-flash",
+static struct platform_driver torch_flash_driver __refdata = {
+	.driver = {
+		.name = "torch-flash",
+		.owner = THIS_MODULE,
 	},
+	.probe = torch_flash_probe,
+	.remove = torch_flash_remove
 };
 
 static int __devinit torch_flash_init(void)
@@ -198,16 +212,18 @@ static int __devinit torch_flash_init(void)
 	torch_debug_msg("------->torch_flash_init\n");
 
 	torch_class = class_create(THIS_MODULE, "torch");
+
 	if (IS_ERR(torch_class))
 		pr_err("Failed to create class(torch)!\n");
 
 	torch_dev = device_create(torch_class, NULL, 0, NULL, "torch");
+
 	if (IS_ERR(torch_dev))
 		pr_err("Failed to create device(torch)!\n");
 
 	if (device_create_file(torch_dev, &dev_attr_torch_ctl) < 0)
 		pr_err("Failed to create device file(%s)!\n", dev_attr_torch_ctl.attr.name); 
-      
+
 	return platform_driver_register(&torch_flash_driver);
 }
 

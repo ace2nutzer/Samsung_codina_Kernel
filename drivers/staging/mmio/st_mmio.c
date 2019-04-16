@@ -25,8 +25,6 @@
 #include <mach/board-sec-u8500.h> // Include STE Board Revision
 #include "st_mmio.h"
 
-#include <linux/moduleparam.h>
-
 #define ISP_REGION_IO				(0xE0000000)
 #define SIA_ISP_REG_ADDR			(0x521E4)
 #define SIA_BASE_ADDR				(0x54000)
@@ -94,16 +92,12 @@
 
 int vt_id;    // Global variable  (VT_CAM_ID) value
 int vendorID; // Global variable for 5M SOC Camera vendor ID
-int assistive_mode;
-
-/* assistive power 1 - 16 */
-static unsigned int assistive_power = 3;
-
-module_param(assistive_power, uint, 0644);
+int assistive_mode; // Global variable for Torch_mode on/off
+static unsigned int torch_brightness = 3; // Torch Flash Brightness 1 - 16
 
 #if defined (CONFIG_TORCH_FLASH)
 extern int Torch_Flash_mode;
-extern void Torch_Flash_Off_by_cam();
+extern void Torch_Flash_Off_by_cam(void);
 #endif
 
 /* Function Pointer Declaration */
@@ -1622,14 +1616,15 @@ void mmio_cam_flash_ktd262(int lux_val)
 
 static int mmio_cam_flash_on_off(struct mmio_info *info, int set, int on)
 {
+	int i = 0;
 	int lux_val = on;
 
 #if defined (CONFIG_TORCH_FLASH)
 	if (Torch_Flash_mode == 1) {
-		Torch_Flash_Off_by_cam();		
+		Torch_Flash_Off_by_cam();
 	}
 #endif
-	
+
 #if defined(CONFIG_MACH_JANICE) || defined(CONFIG_MACH_GAVINI)
 	if (lux_val == 100) {
 		gpio_set_value(FLASH_EN, 0);
@@ -2277,27 +2272,58 @@ rear_camera_type_show(struct device *dev,
 }
 
 	static ssize_t
-rear_flash_enable_store(struct device *dev,
-		struct device_attribute *attr, char *buf, size_t size)
+rear_flash_enable_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
 {
+	sprintf(buf, "%storch_lux: \t%d\n", buf, torch_brightness);
+
+	return strlen(buf);
+}
+
+	static ssize_t
+rear_flash_enable_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t size)
+{
+	unsigned int tmp = 0;
+
 	if (buf[0] == '0') {
 		assistive_mode = 0;
 		mmio_cam_flash_on_off(info, 3, 0);
 		#if defined(CONFIG_MACH_SEC_SKOMER)
 		printk(KERN_DEBUG "rear_flash_enable_store, Control Value = [0]\n");
 		#endif
+
 	} else {
+
+		if (sscanf(buf, "torch_lux=%d", &tmp)) {
+			if (tmp > 16) {
+				pr_err("[st_mmio] Bad cmd\n");
+				return -EINVAL;
+			}
+			torch_brightness = tmp;
+			udelay(1);
+			mmio_cam_flash_on_off(info, 3, (100));
+			assistive_mode = 0;
+			if (tmp == 0)
+				return size;
+			udelay(1);
+		} else if (sscanf(buf, "torch_lux_boot=%d", &tmp)) {
+			if (tmp > 16) {
+				pr_err("[st_mmio] Bad cmd\n");
+				return -EINVAL;
+			}
+			torch_brightness = tmp;
+			return size;
+		}
+
+	if (assistive_mode)
+		return size;
+
 		assistive_mode = 1;
 #if defined CONFIG_MACH_GAVINI
 		mmio_cam_flash_on_off(info, 2, (100+5));
 #else
-			if (assistive_power < 1) {
-				assistive_power = 1;
-			} else if (assistive_power > 16) {
-				assistive_power = 16;
-			}
-
-		mmio_cam_flash_on_off(info, 3, (100 + assistive_power));
+		mmio_cam_flash_on_off(info, 3, (100 + torch_brightness));
 		#if defined(CONFIG_MACH_SEC_SKOMER)
 		printk(KERN_DEBUG "rear_flash_enable_store, Control Value = [100+3]\n");
 		#endif
@@ -2315,7 +2341,7 @@ static DEVICE_ATTR(camtype, 0440, rear_camera_type_show, NULL);
 static DEVICE_ATTR(enable, 0220, NULL, rear_flash_enable_store);
 static DEVICE_ATTR(front_camtype, 0440, front_camera_type_show, NULL); // Front camera type attribute
 static DEVICE_ATTR(rear_camtype, 0440, rear_camera_type_show, NULL); // Rear camera type attribute
-static DEVICE_ATTR(rear_flash, 0220, NULL, rear_flash_enable_store);
+static DEVICE_ATTR(rear_flash, 0666, rear_flash_enable_show, rear_flash_enable_store);
 static DEVICE_ATTR(rear_vendorid, 0440, rear_vendor_id_store, NULL); // Rear camera vendor ID attribute
 
 void sec_cam_init(void)
