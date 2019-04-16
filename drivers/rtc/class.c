@@ -152,9 +152,9 @@ static int rtc_resume(struct device *dev)
 		__func__, sys_tm.tm_year+1900, sys_tm.tm_mon+1, sys_tm.tm_mday,
 		sys_tm.tm_hour, sys_tm.tm_min, sys_tm.tm_sec);
 
-	pr_info("[%s] delta.tv_sec: %d delta.tv_nsec: %d\n", __func__,
+	pr_info("[%s] delta.tv_sec: %ld delta.tv_nsec: %ld\n", __func__,
 		delta.tv_sec, delta.tv_nsec);
-	pr_info("[%s] delta_delta.tv_sec: %d delta_delta.tv_nsec: %d\n",
+	pr_info("[%s] delta_delta.tv_sec: %ld delta_delta.tv_nsec: %ld\n",
 		__func__, delta_delta.tv_sec, delta_delta.tv_nsec);
 
 	rtc_delta = delta.tv_sec;
