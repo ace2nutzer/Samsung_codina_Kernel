@@ -43,7 +43,7 @@ MODULE_PARM_DESC(dspLoadMonitorPeriod, "Period of the DSP-Load monitoring in ms"
 static unsigned int dspLoadHighThreshold = 95;
 module_param(dspLoadHighThreshold, uint, S_IWUSR|S_IRUGO);
 MODULE_PARM_DESC(dspLoadHighThreshold, "Threshold above which 100 APE OPP is requested");
-static unsigned int dspLoadLowThreshold = 42;
+static unsigned int dspLoadLowThreshold = 45;
 module_param(dspLoadLowThreshold, uint, S_IWUSR|S_IRUGO);
 MODULE_PARM_DESC(dspLoadLowThreshold, "Threshold below which 100 APE OPP request is removed");
 static bool cm_use_ftrace;

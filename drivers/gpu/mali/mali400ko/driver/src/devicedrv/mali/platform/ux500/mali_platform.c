@@ -37,8 +37,8 @@
 #include <linux/mfd/dbx500-prcmu.h>
 #endif
 
-#define MALI_LOW_TO_HIGH_LEVEL_UTILIZATION_LIMIT 50
-#define MALI_HIGH_TO_LOW_LEVEL_UTILIZATION_LIMIT 20
+#define MALI_LOW_TO_HIGH_LEVEL_UTILIZATION_LIMIT 50 /* 20% */
+#define MALI_HIGH_TO_LOW_LEVEL_UTILIZATION_LIMIT 20 /* 8% */
 
 #define MALI_UX500_VERSION		"1.0.1"
 
@@ -58,6 +58,24 @@
 
 #define MALI_CLOCK_DEFLO		449280
 #define MALI_CLOCK_DEFHI		499200
+
+#define DEF_BOOST_UP_THRESHOLD		(243) /* 95% */
+
+#define DEF_BOOST_DOWN_THRESHOLD_0		(131) /* 51% */
+#define DEF_BOOST_DOWN_THRESHOLD_1		(141) /* 55% */
+#define DEF_BOOST_DOWN_THRESHOLD_2		(151) /* 59% */
+#define DEF_BOOST_DOWN_THRESHOLD_3		(164) /* 64% */
+#define DEF_BOOST_DOWN_THRESHOLD_4		(179) /* 70% */
+#define DEF_BOOST_DOWN_THRESHOLD_5		(197) /* 77% */
+#define DEF_BOOST_DOWN_THRESHOLD_6		(218) /* 85% */
+
+#define DEF_BOOST_FREQUENCY_STEP_0		(798720)
+#define DEF_BOOST_FREQUENCY_STEP_1		(748800)
+#define DEF_BOOST_FREQUENCY_STEP_2		(698880)
+#define DEF_BOOST_FREQUENCY_STEP_3		(652800)
+#define DEF_BOOST_FREQUENCY_STEP_4		(599040)
+#define DEF_BOOST_FREQUENCY_STEP_5		(549120)
+#define DEF_BOOST_FREQUENCY_STEP_6		(499200)
 
 struct mali_dvfs_data
 {
@@ -102,8 +120,8 @@ static u32 boost_required 	= 0;
 static u32 boost_delay 		= 0;
 static u32 boost_low 		= 0;
 static u32 boost_high 		= 0;
-static u32 boost_upthreshold 	= 243; /* 95% */
-static u32 boost_downthreshold	= 133; /* 52% */
+static u32 boost_up_threshold 	= DEF_BOOST_UP_THRESHOLD;
+static u32 boost_down_threshold	= DEF_BOOST_DOWN_THRESHOLD_6;
 //mutex to protect above variables
 static DEFINE_MUTEX(mali_boost_lock);
 
@@ -316,6 +334,7 @@ void mali_utilization_function(struct work_struct *ptr)
 {
 	/*By default, platform start with 50% APE OPP and 25% DDR OPP*/
 	static u32 has_requested_low = 1;
+	static u32 dynamic_down_threshold = 0;
 
 	MALI_DEBUG_PRINT(5, ("MALI GPU utilization: %u\n", mali_last_utilization));
 
@@ -351,7 +370,7 @@ void mali_utilization_function(struct work_struct *ptr)
 
 	if (!has_requested_low && boost_enable) {
 		// consider boost only if we are in APE_100_OPP mode
-		if (!boost_required && mali_last_utilization > boost_upthreshold) {
+		if (!boost_required && mali_last_utilization > boost_up_threshold) {
 			boost_required = true;
 			if (!boost_scheduled) {
 				//schedule job to turn boost on
@@ -362,14 +381,39 @@ void mali_utilization_function(struct work_struct *ptr)
 				boost_scheduled = false;
 				cancel_delayed_work(&mali_boost_delayedwork);
 			}
-		} else if (boost_required && !boost_working && mali_last_utilization < boost_downthreshold) {
+
+		/* Get dynamic boost_down_threshold */
+		if (boost_high >= DEF_BOOST_FREQUENCY_STEP_0)
+			dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_0;
+
+		else if (boost_high == DEF_BOOST_FREQUENCY_STEP_1)
+			dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_1;
+
+		else if (boost_high == DEF_BOOST_FREQUENCY_STEP_2)
+			dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_2;
+
+		else if (boost_high == DEF_BOOST_FREQUENCY_STEP_3)
+			dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_3;
+
+		else if (boost_high == DEF_BOOST_FREQUENCY_STEP_4)
+			dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_4;
+
+		else if (boost_high == DEF_BOOST_FREQUENCY_STEP_5)
+			dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_5;
+
+		else if (boost_high == DEF_BOOST_FREQUENCY_STEP_6)
+			dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_6;
+
+		boost_down_threshold = dynamic_down_threshold;
+
+		} else if (boost_required && !boost_working && mali_last_utilization < boost_down_threshold) {
 			boost_required = false;
 			if (boost_scheduled) {
 				//if it's not working yet, but is scheduled to be turned on, than cancel scheduled job
 				cancel_delayed_work(&mali_boost_delayedwork);
 				boost_scheduled = false;
 			}
-		} else if (boost_working && mali_last_utilization < boost_downthreshold) {
+		} else if (boost_working && mali_last_utilization < boost_down_threshold) {
 			boost_required = false;
 			if (!boost_scheduled) {
 				// if boost is on and isn't yet scheduled to be turned off then schedule it
@@ -564,7 +608,7 @@ ATTR_RW(mali_boost_delay);
 
 static ssize_t mali_boost_low_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	sprintf(buf, "%sDOWNthreshold: %u\n", buf, boost_downthreshold);
+	sprintf(buf, "%sDOWN_threshold: %u\n", buf, boost_down_threshold);
 	sprintf(buf, "%sDVFS idx: %u\n", buf, boost_low);
 	sprintf(buf, "%sfrequency: %u kHz\n", buf, mali_dvfs[boost_low].freq);
 	sprintf(buf, "%sVape: %u uV\n", buf, vape_voltage(mali_dvfs[boost_low].vape_raw));
@@ -589,7 +633,7 @@ static ssize_t mali_boost_low_store(struct kobject *kobj, struct kobj_attribute 
 	}
 
 	if (sscanf(buf, "threshold=%u", &val)) {
-		boost_downthreshold = val;
+		boost_down_threshold = val;
 
 		return count;
 	}
@@ -614,7 +658,7 @@ ATTR_RW(mali_boost_low);
 
 static ssize_t mali_boost_high_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	sprintf(buf, "%sUPthreshold: %u\n", buf, boost_upthreshold);
+	sprintf(buf, "%sUP_threshold: %u\n", buf, boost_up_threshold);
 	sprintf(buf, "%sDVFS idx: %u\n", buf, boost_high);
 	sprintf(buf, "%sfrequency: %u kHz\n", buf, mali_dvfs[boost_high].freq);
 	sprintf(buf, "%sVape: %u uV\n", buf, vape_voltage(mali_dvfs[boost_high].vape_raw));
@@ -637,7 +681,7 @@ static ssize_t mali_boost_high_store(struct kobject *kobj, struct kobj_attribute
 	}
 
 	if (sscanf(buf, "threshold=%u", &val)) {
-		boost_upthreshold = val;
+		boost_up_threshold = val;
 
 		return count;
 	}
