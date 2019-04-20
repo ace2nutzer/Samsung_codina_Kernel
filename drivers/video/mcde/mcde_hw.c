@@ -1233,7 +1233,7 @@ struct lcdclk_prop
 	unsigned int clk;
 };
 
-/* LCD Freqs in () are valid for PLLDDR_FREQ 1000 */
+/* LCD Freqs in (...) are valid for PLLDDR_FREQ 1000 */
 
 // WS2401
 static struct lcdclk_prop lcdclk_prop[] = {
@@ -1295,7 +1295,7 @@ static struct lcdclk_prop lcdclk_s6d_prop[] = {
 		},
 };
 
-static unsigned int lcdclk_usr = 4;
+static unsigned int lcdclk_usr = 1;
 static unsigned int lcdclk_s6d_usr = 2;
 static unsigned int custom_lcdclk = 0;
 
