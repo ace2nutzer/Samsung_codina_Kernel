@@ -61,7 +61,7 @@ static unsigned int min_sampling_rate;
 
 #define LATENCY_MULTIPLIER			(1000)
 #define MIN_LATENCY_MULTIPLIER			(100)
-#define DEF_SAMPLING_DOWN_FACTOR		(10)
+#define DEF_SAMPLING_DOWN_FACTOR		(1)
 #define MAX_SAMPLING_DOWN_FACTOR		(10)
 #define TRANSITION_LATENCY_LIMIT		(10 * 1000 * 1000)
 
@@ -105,7 +105,7 @@ static struct dbs_tuners {
 	.down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD_1,
 	.sampling_down_factor = DEF_SAMPLING_DOWN_FACTOR,
 	.ignore_nice = 0,
-	.freq_step = 4,
+	.freq_step = 3,
 };
 
 static inline cputime64_t get_cpu_idle_time_jiffy(unsigned int cpu,
