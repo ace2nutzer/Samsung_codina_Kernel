@@ -1299,7 +1299,7 @@ static unsigned int lcdclk_usr = 1;
 static unsigned int lcdclk_s6d_usr = 2;
 static unsigned int custom_lcdclk = 0;
 
-static void lcdclk_thread(struct work_struct *ws2401_lcdclk_work)
+static void lcdclk_thread(struct work_struct *lcdclk_work)
 {
 
 int ret = 0;
