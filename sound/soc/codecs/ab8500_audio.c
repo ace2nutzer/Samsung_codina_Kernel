@@ -4490,7 +4490,7 @@ static int ab850x_codec_set_dai_tdm_slot(struct snd_soc_dai *dai,
 
 	mask = REG_DASLOTCONFX_SLTODAX_MASK;
 	slots_active = hweight32(tx_mask);
-	pr_debug("%s: Slots: (%d), TX: (%d)\n", __func__, slots_active, tx_mask);
+	pr_debug("%s: Slots: (%d), TX: (%lu)\n", __func__, slots_active, tx_mask);
 	switch (slots_active) {
 	case 0:
 		break;

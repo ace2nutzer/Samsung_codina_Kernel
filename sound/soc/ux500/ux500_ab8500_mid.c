@@ -26,7 +26,7 @@ static int mute_IC_enable_control_get(struct snd_kcontrol *kcontrol,
 static int mute_IC_enable_control_put(struct snd_kcontrol *kcontrol,
 	struct snd_ctl_elem_value *ucontrol)
 {
-	pr_info ("[MID]MUTE IC Control=%d\n", ucontrol->value.integer.value[0]);
+	pr_info ("[MID]MUTE IC Control=%ld\n", ucontrol->value.integer.value[0]);
 
 	if (ucontrol->value.integer.value[0] == 1)
 		gpio_set_value(MUTE_IC, 1);
