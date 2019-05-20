@@ -31,8 +31,10 @@
 
 #define DEF_FREQUENCY_UP_THRESHOLD		(95)
 
+#define DEF_FREQUENCY_UP_THRESHOLD_1		(80) /* tunable */
+
 #define DEF_FREQUENCY_DOWN_THRESHOLD_1		(45)
-#define DEF_FREQUENCY_DOWN_THRESHOLD_2		(62)
+#define DEF_FREQUENCY_DOWN_THRESHOLD_2		(47) /* tunable */
 #define DEF_FREQUENCY_DOWN_THRESHOLD_3		(70)
 #define DEF_FREQUENCY_DOWN_THRESHOLD_4		(75)
 #define DEF_FREQUENCY_DOWN_THRESHOLD_5		(86)
@@ -97,12 +99,16 @@ static struct dbs_tuners {
 	unsigned int sampling_rate;
 	unsigned int sampling_down_factor;
 	unsigned int up_threshold;
+	unsigned int up_threshold_1;
 	unsigned int down_threshold;
+	unsigned int down_threshold_2;
 	unsigned int ignore_nice;
 	unsigned int freq_step;
 } dbs_tuners_ins = {
 	.up_threshold = DEF_FREQUENCY_UP_THRESHOLD,
+	.up_threshold_1 = DEF_FREQUENCY_UP_THRESHOLD_1,
 	.down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD_1,
+	.down_threshold_2 = DEF_FREQUENCY_DOWN_THRESHOLD_2,
 	.sampling_down_factor = DEF_SAMPLING_DOWN_FACTOR,
 	.ignore_nice = 0,
 	.freq_step = 3,
@@ -193,8 +199,8 @@ static ssize_t show_##file_name						\
 }
 show_one(sampling_rate, sampling_rate);
 show_one(sampling_down_factor, sampling_down_factor);
-show_one(up_threshold, up_threshold);
-show_one(down_threshold, down_threshold);
+show_one(up_threshold, up_threshold_1);
+show_one(down_threshold, down_threshold_2);
 show_one(ignore_nice_load, ignore_nice);
 show_one(freq_step, freq_step);
 
@@ -224,6 +230,37 @@ static ssize_t store_sampling_rate(struct kobject *a, struct attribute *b,
 		return -EINVAL;
 
 	dbs_tuners_ins.sampling_rate = max(input, min_sampling_rate);
+	return count;
+}
+
+static ssize_t store_up_threshold(struct kobject *a, struct attribute *b,
+				  const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+	ret = sscanf(buf, "%u", &input);
+
+	if (ret != 1 || input > 100 ||
+			input <= dbs_tuners_ins.down_threshold_2)
+		return -EINVAL;
+
+	dbs_tuners_ins.up_threshold_1 = input;
+	return count;
+}
+
+static ssize_t store_down_threshold(struct kobject *a, struct attribute *b,
+				    const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+	ret = sscanf(buf, "%u", &input);
+
+	/* cannot be lower than 1 otherwise freq will not fall */
+	if (ret != 1 || input < 1 || input > 100 ||
+			input >= dbs_tuners_ins.up_threshold_1)
+		return -EINVAL;
+
+	dbs_tuners_ins.down_threshold_2 = input;
 	return count;
 }
 
@@ -280,8 +317,8 @@ static ssize_t store_freq_step(struct kobject *a, struct attribute *b,
 
 define_one_global_rw(sampling_rate);
 define_one_global_rw(sampling_down_factor);
-define_one_global_ro(up_threshold);
-define_one_global_ro(down_threshold);
+define_one_global_rw(up_threshold);
+define_one_global_rw(down_threshold);
 define_one_global_rw(ignore_nice_load);
 define_one_global_rw(freq_step);
 
@@ -378,6 +415,12 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	if (dbs_tuners_ins.freq_step == 0)
 		return;
 
+	/* Get up_threshold */
+	if (policy->cur == DEF_FREQUENCY_STEP_1)
+		dbs_tuners_ins.up_threshold = dbs_tuners_ins.up_threshold_1;
+	else
+		dbs_tuners_ins.up_threshold = DEF_FREQUENCY_UP_THRESHOLD;
+
 	/* Check for frequency increase */
 	if (max_load > dbs_tuners_ins.up_threshold) {
 		this_dbs_info->down_skip = 0;
@@ -406,7 +449,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 		dynamic_down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD_1;
 
 	else if (policy->cur == DEF_FREQUENCY_STEP_2)
-		dynamic_down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD_2;
+		dynamic_down_threshold = dbs_tuners_ins.down_threshold_2;
 
 	else if (policy->cur == DEF_FREQUENCY_STEP_3)
 		dynamic_down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD_3;
