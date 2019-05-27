@@ -68,9 +68,10 @@ static DEFINE_PER_CPU(int, cpufreq_policy_cpu);
 static DEFINE_PER_CPU(struct rw_semaphore, cpu_policy_rwsem);
 
 /* suspend max cpu freq tunable */
+#ifdef CONFIG_CPU_FREQ_SUSPEND_LIMIT
 unsigned int suspend_max_freq = 0;
-
 module_param(suspend_max_freq, uint, 0644);
+#endif
 
 #define lock_policy_rwsem(mode, cpu)					\
 static int lock_policy_rwsem_##mode					\
