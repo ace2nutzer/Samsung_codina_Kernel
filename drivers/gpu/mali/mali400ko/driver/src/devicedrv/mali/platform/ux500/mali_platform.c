@@ -383,28 +383,28 @@ void mali_utilization_function(struct work_struct *ptr)
 			}
 
 		/* Get dynamic boost_down_threshold */
-		if (boost_high >= DEF_BOOST_FREQUENCY_STEP_0)
-			dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_0;
+	if (mali_dvfs[boost_high].freq >= DEF_BOOST_FREQUENCY_STEP_0)
+		dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_0;
 
-		else if (boost_high == DEF_BOOST_FREQUENCY_STEP_1)
-			dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_1;
+	else if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_1)
+		dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_1;
 
-		else if (boost_high == DEF_BOOST_FREQUENCY_STEP_2)
-			dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_2;
+	else if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_2)
+		dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_2;
 
-		else if (boost_high == DEF_BOOST_FREQUENCY_STEP_3)
-			dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_3;
+	else if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_3)
+		dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_3;
 
-		else if (boost_high == DEF_BOOST_FREQUENCY_STEP_4)
-			dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_4;
+	else if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_4)
+		dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_4;
 
-		else if (boost_high == DEF_BOOST_FREQUENCY_STEP_5)
-			dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_5;
+	else if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_5)
+		dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_5;
 
-		else if (boost_high == DEF_BOOST_FREQUENCY_STEP_6)
-			dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_6;
+	else if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_6)
+		dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_6;
 
-		boost_down_threshold = dynamic_down_threshold;
+	boost_down_threshold = dynamic_down_threshold;
 
 		} else if (boost_required && !boost_working && mali_last_utilization < boost_down_threshold) {
 			boost_required = false;
@@ -631,13 +631,13 @@ static ssize_t mali_boost_low_store(struct kobject *kobj, struct kobj_attribute 
 
 		return count;
 	}
-
+/*
 	if (sscanf(buf, "threshold=%u", &val)) {
 		boost_down_threshold = val;
 
 		return count;
 	}
-
+*/
 	if (sscanf(buf, "%u", &val)) {
 		for (i = 0; i < ARRAY_SIZE(mali_dvfs); i++) {
 			if (mali_dvfs[i].freq == val) {
@@ -679,13 +679,13 @@ static ssize_t mali_boost_high_store(struct kobject *kobj, struct kobj_attribute
 
 		return count;
 	}
-
+/*
 	if (sscanf(buf, "threshold=%u", &val)) {
 		boost_up_threshold = val;
 
 		return count;
 	}
-
+*/
 	if (sscanf(buf, "%u", &val)) {
 		for (i = 0; i < ARRAY_SIZE(mali_dvfs); i++) {
 			if (mali_dvfs[i].freq == val) {

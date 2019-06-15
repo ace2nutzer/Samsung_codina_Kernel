@@ -37,7 +37,7 @@ __iomem void *prcmu_tcdm_base = NULL;
 #define FULL_OPP 100
 #define HALF_OPP 50
 static unsigned long running_dsp = 0;
-static unsigned int dspLoadMonitorPeriod = 1000;
+static unsigned int dspLoadMonitorPeriod = 67;
 module_param(dspLoadMonitorPeriod, uint, S_IWUSR|S_IRUGO);
 MODULE_PARM_DESC(dspLoadMonitorPeriod, "Period of the DSP-Load monitoring in ms");
 static unsigned int dspLoadHighThreshold = 95;
