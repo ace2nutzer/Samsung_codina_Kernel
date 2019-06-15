@@ -91,6 +91,7 @@
 */
 
 static unsigned int ape_opp = PRCMU_QOS_HALF_VALUE;
+static unsigned int ddr_opp = PRCMU_QOS_HALF_VALUE;
 
 struct s6d27a1_dpi {
 	struct device				*dev;
@@ -351,7 +352,7 @@ error:
 
 static void s6d27a1_request_opp(struct s6d27a1_dpi *lcd)
 {
-	if ((!lcd->opp_is_requested) && (lcd->pd->min_ddr_opp > 0)) {
+	if (!lcd->opp_is_requested) {
 
 		if (prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
 						LCD_DRIVER_NAME_S6D27A1,
@@ -362,13 +363,13 @@ static void s6d27a1_request_opp(struct s6d27a1_dpi *lcd)
 
 		if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
 						LCD_DRIVER_NAME_S6D27A1,
-						lcd->pd->min_ddr_opp)) {
+						ddr_opp)) {
 			dev_err(lcd->dev, "add DDR OPP %d failed\n",
-				lcd->pd->min_ddr_opp);
+						ddr_opp);
 		}
 
 		dev_dbg(lcd->dev, "APE OPP requested at %d%%\n",ape_opp);
-		dev_dbg(lcd->dev, "DDR OPP requested at %d%%\n",lcd->pd->min_ddr_opp);
+		dev_dbg(lcd->dev, "DDR OPP requested at %d%%\n",ddr_opp);
 		lcd->opp_is_requested = true;
 	}
 }
@@ -382,7 +383,15 @@ static void s6d27a1_update_opp(struct s6d27a1_dpi *lcd)
 						ape_opp);
 	}
 
+	if (prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
+				LCD_DRIVER_NAME_S6D27A1,
+				ddr_opp)) {
+		dev_err(lcd->dev, "update user DDR OPP %d failed\n",
+						ddr_opp);
+	}
+
 		dev_warn(lcd->dev, "APE OPP requested by user at %d%%\n",ape_opp);
+		dev_warn(lcd->dev, "DDR OPP requested by user at %d%%\n",ddr_opp);
 }
 
 static void s6d27a1_release_opp(struct s6d27a1_dpi *lcd)
@@ -871,8 +880,9 @@ static ssize_t s6d27a1_sysfs_show_mcde_chnl(struct device *dev,
 	sprintf(buf, "%shsw: %d\n", buf, lcd->mdd->video_mode.hsw);
 	sprintf(buf, "%svbp: %d\n", buf, lcd->mdd->video_mode.vbp);
 	sprintf(buf, "%svfp: %d\n", buf, lcd->mdd->video_mode.vfp);
-	sprintf(buf, "%svsw: %d\n", buf, lcd->mdd->video_mode.vsw);
+	sprintf(buf, "%svsw: %d\n\n", buf, lcd->mdd->video_mode.vsw);
 	sprintf(buf, "%sape_opp: %d\n", buf, ape_opp);
+	sprintf(buf, "%sddr_opp: %d\n", buf, ddr_opp);
 
 	return strlen(buf);
 }
@@ -899,6 +909,19 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 		}
 
 		ape_opp = tmp;
+		s6d27a1_update_opp(lcd);
+
+		return len;
+	}
+
+	if (sscanf(buf, "ddropp=%d", &tmp)) {
+
+		if (tmp < 25 || tmp > 100) {
+			pr_warning("[s6d27a1] Invaild input\n");
+			return -EINVAL;
+		}
+
+		ddr_opp = tmp;
 		s6d27a1_update_opp(lcd);
 
 		return len;
