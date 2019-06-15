@@ -1286,7 +1286,7 @@ static struct lcdclk_prop lcdclk_s6d_prop[] = {
 			.clk = 44373333,
 		},
 		[6] = {
-			.name = "(45) MHz",
+			.name = "44(45) MHz",
 			.clk = 45381818,
 		},
 		[7] = {
@@ -1295,8 +1295,8 @@ static struct lcdclk_prop lcdclk_s6d_prop[] = {
 		},
 };
 
-static unsigned int lcdclk_usr = 1;
-static unsigned int lcdclk_s6d_usr = 2;
+static unsigned int lcdclk_usr = 4;
+static unsigned int lcdclk_s6d_usr = 6;
 static unsigned int custom_lcdclk = 0;
 
 static void lcdclk_thread(struct work_struct *lcdclk_work)

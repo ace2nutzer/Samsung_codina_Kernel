@@ -42,7 +42,7 @@
  * 30720000	[S6D27A1]
  * 49920000	[WS2401]
  */
-#define PRCMU_DPI_CLK_SHARP_FREQ	33280000		/* s6d27a1 */
+#define PRCMU_DPI_CLK_SHARP_FREQ	31200000		/* s6d27a1 */
 #define PRCMU_DPI_CLK_SMD_FREQ		49920000		/* ws2401 */
 
 enum {
@@ -92,13 +92,13 @@ static struct mcde_port port0 = {
 	.phy = {
 		.dpi = {
 			.tv_mode = false,
-			.clock_div = 2,
+			.clock_div = 1,
 			.polarity =
 				DPI_ACT_LOW_VSYNC |
 				DPI_ACT_LOW_HSYNC |
 				/* DPI_ACT_LOW_DATA_ENABLE | */
 				DPI_ACT_ON_FALLING_EDGE,
-			.lcd_freq = PRCMU_DPI_CLK_SMD_FREQ
+			.lcd_freq = PRCMU_DPI_CLK_SHARP_FREQ
 		},
 	},
 };
@@ -146,8 +146,6 @@ struct ssg_dpi_display_platform_data codina_dpi_pri_display_info = {
 	.reset_delay = 10,
 	.display_off_delay = 25,
 
-	.min_ddr_opp		= 50,
-
 	.video_mode.xres	= 480,
 	.video_mode.yres	= 800,
 	.video_mode.interlaced	= false,
@@ -157,7 +155,7 @@ struct ssg_dpi_display_platform_data codina_dpi_pri_display_info = {
 	 * setup elsewhere. But the pixclock value is visible in user
 	 * space.
 	 */
-	.video_mode.pixclock = (int)(1e+12 * (1.0 / PRCMU_DPI_CLK_SMD_FREQ)),
+	.video_mode.pixclock = (int)(1e+12 * (1.0 / PRCMU_DPI_CLK_SHARP_FREQ)),
 
 	.reset		= pri_display_reset,
 	.lcd_pwr_setup = pri_lcd_pwr_setup,	
@@ -464,12 +462,12 @@ int __init init_codina_display_devices(void)
 
 	if (lcd_type == LCD_PANEL_TYPE_SMD) {
 		generic_display0.name = LCD_DRIVER_NAME_WS2401;
-		codina_dpi_pri_display_info.video_mode.vsw = 8;
-		codina_dpi_pri_display_info.video_mode.vbp = 8;
-		codina_dpi_pri_display_info.video_mode.hsw = 8;
 		codina_dpi_pri_display_info.video_mode.hbp = 8;
 		codina_dpi_pri_display_info.video_mode.hfp = 8;
+		codina_dpi_pri_display_info.video_mode.hsw = 8;
+		codina_dpi_pri_display_info.video_mode.vbp = 8;
 		codina_dpi_pri_display_info.video_mode.vfp = 8;
+		codina_dpi_pri_display_info.video_mode.vsw = 8;
 		codina_dpi_pri_display_info.sleep_in_delay = 50;
 		codina_dpi_pri_display_info.sleep_out_delay = 100;
 		if (is_recovery) {
@@ -484,12 +482,12 @@ int __init init_codina_display_devices(void)
 	} else {
 
 		generic_display0.name = LCD_DRIVER_NAME_S6D27A1;
-		codina_dpi_pri_display_info.video_mode.vsw = 6;
-		codina_dpi_pri_display_info.video_mode.vbp = 6;
-		codina_dpi_pri_display_info.video_mode.hsw = 6;
-		codina_dpi_pri_display_info.video_mode.hbp = 6;
-		codina_dpi_pri_display_info.video_mode.hfp = 4;
-		codina_dpi_pri_display_info.video_mode.vfp = 4;
+		codina_dpi_pri_display_info.video_mode.hbp = 50;
+		codina_dpi_pri_display_info.video_mode.hfp = 50;
+		codina_dpi_pri_display_info.video_mode.hsw = 2;
+		codina_dpi_pri_display_info.video_mode.vbp = 10;
+		codina_dpi_pri_display_info.video_mode.vfp = 10;
+		codina_dpi_pri_display_info.video_mode.vsw = 2;
 		codina_dpi_pri_display_info.sleep_in_delay = 50;
 		codina_dpi_pri_display_info.sleep_out_delay = 200;
 		if (is_recovery) {
