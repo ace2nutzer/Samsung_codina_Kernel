@@ -177,9 +177,6 @@ static unsigned long ksm_pages_shared;
 /* The number of page slots additionally sharing those nodes */
 static unsigned long ksm_pages_sharing;
 
-/* Sharing in MB */
-static unsigned long ksm_sharing_in_mb;
-
 /* The number of nodes in the unstable tree */
 static unsigned long ksm_pages_unshared;
 
@@ -187,7 +184,7 @@ static unsigned long ksm_pages_unshared;
 static unsigned long ksm_rmap_items;
 
 /* Number of pages ksmd should scan in one batch for first full scan */
-static unsigned int ksm_thread_pages_to_scan = 2000;
+static unsigned int ksm_thread_pages_to_scan = 1500;
 
 /* Number of pages ksmd should scan in one batch after full scan */
 static unsigned int ksm_thread_pages_to_scan_after_full_scan = 100;
