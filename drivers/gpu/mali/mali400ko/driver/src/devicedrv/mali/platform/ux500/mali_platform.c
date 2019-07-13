@@ -38,7 +38,7 @@
 #endif
 
 #define MALI_LOW_TO_HIGH_LEVEL_UTILIZATION_LIMIT 50 /* 20% */
-#define MALI_HIGH_TO_LOW_LEVEL_UTILIZATION_LIMIT 20 /* 8% */
+#define MALI_HIGH_TO_LOW_LEVEL_UTILIZATION_LIMIT 15 /* 6% */
 
 #define MALI_UX500_VERSION		"1.0.1"
 
@@ -59,15 +59,15 @@
 #define MALI_CLOCK_DEFLO		449280
 #define MALI_CLOCK_DEFHI		499200
 
-#define DEF_BOOST_UP_THRESHOLD		(243) /* 95% */
+#define DEF_BOOST_UP_THRESHOLD		(179) /* 70% */
 
-#define DEF_BOOST_DOWN_THRESHOLD_0		(131) /* 51% */
-#define DEF_BOOST_DOWN_THRESHOLD_1		(141) /* 55% */
-#define DEF_BOOST_DOWN_THRESHOLD_2		(151) /* 59% */
-#define DEF_BOOST_DOWN_THRESHOLD_3		(164) /* 64% */
-#define DEF_BOOST_DOWN_THRESHOLD_4		(179) /* 70% */
-#define DEF_BOOST_DOWN_THRESHOLD_5		(197) /* 77% */
-#define DEF_BOOST_DOWN_THRESHOLD_6		(218) /* 85% */
+#define DEF_BOOST_DOWN_THRESHOLD_0		(74) /* 29% */
+#define DEF_BOOST_DOWN_THRESHOLD_1		(82) /* 32% */
+#define DEF_BOOST_DOWN_THRESHOLD_2		(90) /* 35% */
+#define DEF_BOOST_DOWN_THRESHOLD_3		(97) /* 38% */
+#define DEF_BOOST_DOWN_THRESHOLD_4		(108) /* 42% */
+#define DEF_BOOST_DOWN_THRESHOLD_5		(120) /* 47% */
+#define DEF_BOOST_DOWN_THRESHOLD_6		(136) /* 53% */
 
 #define DEF_BOOST_FREQUENCY_STEP_0		(798720)
 #define DEF_BOOST_FREQUENCY_STEP_1		(748800)
@@ -334,7 +334,6 @@ void mali_utilization_function(struct work_struct *ptr)
 {
 	/*By default, platform start with 50% APE OPP and 25% DDR OPP*/
 	static u32 has_requested_low = 1;
-	static u32 dynamic_down_threshold = 0;
 
 	MALI_DEBUG_PRINT(5, ("MALI GPU utilization: %u\n", mali_last_utilization));
 
@@ -383,28 +382,33 @@ void mali_utilization_function(struct work_struct *ptr)
 			}
 
 		/* Get dynamic boost_down_threshold */
-	if (mali_dvfs[boost_high].freq >= DEF_BOOST_FREQUENCY_STEP_0)
-		dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_0;
+		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_0) {
+			boost_down_threshold = DEF_BOOST_DOWN_THRESHOLD_0;
+		}
 
-	else if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_1)
-		dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_1;
+		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_1) {
+			boost_down_threshold = DEF_BOOST_DOWN_THRESHOLD_1;
+		}
 
-	else if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_2)
-		dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_2;
+		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_2) {
+			boost_down_threshold = DEF_BOOST_DOWN_THRESHOLD_2;
+		}
 
-	else if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_3)
-		dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_3;
+		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_3) {
+			boost_down_threshold = DEF_BOOST_DOWN_THRESHOLD_3;
+		}
 
-	else if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_4)
-		dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_4;
+		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_4) {
+			boost_down_threshold = DEF_BOOST_DOWN_THRESHOLD_4;
+		}
 
-	else if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_5)
-		dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_5;
+		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_5) {
+			boost_down_threshold = DEF_BOOST_DOWN_THRESHOLD_5;
+		}
 
-	else if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_6)
-		dynamic_down_threshold = DEF_BOOST_DOWN_THRESHOLD_6;
-
-	boost_down_threshold = dynamic_down_threshold;
+		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_6) {
+			boost_down_threshold = DEF_BOOST_DOWN_THRESHOLD_6;
+		}
 
 		} else if (boost_required && !boost_working && mali_last_utilization < boost_down_threshold) {
 			boost_required = false;
@@ -608,7 +612,7 @@ ATTR_RW(mali_boost_delay);
 
 static ssize_t mali_boost_low_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	sprintf(buf, "%sDOWN_threshold: %u\n", buf, boost_down_threshold);
+	sprintf(buf, "%sDynamic_DOWN_threshold: %u\n", buf, boost_down_threshold);
 	sprintf(buf, "%sDVFS idx: %u\n", buf, boost_low);
 	sprintf(buf, "%sfrequency: %u kHz\n", buf, mali_dvfs[boost_low].freq);
 	sprintf(buf, "%sVape: %u uV\n", buf, vape_voltage(mali_dvfs[boost_low].vape_raw));
@@ -658,7 +662,7 @@ ATTR_RW(mali_boost_low);
 
 static ssize_t mali_boost_high_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	sprintf(buf, "%sUP_threshold: %u\n", buf, boost_up_threshold);
+	sprintf(buf, "%sStatic_UP_threshold: %u\n", buf, boost_up_threshold);
 	sprintf(buf, "%sDVFS idx: %u\n", buf, boost_high);
 	sprintf(buf, "%sfrequency: %u kHz\n", buf, mali_dvfs[boost_high].freq);
 	sprintf(buf, "%sVape: %u uV\n", buf, vape_voltage(mali_dvfs[boost_high].vape_raw));
