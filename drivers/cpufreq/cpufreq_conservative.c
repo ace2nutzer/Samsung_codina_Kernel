@@ -29,23 +29,25 @@
  * It helps to keep variable names smaller, simpler
  */
 
-#define DEF_FREQUENCY_UP_THRESHOLD		(95)
+#define DEF_FREQUENCY_UP_THRESHOLD		(70)
 
-#define DEF_FREQUENCY_UP_THRESHOLD_1		(70) /* tunable */
+#define DEF_FREQUENCY_DOWN_THRESHOLD_1		(25)
+#define DEF_FREQUENCY_DOWN_THRESHOLD_2		(37)
+#define DEF_FREQUENCY_DOWN_THRESHOLD_3		(42)
+#define DEF_FREQUENCY_DOWN_THRESHOLD_4		(46)
+#define DEF_FREQUENCY_DOWN_THRESHOLD_5		(54)
+#define DEF_FREQUENCY_DOWN_THRESHOLD_6		(57)
 
-#define DEF_FREQUENCY_DOWN_THRESHOLD_1		(45)
-#define DEF_FREQUENCY_DOWN_THRESHOLD_2		(37) /* tunable */
-#define DEF_FREQUENCY_DOWN_THRESHOLD_3		(70)
-#define DEF_FREQUENCY_DOWN_THRESHOLD_4		(75)
-#define DEF_FREQUENCY_DOWN_THRESHOLD_5		(86)
-#define DEF_FREQUENCY_DOWN_THRESHOLD_6		(91)
-
+#define DEF_FREQUENCY_STEP_0		(200000)
 #define DEF_FREQUENCY_STEP_1		(400000)
 #define DEF_FREQUENCY_STEP_2		(600000)
 #define DEF_FREQUENCY_STEP_3		(800000)
 #define DEF_FREQUENCY_STEP_4		(1000000)
 #define DEF_FREQUENCY_STEP_5		(1100000)
 #define DEF_FREQUENCY_STEP_6		(1150000)
+#define DEF_FREQUENCY_STEP_7		(1200000)
+#define DEF_FREQUENCY_STEP_8		(1250000)
+#define DEF_FREQUENCY_STEP_9		(1300000)
 
 /*
  * The polling frequency of this governor depends on the capability of
@@ -66,6 +68,7 @@ static unsigned int min_sampling_rate;
 #define DEF_SAMPLING_DOWN_FACTOR		(1)
 #define MAX_SAMPLING_DOWN_FACTOR		(10)
 #define TRANSITION_LATENCY_LIMIT		(10 * 1000 * 1000)
+#define DEF_FREQUENCY_MIN_SAMPLE_RATE		(100000)
 
 static void do_dbs_timer(struct work_struct *work);
 
@@ -99,16 +102,12 @@ static struct dbs_tuners {
 	unsigned int sampling_rate;
 	unsigned int sampling_down_factor;
 	unsigned int up_threshold;
-	unsigned int up_threshold_1;
 	unsigned int down_threshold;
-	unsigned int down_threshold_2;
 	unsigned int ignore_nice;
 	unsigned int freq_step;
 } dbs_tuners_ins = {
 	.up_threshold = DEF_FREQUENCY_UP_THRESHOLD,
-	.up_threshold_1 = DEF_FREQUENCY_UP_THRESHOLD_1,
 	.down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD_1,
-	.down_threshold_2 = DEF_FREQUENCY_DOWN_THRESHOLD_2,
 	.sampling_down_factor = DEF_SAMPLING_DOWN_FACTOR,
 	.ignore_nice = 0,
 	.freq_step = 3,
@@ -199,8 +198,8 @@ static ssize_t show_##file_name						\
 }
 show_one(sampling_rate, sampling_rate);
 show_one(sampling_down_factor, sampling_down_factor);
-show_one(up_threshold, up_threshold_1);
-show_one(down_threshold, down_threshold_2);
+show_one(static_up_threshold, up_threshold);
+show_one(dynamic_down_threshold, down_threshold);
 show_one(ignore_nice_load, ignore_nice);
 show_one(freq_step, freq_step);
 
@@ -232,7 +231,7 @@ static ssize_t store_sampling_rate(struct kobject *a, struct attribute *b,
 	dbs_tuners_ins.sampling_rate = max(input, min_sampling_rate);
 	return count;
 }
-
+/*
 static ssize_t store_up_threshold(struct kobject *a, struct attribute *b,
 				  const char *buf, size_t count)
 {
@@ -241,10 +240,10 @@ static ssize_t store_up_threshold(struct kobject *a, struct attribute *b,
 	ret = sscanf(buf, "%u", &input);
 
 	if (ret != 1 || input > 100 ||
-			input <= dbs_tuners_ins.down_threshold_2)
+			input <= dbs_tuners_ins.down_threshold)
 		return -EINVAL;
 
-	dbs_tuners_ins.up_threshold_1 = input;
+	dbs_tuners_ins.up_threshold = input;
 	return count;
 }
 
@@ -255,15 +254,15 @@ static ssize_t store_down_threshold(struct kobject *a, struct attribute *b,
 	int ret;
 	ret = sscanf(buf, "%u", &input);
 
-	/* cannot be lower than 1 otherwise freq will not fall */
+	// cannot be lower than 1 otherwise freq will not fall
 	if (ret != 1 || input < 1 || input > 100 ||
-			input >= dbs_tuners_ins.up_threshold_1)
+			input >= dbs_tuners_ins.up_threshold)
 		return -EINVAL;
 
-	dbs_tuners_ins.down_threshold_2 = input;
+	dbs_tuners_ins.down_threshold = input;
 	return count;
 }
-
+*/
 static ssize_t store_ignore_nice_load(struct kobject *a, struct attribute *b,
 				      const char *buf, size_t count)
 {
@@ -317,8 +316,8 @@ static ssize_t store_freq_step(struct kobject *a, struct attribute *b,
 
 define_one_global_rw(sampling_rate);
 define_one_global_rw(sampling_down_factor);
-define_one_global_rw(up_threshold);
-define_one_global_rw(down_threshold);
+define_one_global_ro(static_up_threshold);
+define_one_global_ro(dynamic_down_threshold);
 define_one_global_rw(ignore_nice_load);
 define_one_global_rw(freq_step);
 
@@ -326,8 +325,8 @@ static struct attribute *dbs_attributes[] = {
 	&sampling_rate_min.attr,
 	&sampling_rate.attr,
 	&sampling_down_factor.attr,
-	&up_threshold.attr,
-	&down_threshold.attr,
+	&static_up_threshold.attr,
+	&dynamic_down_threshold.attr,
 	&ignore_nice_load.attr,
 	&freq_step.attr,
 	NULL
@@ -346,7 +345,6 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	unsigned int load = 0;
 	unsigned int max_load = 0;
 	unsigned int freq_target;
-	unsigned int dynamic_down_threshold = 0;
 
 	struct cpufreq_policy *policy;
 	unsigned int j;
@@ -415,12 +413,6 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	if (dbs_tuners_ins.freq_step == 0)
 		return;
 
-	/* Get up_threshold */
-	if (policy->cur == DEF_FREQUENCY_STEP_1)
-		dbs_tuners_ins.up_threshold = dbs_tuners_ins.up_threshold_1;
-	else
-		dbs_tuners_ins.up_threshold = DEF_FREQUENCY_UP_THRESHOLD;
-
 	/* Check for frequency increase */
 	if (max_load > dbs_tuners_ins.up_threshold) {
 		this_dbs_info->down_skip = 0;
@@ -445,26 +437,37 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	}
 
 	/* Get dynamic down_threshold */
-	if (policy->cur == DEF_FREQUENCY_STEP_1)
-		dynamic_down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD_1;
+	if (policy->cur == DEF_FREQUENCY_STEP_1) {
+		dbs_tuners_ins.down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD_1;
+		goto check;
+	}
 
-	else if (policy->cur == DEF_FREQUENCY_STEP_2)
-		dynamic_down_threshold = dbs_tuners_ins.down_threshold_2;
+	if (policy->cur == DEF_FREQUENCY_STEP_2) {
+		dbs_tuners_ins.down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD_2;
+		goto check;
+	}
 
-	else if (policy->cur == DEF_FREQUENCY_STEP_3)
-		dynamic_down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD_3;
+	if (policy->cur == DEF_FREQUENCY_STEP_3) {
+		dbs_tuners_ins.down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD_3;
+		goto check;
+	}
 
-	else if (policy->cur == DEF_FREQUENCY_STEP_4)
-		dynamic_down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD_4;
+	if (policy->cur == DEF_FREQUENCY_STEP_4) {
+		dbs_tuners_ins.down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD_4;
+		goto check;
+	}
 
-	else if (policy->cur == DEF_FREQUENCY_STEP_5)
-		dynamic_down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD_5;
+	if (policy->cur == DEF_FREQUENCY_STEP_5) {
+		dbs_tuners_ins.down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD_5;
+		goto check;
+	}
 
-	else if (policy->cur >= DEF_FREQUENCY_STEP_6)
-		dynamic_down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD_6;
+	if (policy->cur >= DEF_FREQUENCY_STEP_6) {
+		dbs_tuners_ins.down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD_6;
+		goto check;
+	}
 
-	dbs_tuners_ins.down_threshold = dynamic_down_threshold;
-
+check:
 	/* Check for frequency decrease */
 	if (max_load < (dbs_tuners_ins.down_threshold)) {
 		freq_target = (dbs_tuners_ins.freq_step * policy->max) / 100;
@@ -573,18 +576,8 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 				return rc;
 			}
 
-			/*
-			 * conservative does not implement micro like ondemand
-			 * governor, thus we are bound to jiffes/HZ
-			 */
-			min_sampling_rate =
-				MIN_SAMPLING_RATE_RATIO * jiffies_to_usecs(10);
-			/* Bring kernel and HW constraints together */
-			min_sampling_rate = max(min_sampling_rate,
-					MIN_LATENCY_MULTIPLIER * latency);
-			dbs_tuners_ins.sampling_rate =
-				max(min_sampling_rate,
-				    latency * LATENCY_MULTIPLIER);
+			min_sampling_rate = DEF_FREQUENCY_MIN_SAMPLE_RATE;
+			dbs_tuners_ins.sampling_rate = DEF_FREQUENCY_MIN_SAMPLE_RATE;
 
 			cpufreq_register_notifier(
 					&dbs_cpufreq_notifier_block,

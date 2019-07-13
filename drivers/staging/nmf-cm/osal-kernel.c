@@ -37,13 +37,13 @@ __iomem void *prcmu_tcdm_base = NULL;
 #define FULL_OPP 100
 #define HALF_OPP 50
 static unsigned long running_dsp = 0;
-static unsigned int dspLoadMonitorPeriod = 67;
+static unsigned int dspLoadMonitorPeriod = 100;
 module_param(dspLoadMonitorPeriod, uint, S_IWUSR|S_IRUGO);
 MODULE_PARM_DESC(dspLoadMonitorPeriod, "Period of the DSP-Load monitoring in ms");
-static unsigned int dspLoadHighThreshold = 95;
+static unsigned int dspLoadHighThreshold = 70;
 module_param(dspLoadHighThreshold, uint, S_IWUSR|S_IRUGO);
 MODULE_PARM_DESC(dspLoadHighThreshold, "Threshold above which 100 APE OPP is requested");
-static unsigned int dspLoadLowThreshold = 45;
+static unsigned int dspLoadLowThreshold = 25;
 module_param(dspLoadLowThreshold, uint, S_IWUSR|S_IRUGO);
 MODULE_PARM_DESC(dspLoadLowThreshold, "Threshold below which 100 APE OPP request is removed");
 static bool cm_use_ftrace;
