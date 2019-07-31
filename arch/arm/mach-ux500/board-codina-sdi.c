@@ -309,7 +309,7 @@ static struct stedma40_chan_cfg sdi1_dma_cfg_tx = {
 
 static struct mmci_platform_data ssg_sdi1_data = {
 	.ocr_mask	= MMC_VDD_29_30,
-	.f_max		= 100000000,
+	.f_max		= 50000000,
 #ifdef CONFIG_STE_WLAN
 	.capabilities	= MMC_CAP_4_BIT_DATA,
 #else
