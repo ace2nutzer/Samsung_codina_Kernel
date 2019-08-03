@@ -29,6 +29,7 @@
 #include <linux/completion.h>
 #include <linux/mutex.h>
 #include <linux/syscore_ops.h>
+#include <linux/earlysuspend.h>
 
 #include <trace/events/power.h>
 
@@ -67,10 +68,47 @@ static DEFINE_SPINLOCK(cpufreq_driver_lock);
 static DEFINE_PER_CPU(int, cpufreq_policy_cpu);
 static DEFINE_PER_CPU(struct rw_semaphore, cpu_policy_rwsem);
 
-/* suspend max cpu freq tunable */
+static struct early_suspend early_suspend;
+
 #ifdef CONFIG_CPU_FREQ_SUSPEND_LIMIT
+/* suspend min/max cpu freq tunable */
+unsigned int suspend_min_freq = 200000;
 unsigned int suspend_max_freq = 0;
+module_param(suspend_min_freq, uint, 0644);
 module_param(suspend_max_freq, uint, 0644);
+
+static unsigned int tmp_min_freq = 0;
+static unsigned int tmp_max_freq = 0;
+static unsigned int set_suspend_min_freq = 0;
+static unsigned int set_suspend_max_freq = 0;
+
+static void cpufreq_early_suspend(struct early_suspend *h)
+{
+	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
+
+	/* save current min/max cpu freq */
+	tmp_min_freq = policy->min;
+	tmp_max_freq = policy->max;
+
+	if (!suspend_min_freq)
+		set_suspend_min_freq = tmp_min_freq;
+	else
+		set_suspend_min_freq = suspend_min_freq;
+
+	if (!suspend_max_freq)
+		set_suspend_max_freq = tmp_max_freq;
+	else
+		set_suspend_max_freq = suspend_max_freq;
+
+	/* set min/max cpu freq for suspend */
+	cpufreq_update_freq(0, set_suspend_min_freq, set_suspend_max_freq);
+}
+
+static void cpufreq_late_resume(struct early_suspend *h)
+{
+	/* restore previous min/max cpu freq */
+	cpufreq_update_freq(0, tmp_min_freq, tmp_max_freq);
+}
 #endif
 
 #define lock_policy_rwsem(mode, cpu)					\
@@ -369,6 +407,8 @@ show_one(cpuinfo_max_freq, cpuinfo.max_freq);
 show_one(cpuinfo_transition_latency, cpuinfo.transition_latency);
 show_one(scaling_min_freq, min);
 show_one(scaling_max_freq, max);
+show_one(user_scaling_min_freq, min);
+show_one(user_scaling_max_freq, max);
 show_one(scaling_cur_freq, cur);
 
 static int __cpufreq_set_policy(struct cpufreq_policy *data,
@@ -419,8 +459,8 @@ static ssize_t store_##file_name					\
 	return ret ? ret : count;					\
 }
 
-store_one(scaling_min_freq, min);
-store_one(scaling_max_freq, max);
+store_one(user_scaling_min_freq, min);
+store_one(user_scaling_max_freq, max);
 
 /**
  * show_cpuinfo_cur_freq - current CPU frequency as detected by hardware
@@ -605,8 +645,10 @@ cpufreq_freq_attr_ro(scaling_cur_freq);
 cpufreq_freq_attr_ro(bios_limit);
 cpufreq_freq_attr_ro(related_cpus);
 cpufreq_freq_attr_ro(affected_cpus);
-cpufreq_freq_attr_rw(scaling_min_freq);
-cpufreq_freq_attr_rw(scaling_max_freq);
+cpufreq_freq_attr_ro(scaling_min_freq);
+cpufreq_freq_attr_ro(scaling_max_freq);
+cpufreq_freq_attr_rw(user_scaling_min_freq);
+cpufreq_freq_attr_rw(user_scaling_max_freq);
 cpufreq_freq_attr_rw(scaling_governor);
 cpufreq_freq_attr_rw(scaling_setspeed);
 
@@ -616,6 +658,8 @@ static struct attribute *default_attrs[] = {
 	&cpuinfo_transition_latency.attr,
 	&scaling_min_freq.attr,
 	&scaling_max_freq.attr,
+	&user_scaling_min_freq.attr,
+	&user_scaling_max_freq.attr,
 	&affected_cpus.attr,
 	&related_cpus.attr,
 	&scaling_governor.attr,
@@ -1925,6 +1969,12 @@ static int __init cpufreq_core_init(void)
 						&cpu_sysdev_class.kset.kobj);
 	BUG_ON(!cpufreq_global_kobject);
 	register_syscore_ops(&cpufreq_syscore_ops);
+
+	early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
+	early_suspend.suspend = cpufreq_early_suspend;
+	early_suspend.resume = cpufreq_late_resume;
+
+	register_early_suspend(&early_suspend);
 
 	return 0;
 }

@@ -37,8 +37,24 @@
 #include <linux/mfd/dbx500-prcmu.h>
 #endif
 
-#define MALI_LOW_TO_HIGH_LEVEL_UTILIZATION_LIMIT 50 /* 20% */
-#define MALI_HIGH_TO_LOW_LEVEL_UTILIZATION_LIMIT 15 /* 6% */
+#define MALI_CLOCK_DEFLO		449280
+#define MALI_CLOCK_DEFHI		499200
+
+#define DEF_BOOST_UP_THRESHOLD		(166) /* 65% | min 60, max 256 */
+#define DOWN_THRESHOLD_MARGIN		(38) /* 15% */
+
+/* reversed logic */
+#define DEF_BOOST_FREQUENCY_STEP_7		(449280)
+#define DEF_BOOST_FREQUENCY_STEP_6		(499200)
+#define DEF_BOOST_FREQUENCY_STEP_5		(549120)
+#define DEF_BOOST_FREQUENCY_STEP_4		(599040)
+#define DEF_BOOST_FREQUENCY_STEP_3		(652800)
+#define DEF_BOOST_FREQUENCY_STEP_2		(698880)
+#define DEF_BOOST_FREQUENCY_STEP_1		(748800)
+#define DEF_BOOST_FREQUENCY_STEP_0		(798720)
+
+#define MALI_LOW_TO_HIGH_LEVEL_UTILIZATION_LIMIT 51 /* 20% */
+#define MALI_HIGH_TO_LOW_LEVEL_UTILIZATION_LIMIT 13 /* 5% */
 
 #define MALI_UX500_VERSION		"1.0.1"
 
@@ -56,26 +72,13 @@
 #define AB8500_VAPE_MIN_UV		700000
 #define AB8500_VAPE_MAX_UV		1387500
 
-#define MALI_CLOCK_DEFLO		449280
-#define MALI_CLOCK_DEFHI		499200
-
-#define DEF_BOOST_UP_THRESHOLD		(179) /* 70% */
-
-#define DEF_BOOST_DOWN_THRESHOLD_0		(74) /* 29% */
-#define DEF_BOOST_DOWN_THRESHOLD_1		(82) /* 32% */
-#define DEF_BOOST_DOWN_THRESHOLD_2		(90) /* 35% */
-#define DEF_BOOST_DOWN_THRESHOLD_3		(97) /* 38% */
-#define DEF_BOOST_DOWN_THRESHOLD_4		(108) /* 42% */
-#define DEF_BOOST_DOWN_THRESHOLD_5		(120) /* 47% */
-#define DEF_BOOST_DOWN_THRESHOLD_6		(136) /* 53% */
-
-#define DEF_BOOST_FREQUENCY_STEP_0		(798720)
-#define DEF_BOOST_FREQUENCY_STEP_1		(748800)
-#define DEF_BOOST_FREQUENCY_STEP_2		(698880)
-#define DEF_BOOST_FREQUENCY_STEP_3		(652800)
-#define DEF_BOOST_FREQUENCY_STEP_4		(599040)
-#define DEF_BOOST_FREQUENCY_STEP_5		(549120)
-#define DEF_BOOST_FREQUENCY_STEP_6		(499200)
+static u32 boost_down_threshold_6 = 0;
+static u32 boost_down_threshold_5 = 0;
+static u32 boost_down_threshold_4 = 0;
+static u32 boost_down_threshold_3 = 0;
+static u32 boost_down_threshold_2 = 0;
+static u32 boost_down_threshold_1 = 0;
+static u32 boost_down_threshold_0 = 0;
 
 struct mali_dvfs_data
 {
@@ -84,6 +87,7 @@ struct mali_dvfs_data
 	u8 	vape_raw;
 };
 
+/* reversed logic */
 static struct mali_dvfs_data mali_dvfs[] = {
 	{798720, 0x010501D0, 0x37},
 	{748800, 0x010501C3, 0x37},
@@ -121,7 +125,7 @@ static u32 boost_delay 		= 0;
 static u32 boost_low 		= 0;
 static u32 boost_high 		= 0;
 static u32 boost_up_threshold 	= DEF_BOOST_UP_THRESHOLD;
-static u32 boost_down_threshold	= DEF_BOOST_DOWN_THRESHOLD_6;
+static u32 dynamic_boost_down_threshold	= 0;
 //mutex to protect above variables
 static DEFINE_MUTEX(mali_boost_lock);
 
@@ -382,42 +386,42 @@ void mali_utilization_function(struct work_struct *ptr)
 			}
 
 		/* Get dynamic boost_down_threshold */
-		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_0) {
-			boost_down_threshold = DEF_BOOST_DOWN_THRESHOLD_0;
-		}
-
-		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_1) {
-			boost_down_threshold = DEF_BOOST_DOWN_THRESHOLD_1;
-		}
-
-		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_2) {
-			boost_down_threshold = DEF_BOOST_DOWN_THRESHOLD_2;
-		}
-
-		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_3) {
-			boost_down_threshold = DEF_BOOST_DOWN_THRESHOLD_3;
-		}
-
-		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_4) {
-			boost_down_threshold = DEF_BOOST_DOWN_THRESHOLD_4;
+		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_6) {
+			dynamic_boost_down_threshold = boost_down_threshold_6;
 		}
 
 		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_5) {
-			boost_down_threshold = DEF_BOOST_DOWN_THRESHOLD_5;
+			dynamic_boost_down_threshold = boost_down_threshold_5;
 		}
 
-		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_6) {
-			boost_down_threshold = DEF_BOOST_DOWN_THRESHOLD_6;
+		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_4) {
+			dynamic_boost_down_threshold = boost_down_threshold_4;
 		}
 
-		} else if (boost_required && !boost_working && mali_last_utilization < boost_down_threshold) {
+		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_3) {
+			dynamic_boost_down_threshold = boost_down_threshold_3;
+		}
+
+		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_2) {
+			dynamic_boost_down_threshold = boost_down_threshold_2;
+		}
+
+		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_1) {
+			dynamic_boost_down_threshold = boost_down_threshold_1;
+		}
+
+		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_0) {
+			dynamic_boost_down_threshold = boost_down_threshold_0;
+		}
+
+		} else if (boost_required && !boost_working && mali_last_utilization < dynamic_boost_down_threshold) {
 			boost_required = false;
 			if (boost_scheduled) {
 				//if it's not working yet, but is scheduled to be turned on, than cancel scheduled job
 				cancel_delayed_work(&mali_boost_delayedwork);
 				boost_scheduled = false;
 			}
-		} else if (boost_working && mali_last_utilization < boost_down_threshold) {
+		} else if (boost_working && mali_last_utilization < dynamic_boost_down_threshold) {
 			boost_required = false;
 			if (!boost_scheduled) {
 				// if boost is on and isn't yet scheduled to be turned off then schedule it
@@ -428,6 +432,21 @@ void mali_utilization_function(struct work_struct *ptr)
 	}
 	mutex_unlock(&mali_boost_lock);
 
+}
+
+static void recalculate_boost_down_threshold(void)
+{
+	boost_down_threshold_6 = ((boost_up_threshold * DEF_BOOST_FREQUENCY_STEP_7 / DEF_BOOST_FREQUENCY_STEP_6) - DOWN_THRESHOLD_MARGIN);
+	boost_down_threshold_5 = ((boost_up_threshold * DEF_BOOST_FREQUENCY_STEP_7 / DEF_BOOST_FREQUENCY_STEP_5) - DOWN_THRESHOLD_MARGIN);
+	boost_down_threshold_4 = ((boost_up_threshold * DEF_BOOST_FREQUENCY_STEP_7 / DEF_BOOST_FREQUENCY_STEP_4) - DOWN_THRESHOLD_MARGIN);
+	boost_down_threshold_3 = ((boost_up_threshold * DEF_BOOST_FREQUENCY_STEP_7 / DEF_BOOST_FREQUENCY_STEP_3) - DOWN_THRESHOLD_MARGIN);
+	boost_down_threshold_2 = ((boost_up_threshold * DEF_BOOST_FREQUENCY_STEP_7 / DEF_BOOST_FREQUENCY_STEP_2) - DOWN_THRESHOLD_MARGIN);
+	boost_down_threshold_1 = ((boost_up_threshold * DEF_BOOST_FREQUENCY_STEP_7 / DEF_BOOST_FREQUENCY_STEP_1) - DOWN_THRESHOLD_MARGIN);
+	boost_down_threshold_0 = ((boost_up_threshold * DEF_BOOST_FREQUENCY_STEP_7 / DEF_BOOST_FREQUENCY_STEP_0) - DOWN_THRESHOLD_MARGIN);
+
+	if (!is_initialized) {
+		dynamic_boost_down_threshold = boost_down_threshold_6;
+	}
 }
 
 #define ATTR_RO(_name)	\
@@ -612,14 +631,16 @@ ATTR_RW(mali_boost_delay);
 
 static ssize_t mali_boost_low_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	sprintf(buf, "%sDynamic_DOWN_threshold: %u\n", buf, boost_down_threshold);
+	sprintf(buf, "%sDynamic_DOWN_threshold: %u\n", buf, dynamic_boost_down_threshold);
 	sprintf(buf, "%sDVFS idx: %u\n", buf, boost_low);
 	sprintf(buf, "%sfrequency: %u kHz\n", buf, mali_dvfs[boost_low].freq);
 	sprintf(buf, "%sVape: %u uV\n", buf, vape_voltage(mali_dvfs[boost_low].vape_raw));
 
 	return strlen(buf);
 }
+ATTR_RO(mali_boost_low);
 
+/*
 static ssize_t mali_boost_low_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
 	int val;
@@ -635,13 +656,16 @@ static ssize_t mali_boost_low_store(struct kobject *kobj, struct kobj_attribute 
 
 		return count;
 	}
-/*
+
 	if (sscanf(buf, "threshold=%u", &val)) {
-		boost_down_threshold = val;
+		if (val > 256 || val < 1)
+			return -EINVAL;
+
+		dynamic_boost_down_threshold = val;
 
 		return count;
 	}
-*/
+
 	if (sscanf(buf, "%u", &val)) {
 		for (i = 0; i < ARRAY_SIZE(mali_dvfs); i++) {
 			if (mali_dvfs[i].freq == val) {
@@ -659,10 +683,11 @@ static ssize_t mali_boost_low_store(struct kobject *kobj, struct kobj_attribute 
 	return -EINVAL;
 }
 ATTR_RW(mali_boost_low);
+*/
 
 static ssize_t mali_boost_high_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	sprintf(buf, "%sStatic_UP_threshold: %u\n", buf, boost_up_threshold);
+	sprintf(buf, "%sUP_threshold: %u\n", buf, boost_up_threshold);
 	sprintf(buf, "%sDVFS idx: %u\n", buf, boost_high);
 	sprintf(buf, "%sfrequency: %u kHz\n", buf, mali_dvfs[boost_high].freq);
 	sprintf(buf, "%sVape: %u uV\n", buf, vape_voltage(mali_dvfs[boost_high].vape_raw));
@@ -683,13 +708,18 @@ static ssize_t mali_boost_high_store(struct kobject *kobj, struct kobj_attribute
 
 		return count;
 	}
-/*
+
 	if (sscanf(buf, "threshold=%u", &val)) {
+		if (val > 256 || val < 60)
+			return -EINVAL;
+
 		boost_up_threshold = val;
+
+		recalculate_boost_down_threshold();
 
 		return count;
 	}
-*/
+
 	if (sscanf(buf, "%u", &val)) {
 		for (i = 0; i < ARRAY_SIZE(mali_dvfs); i++) {
 			if (mali_dvfs[i].freq == val) {
@@ -790,6 +820,7 @@ _mali_osk_errcode_t mali_platform_init()
 
 	if (!is_initialized) {
 
+		recalculate_boost_down_threshold();
 		prcmu_write(PRCMU_PLLSOC0, PRCMU_PLLSOC0_INIT);
 		prcmu_write(PRCMU_SGACLK,  PRCMU_SGACLK_INIT);
 		mali_boost_init();
