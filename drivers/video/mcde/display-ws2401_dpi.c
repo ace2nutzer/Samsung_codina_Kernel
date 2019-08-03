@@ -32,7 +32,6 @@
 #include <linux/backlight.h>
 #include <linux/mutex.h>
 #include <linux/workqueue.h>
-#include <linux/cpufreq.h>
 #ifdef CONFIG_HAS_EARLYSUSPEND
 #include <linux/earlysuspend.h>
 #endif
@@ -1563,22 +1562,13 @@ static int ws2401_dpi_mcde_suspend(
 }
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
-/* suspend max cpu freq tunables */
-#ifdef CONFIG_CPU_FREQ_SUSPEND_LIMIT
-extern unsigned int suspend_max_freq;
-static unsigned int set_suspend_max_freq = 0;
-static unsigned int tmp_max_freq = 0;
-#endif
-
 static void ws2401_dpi_mcde_early_suspend(
 		struct early_suspend *earlysuspend)
 {
 	struct ws2401_dpi *lcd = container_of(earlysuspend,
 						struct ws2401_dpi,
 						earlysuspend);
-#ifdef CONFIG_CPU_FREQ_SUSPEND_LIMIT
-	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
-#endif
+
 	pm_message_t dummy;
 
 	#ifdef ESD_OPERATION
@@ -1599,20 +1589,6 @@ static void ws2401_dpi_mcde_early_suspend(
 	#endif
 
 	ws2401_dpi_mcde_suspend(lcd->mdd, dummy);
-
-	/* save current max cpu freq */
-#ifdef CONFIG_CPU_FREQ_SUSPEND_LIMIT
-	tmp_max_freq = policy->max;
-
-	if (!suspend_max_freq) {
-		set_suspend_max_freq = tmp_max_freq;
-	} else {
-		set_suspend_max_freq = suspend_max_freq;
-	}
-
-	cpufreq_update_freq(0, 200000, set_suspend_max_freq);
-#endif
-
 }
 
 static void ws2401_dpi_mcde_late_resume(
@@ -1621,11 +1597,6 @@ static void ws2401_dpi_mcde_late_resume(
 	struct ws2401_dpi *lcd = container_of(earlysuspend,
 						struct ws2401_dpi,
 						earlysuspend);
-
-	/* restore previous max cpu freq */
-#ifdef CONFIG_CPU_FREQ_SUSPEND_LIMIT
-	cpufreq_update_freq(0, 400000, tmp_max_freq);
-#endif
 
 	#ifdef ESD_OPERATION
 	if (lcd->lcd_connected)
