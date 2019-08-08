@@ -24,6 +24,7 @@
 #include <linux/kthread.h>
 #include <linux/sched.h>
 #include <linux/delay.h>
+#include <linux/input/sweep2wake.h>
 #ifdef CONFIG_GENERIC_BLN_USE_WAKELOCK
 #include <linux/wakelock.h>
 #endif
@@ -36,6 +37,9 @@ static int bln_blinkon_delay = 200; /* blinkon with 100msec delay by default */
 static int bln_blinkoff_delay = 2000; /* blinkoff with 3000msec delay by default */
 static bool bln_suspended = false; /* is system suspended */
 static struct bln_implementation *bln_imp = NULL;
+
+extern bool force_late_resume_bt404_ts;
+extern void late_resume_bt404_ts(void);
 
 static long unsigned int notification_led_mask = 0x0;
 
@@ -181,6 +185,12 @@ static void enable_led_notification(void)
 		kthread_run(&blink_thread, (void*) NULL,"bln_blink_thread");
 
 	pr_info("%s: notification led enabled\n", __FUNCTION__);
+
+	if (s2w_switch && !s2w_use_wakelock) {
+		force_late_resume_bt404_ts = true;
+		late_resume_bt404_ts();
+		s2w_reset();
+	}
 }
 
 static ssize_t backlightnotification_status_read(struct device *dev,
