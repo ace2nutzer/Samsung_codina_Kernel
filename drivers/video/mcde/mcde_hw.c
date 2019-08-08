@@ -46,7 +46,7 @@
 #include "mcde_trace.h"
 #endif
 
-#define MCDE_DPI_UNDERFLOW
+//#define MCDE_DPI_UNDERFLOW
 #ifdef MCDE_DPI_UNDERFLOW
 #include <linux/fb.h>
 #include <video/mcde_fb.h>
