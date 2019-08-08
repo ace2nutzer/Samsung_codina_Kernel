@@ -48,6 +48,7 @@
 #include <linux/input/mt.h>
 #include <linux/regulator/consumer.h>
 #include <linux/wakelock.h>
+#include <linux/bln.h>
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
 #include <linux/input/sweep2wake.h>
 #endif
@@ -4317,8 +4318,11 @@ err_i2c:
 	return ret;
 }
 
-static bool is_awaken = false;
-static bool is_sleep = false;
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+bool force_late_resume_bt404_ts = false;
+extern bool sxa_engine_running;
+extern bool is_charger_present;
+#endif
 
 #if defined(CONFIG_PM) || defined(CONFIG_HAS_EARLYSUSPEND)
 static int bt404_ts_suspend(struct device *dev)
@@ -4327,12 +4331,14 @@ static int bt404_ts_suspend(struct device *dev)
 	struct bt404_ts_data *data = i2c_get_clientdata(client);
 	int ret;
 
-        if (s2w_switch) {
-                        pr_err("%s: skipped\n", __func__);
-		goto out;
-        }
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+	if ((s2w_switch) && (sxa_engine_running || is_charger_present || bln_is_ongoing() || s2w_use_wakelock)) {
+		pr_err("%s: skipped\n", __func__);
+		goto out2;
+	}
+#endif
 
-	if (!data->enabled) {
+	if (!data->enabled && !s2w_switch) {
 		dev_err(dev, "%s, already disabled\n", __func__);
 		ret = -1;
 		goto out;
@@ -4369,6 +4375,7 @@ static int bt404_ts_suspend(struct device *dev)
 	ret = 0;
 out:
 	dev_info(dev, "suspended.\n");
+out2:
 	return ret;
 }
 
@@ -4378,12 +4385,20 @@ static int bt404_ts_resume(struct device *dev)
 	struct bt404_ts_data *data = i2c_get_clientdata(client);
 	int ret;
 
-        if (s2w_switch) {
-                        pr_err("%s: skipped\n", __func__);
-		goto out;
-        }
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+	if (force_late_resume_bt404_ts) {
+		goto out3;
+	}
 
-	if (data->enabled) {
+	if ((s2w_switch) && (s2w_use_wakelock || sxa_engine_running || is_charger_present)) {
+		pr_err("%s: skipped\n", __func__);
+		goto out2;
+	}
+out3:
+	force_late_resume_bt404_ts = false;
+#endif
+
+	if (data->enabled && !s2w_switch) {
 		dev_err(dev, "%s, already enabled\n", __func__);
 		ret = -1;
 		goto out;
@@ -4413,30 +4428,19 @@ static int bt404_ts_resume(struct device *dev)
 	enable_irq(data->irq);
 out:
 	dev_info(dev, "resumed.\n");
+out2:
 	return ret;
 }
 #endif
 
-inline static bool early_suspend_bt404_ts(void)
+void early_suspend_bt404_ts(void)
 {
-	if (!is_sleep) {
-		is_sleep = true;
-		is_awaken = false;
-		bt404_ts_suspend(&data_->client->dev);
-	}       
- 
-	return !is_sleep;
+	bt404_ts_suspend(&data_->client->dev);
 }
 
-inline static bool late_resume_bt404_ts(void)
+void late_resume_bt404_ts(void)
 {
-	if (!is_awaken) {
-		bt404_ts_resume(&data_->client->dev);
-		is_sleep = false;
-		is_awaken = true;
-	}
- 
-	return !is_awaken;
+	bt404_ts_resume(&data_->client->dev);
 }
 
 #ifdef CONFIG_HAS_EARLYSUSPEND

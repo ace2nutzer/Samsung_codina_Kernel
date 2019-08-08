@@ -50,10 +50,10 @@
 #include <asm/traps.h>
 #include <asm/unwind.h>
 
-int is_lpm = 0;
+unsigned int is_lpm = 0;
 module_param_named(is_lpm, is_lpm, uint, 0444);
 
-int is_recovery = 0;
+unsigned int is_recovery = 0;
 module_param_named(is_recovery, is_recovery, uint, 0444);
 
 #if defined(CONFIG_DEPRECATED_PARAM_STRUCT)

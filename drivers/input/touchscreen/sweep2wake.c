@@ -26,6 +26,8 @@
 #include <linux/init.h>
 #include <linux/err.h>
 #include <linux/input/sweep2wake.h>
+#include <linux/earlysuspend.h>
+#include <linux/bln.h>
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE_WAKELOCK
 #include <linux/wakelock.h>
 #endif
@@ -41,26 +43,43 @@
 
 /* Resources */
 int s2w_switch = 0;
-extern bool is_suspend;
+bool is_suspend = false;
 static bool exec_count = true;
 static bool barrier[2] = {false, false};
+extern unsigned int is_lpm;
+extern bool sxa_engine_running;
+extern bool is_charger_present;
+
 static struct input_dev * sweep2wake_pwrdev;
+static struct early_suspend early_suspend;
+
 static DEFINE_MUTEX(pwrkeyworklock);
 
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE_WAKELOCK
+bool s2w_use_wakelock = false;
 static struct wake_lock s2w_wake_lock;
-bool is_s2w_wakelock_active(void) {
+static bool is_s2w_wakelock_active(void) {
         return wake_lock_active(&s2w_wake_lock);
 }
-static bool s2w_use_wakelock = true;
 #endif
+
+static void s2w_early_suspend(struct early_suspend *h)
+{
+	is_suspend = true;
+	s2w_reset();
+}
+
+static void s2w_late_resume(struct early_suspend *h)
+{
+	is_suspend = false;
+	s2w_reset();
+}
 
 /* PowerKey setter */
 void sweep2wake_setdev(struct input_dev * input_device) {
 	sweep2wake_pwrdev = input_device;
 	return;
 }
-EXPORT_SYMBOL(sweep2wake_setdev);
 
 /* PowerKey work func */
 static void sweep2wake_presspwr(struct work_struct * sweep2wake_presspwr_work) {
@@ -68,17 +87,17 @@ static void sweep2wake_presspwr(struct work_struct * sweep2wake_presspwr_work) {
                 return;
 	input_event(sweep2wake_pwrdev, EV_KEY, KEY_POWER, 1);
 	input_event(sweep2wake_pwrdev, EV_SYN, 0, 0);
-	msleep(S2W_PWRKEY_DUR);
+	mdelay(S2W_PWRKEY_DUR);
 	input_event(sweep2wake_pwrdev, EV_KEY, KEY_POWER, 0);
 	input_event(sweep2wake_pwrdev, EV_SYN, 0, 0);
-	msleep(S2W_PWRKEY_DUR);
+	mdelay(S2W_PWRKEY_DUR);
         mutex_unlock(&pwrkeyworklock);
 	return;
 }
 static DECLARE_WORK(sweep2wake_presspwr_work, sweep2wake_presspwr);
 
 /* PowerKey trigger */
-void sweep2wake_pwrtrigger(void) {
+static void sweep2wake_pwrtrigger(void) {
 	schedule_work(&sweep2wake_presspwr_work);
         return;
 }
@@ -90,16 +109,18 @@ void s2w_reset(void)
 	exec_count = true;
 }
 
-static unsigned int is_lpm = 0;
-module_param_named(is_lpm, is_lpm, uint, 0644);
-
 /* Sweep2wake main function */
 void detect_sweep2wake(int x, int y, bool st)
 {
         int prevx = 0, nextx = 0;
         bool single_touch = st;
 
-	if(!single_touch){
+	if ((!s2w_switch) || (!s2w_use_wakelock && !sxa_engine_running && !is_charger_present && !bln_is_ongoing())) {
+		s2w_reset();
+		return;
+	}
+
+	if (!single_touch) {
 		s2w_reset();
 		return;
 	}
@@ -147,14 +168,24 @@ static int set_enable(const char *val, struct kernel_param *kp)
 {
 	int max_tries = 10; 
 	int tries = 0;
-	if(is_suspend){
+	if (is_suspend) {
+		/*
+		 * Meticulus:
+		 * We can't change the "enable" while the screen is off because
+		 * it causes unbalanced irq enable/disable requests. So
+		 * I'm waking the screen and then setting it.
+		 */
+		if (DEBUG)
+			printk("s2w: cant enable/disable while screen is off! Waking...\n");
 
-		while(is_suspend && tries <= max_tries){
+		sweep2wake_pwrtrigger();
+
+		while (is_suspend && tries <= max_tries) {
 			msleep(200);
 			tries = tries + 1;
 		}
 	}
-	if(strcmp(val, "1") >= 0 || strcmp(val, "true") >= 0){
+	if (strcmp(val, "1") >= 0 || strcmp(val, "true") >= 0) {
 		s2w_switch = 1;
 		if(DEBUG)
 			printk("s2w: enabled\n");
@@ -167,50 +198,47 @@ static int set_enable(const char *val, struct kernel_param *kp)
 		}
 #endif
 	}
-	else if(strcmp(val, "0") >= 0 || strcmp(val, "false") >= 0){
+	else if (strcmp(val, "0") >= 0 || strcmp(val, "false") >= 0) {
 		s2w_switch = 0;
 		if(DEBUG)
 			printk("s2w: disabled\n");
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE_WAKELOCK
-		if(wake_lock_active(&s2w_wake_lock)){
+		if (wake_lock_active(&s2w_wake_lock)) {
 			wake_unlock(&s2w_wake_lock);
 		}
 #endif
 
-	}else {
+	} else {
 		printk("s2w: invalid input '%s' for 'enable'; use 1 or 0\n", val);
 	}
 
 	return 0;
 }
-
 module_param_call(enable, set_enable, param_get_int, &s2w_switch, 0664);
 
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE_WAKELOCK
+static int set_s2w_use_wakelock(const char *val, struct kernel_param *kp) {
 
-static int set_s2w_use_wakelock(const char *val, struct kernel_param *kp){
-
-	if(strcmp(val, "1") >= 0 || strcmp(val, "true") >= 0){
+	if(strcmp(val, "1") >= 0 || strcmp(val, "true") >= 0) {
 		s2w_use_wakelock = true;
-		if(s2w_use_wakelock && !wake_lock_active(&s2w_wake_lock)){
+		if(s2w_use_wakelock && !wake_lock_active(&s2w_wake_lock)) {
 			wake_lock(&s2w_wake_lock);
 			if(DEBUG)
 				printk("s2w: wake lock enabled\n");
 		}
 	}
-	else if(strcmp(val, "0") >= 0 || strcmp(val, "false") >= 0){
+	else if (strcmp(val, "0") >= 0 || strcmp(val, "false") >= 0) {
 		s2w_use_wakelock = false;
 		if(wake_lock_active(&s2w_wake_lock)){
 			wake_unlock(&s2w_wake_lock);
 		}
 
-	}else {
+	} else {
 		printk("s2w: invalid input '%s' for 's2w_use_wakelock'; use 1 or 0\n", val);
 	}
 	return 0;
 
 }
-
 module_param_call(s2w_use_wakelock, set_s2w_use_wakelock, param_get_bool, &s2w_use_wakelock, 0664);
 #endif
 
@@ -219,12 +247,20 @@ static int __init sweep2wake_init(void)
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE_WAKELOCK
 	wake_lock_init(&s2w_wake_lock, WAKE_LOCK_SUSPEND, "s2w_kernel_wake_lock");
 #endif
+
+	early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
+	early_suspend.suspend = s2w_early_suspend;
+	early_suspend.resume = s2w_late_resume;
+
+	register_early_suspend(&early_suspend);
+
 	pr_info("[sweep2wake]: %s done\n", __func__);
 	return 0;
 }
 
 static void __exit sweep2wake_exit(void)
 {
+	unregister_early_suspend(&early_suspend);
 	return;
 }
 
@@ -233,4 +269,3 @@ module_exit(sweep2wake_exit);
 
 MODULE_DESCRIPTION("Sweep2wake");
 MODULE_LICENSE("GPLv2");
-

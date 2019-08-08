@@ -28,6 +28,7 @@
 #include <linux/mfd/abx500/ux500_chargalg.h>
 #include <linux/mfd/abx500/ab8500-bm.h>
 #include <linux/mfd/abx500/ab8500-gpadc.h>
+#include <linux/input/sweep2wake.h>
 
 /* Watchdog kick interval */
 #define CHG_WD_INTERVAL			(60 * HZ)
@@ -52,12 +53,16 @@
 /* ace2nutzer: bln on eoc_real = 1 */
 #include <linux/bln.h>
 
-static bool is_charger_present = false;
+bool is_charger_present = false;
 
 static unsigned int eoc_bln = 0;
 
 extern unsigned int is_lpm;
 extern unsigned int is_recovery;
+extern bool force_late_resume_bt404_ts;
+extern void late_resume_bt404_ts(void);
+extern void early_suspend_bt404_ts(void);
+static bool forced_late_resume_bt404_ts = false;
 
 #define CHARGING_PAUSED			-1
 #define CHARGING_STOPPED		0
@@ -69,27 +74,23 @@ static int charging_stats = CHARGING_STOPPED;
 
 static bool eoc_first = 0;
 static bool eoc_real = 0;
-bool is_suspend = 0;
+static bool is_suspended = false;
 static bool eoc_bln_is_ongoing = 0;
 
 static void ab8500_chargalg_early_suspend(struct early_suspend *h)
 {
-	is_suspend = 1;
-
-	return;
+	is_suspended = true;
 }
 
 static void ab8500_chargalg_late_resume(struct early_suspend *h)
 {
-	is_suspend = 0;
+	is_suspended = false;
 
 	/* disable EOC BLN */
 	if (eoc_bln_is_ongoing && !bln_is_ongoing()) {
 		bln_disable_backlights(gen_all_leds_mask());
 		eoc_bln_is_ongoing = 0;
 	}
-
-	return;
 }
 
 enum ab8500_chargers {
@@ -1029,7 +1030,7 @@ static void ab8500_chargalg_end_of_charge(struct ab8500_chargalg *di)
 				eoc_real = 1;
 
 				/* enable BLN */
-				if ((eoc_bln && !bln_is_ongoing() && !eoc_bln_is_ongoing) && (is_suspend || is_lpm || is_recovery)) {
+				if ((eoc_bln && !bln_is_ongoing() && !eoc_bln_is_ongoing) && (is_suspended || is_lpm || is_recovery)) {
 					bln_enable_backlights(get_led_mask());
 					eoc_bln_is_ongoing = 1;
 				}
@@ -1241,6 +1242,13 @@ static int ab8500_chargalg_get_ext_psy_data(struct device *dev, void *data)
 			if (!ret.intval && is_charger) {
 				is_charger_present = false;
 
+				forced_late_resume_bt404_ts = false;
+
+				if (s2w_switch && !s2w_use_wakelock && is_suspended) {
+					early_suspend_bt404_ts();
+					s2w_reset();
+				}
+
 				/* disable EOC BLN */
 				if (eoc_bln_is_ongoing && !bln_is_ongoing()) {
 					bln_disable_backlights(gen_all_leds_mask());
@@ -1249,6 +1257,13 @@ static int ab8500_chargalg_get_ext_psy_data(struct device *dev, void *data)
 
 			} else if (ret.intval && is_charger) {
 				is_charger_present = true;
+
+				if (s2w_switch && !s2w_use_wakelock && is_suspended && !forced_late_resume_bt404_ts) {
+					force_late_resume_bt404_ts = true;
+					late_resume_bt404_ts();
+					s2w_reset();
+					forced_late_resume_bt404_ts = true;
+				}
 
 			}
 			switch (ext->type) {

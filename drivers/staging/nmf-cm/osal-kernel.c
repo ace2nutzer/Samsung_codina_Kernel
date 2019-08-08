@@ -18,6 +18,7 @@
 #include <linux/timer.h>
 #include <linux/uaccess.h>
 #include <linux/vmalloc.h>
+#include <linux/input/sweep2wake.h>
 
 #include <trace/stm.h>
 
@@ -32,6 +33,9 @@
 
 __iomem void *prcmu_base = NULL;
 __iomem void *prcmu_tcdm_base = NULL;
+
+bool sxa_engine_running = false;
+extern void early_suspend_bt404_ts(void);
 
 /* DSP Load Monitoring */
 #define FULL_OPP 100
@@ -745,6 +749,8 @@ static int dspload_monitor(void *idx)
 	mpc->opp_request = current_opp_request;
 #endif
 
+	sxa_engine_running = true;
+
 	// Override vape2 voltage when sxa engine is running
 	prcmu_qos_lpa_override(true);
 
@@ -843,10 +849,18 @@ static int dspload_monitor(void *idx)
 	del_singleshot_timer_sync(&timer);
 	if (cm_debug_level)
 		pr_info("CM Driver: Remove QoS OPP for %s\n", mpc->name);
+
 	prcmu_qos_remove_requirement(PRCMU_QOS_DDR_OPP,
 				     (char*)mpc->name);
 	prcmu_qos_remove_requirement(PRCMU_QOS_APE_OPP,
 				     (char*)mpc->name);
+
+	sxa_engine_running = false;
+
+	if (s2w_switch && !s2w_use_wakelock && is_suspend) {
+		early_suspend_bt404_ts();
+		s2w_reset();
+	}
 
 	// Restore vape2 voltage when sxa engine is down
 	prcmu_qos_lpa_override(false);
