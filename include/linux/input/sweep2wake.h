@@ -27,7 +27,6 @@
 
 extern int s2w_switch;
 extern bool s2w_use_wakelock;
-extern void s2w_reset(void);
 extern bool is_suspend;
 
 /* Sweep2wake main function */

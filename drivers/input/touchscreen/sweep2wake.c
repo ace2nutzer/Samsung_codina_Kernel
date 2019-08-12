@@ -63,6 +63,13 @@ static bool is_s2w_wakelock_active(void) {
 }
 #endif
 
+static void s2w_reset(void)
+{
+	barrier[0] = false;
+	barrier[1] = false;
+	exec_count = true;
+}
+
 static void s2w_early_suspend(struct early_suspend *h)
 {
 	is_suspend = true;
@@ -102,13 +109,6 @@ static void sweep2wake_pwrtrigger(void) {
         return;
 }
 
-void s2w_reset(void)
-{
-	barrier[0] = false;
-	barrier[1] = false;
-	exec_count = true;
-}
-
 /* Sweep2wake main function */
 void detect_sweep2wake(int x, int y, bool st)
 {
@@ -116,7 +116,6 @@ void detect_sweep2wake(int x, int y, bool st)
         bool single_touch = st;
 
 	if ((!s2w_switch) || (!s2w_use_wakelock && !sxa_engine_running && !is_charger_present && !bln_is_ongoing())) {
-		s2w_reset();
 		return;
 	}
 

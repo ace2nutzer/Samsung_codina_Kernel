@@ -1245,8 +1245,8 @@ static int ab8500_chargalg_get_ext_psy_data(struct device *dev, void *data)
 				forced_late_resume_bt404_ts = false;
 
 				if (s2w_switch && !s2w_use_wakelock && is_suspended) {
+					pr_info("abb_chargalg: cable unplugged && s2w enabled && is_suspended, --> early_suspend_bt404_ts ...");
 					early_suspend_bt404_ts();
-					s2w_reset();
 				}
 
 				/* disable EOC BLN */
@@ -1260,8 +1260,8 @@ static int ab8500_chargalg_get_ext_psy_data(struct device *dev, void *data)
 
 				if (s2w_switch && !s2w_use_wakelock && is_suspended && !forced_late_resume_bt404_ts) {
 					force_late_resume_bt404_ts = true;
+					pr_info("abb_chargalg: cable plugged && s2w enabled && is_suspended, --> forcing late_resume_bt404_ts ...");
 					late_resume_bt404_ts();
-					s2w_reset();
 					forced_late_resume_bt404_ts = true;
 				}
 
