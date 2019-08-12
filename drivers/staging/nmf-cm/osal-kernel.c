@@ -858,8 +858,8 @@ static int dspload_monitor(void *idx)
 	sxa_engine_running = false;
 
 	if (s2w_switch && !s2w_use_wakelock && is_suspend) {
+		pr_info("CM: !sxa_engine_running && s2w enabled && is_suspend, --> early_suspend_bt404_ts ...");
 		early_suspend_bt404_ts();
-		s2w_reset();
 	}
 
 	// Restore vape2 voltage when sxa engine is down

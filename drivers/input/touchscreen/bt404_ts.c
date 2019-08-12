@@ -4333,12 +4333,12 @@ static int bt404_ts_suspend(struct device *dev)
 
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
 	if ((s2w_switch) && (sxa_engine_running || is_charger_present || bln_is_ongoing() || s2w_use_wakelock)) {
-		pr_err("%s: skipped\n", __func__);
+		pr_err("%s: skipped because Sweep2Wake is enabled\n", __func__);
 		goto out2;
 	}
 #endif
 
-	if (!data->enabled && !s2w_switch) {
+	if (!data->enabled) {
 		dev_err(dev, "%s, already disabled\n", __func__);
 		ret = -1;
 		goto out;
@@ -4391,14 +4391,14 @@ static int bt404_ts_resume(struct device *dev)
 	}
 
 	if ((s2w_switch) && (s2w_use_wakelock || sxa_engine_running || is_charger_present)) {
-		pr_err("%s: skipped\n", __func__);
+		pr_err("%s: skipped because Sweep2Wake is enabled\n", __func__);
 		goto out2;
 	}
 out3:
 	force_late_resume_bt404_ts = false;
 #endif
 
-	if (data->enabled && !s2w_switch) {
+	if (data->enabled) {
 		dev_err(dev, "%s, already enabled\n", __func__);
 		ret = -1;
 		goto out;

@@ -188,8 +188,8 @@ static void enable_led_notification(void)
 
 	if (s2w_switch && !s2w_use_wakelock) {
 		force_late_resume_bt404_ts = true;
+		pr_info("BLN && s2w enabled, forcing late_resume_bt404_ts ...");
 		late_resume_bt404_ts();
-		s2w_reset();
 	}
 }
 
