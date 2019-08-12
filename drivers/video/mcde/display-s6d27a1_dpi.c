@@ -89,6 +89,9 @@
 #define ESD_TEST
 */
 
+static bool lcd_workaround = false;
+static unsigned int lcd_workaround_delay = 500;
+
 static unsigned int ape_opp = PRCMU_QOS_HALF_VALUE;
 static unsigned int ddr_opp = PRCMU_QOS_HALF_VALUE;
 
@@ -1103,6 +1106,62 @@ static ssize_t s6d27a1_sysfs_store_enable(struct device *dev,
 static DEVICE_ATTR(enable, 0200,
 		NULL /*s6d27a1_sysfs_show_enable */, s6d27a1_sysfs_store_enable);
 
+static ssize_t s6d27a1_sysfs_show_lcd_workaround(struct device *dev,
+				      struct device_attribute *attr, char *buf)
+{
+	sprintf(buf,   "\n[s6d27a1 LCD Workaround]\n\n");
+
+	sprintf(buf, "%s[enable]\t[%s]\n", buf, lcd_workaround ? "*" : " ");
+	sprintf(buf, "%s[delay in ms]\t[%d]\n\n", buf, lcd_workaround_delay);
+
+	return strlen(buf);
+}
+
+static ssize_t s6d27a1_sysfs_store_lcd_workaround(struct device *dev,
+				       struct device_attribute *attr,
+				       const char *buf, size_t len)
+{
+	int tmp;
+
+	if (!strncmp(buf, "true", 1)) {
+		lcd_workaround = true;
+		return len;
+	}
+
+	if (!strncmp(buf, "false", 2)) {
+		lcd_workaround = false;
+		return len;
+	}
+
+	if (sysfs_streq(buf, "1")) {
+		lcd_workaround = true;
+		return len;
+	}
+
+	if (sysfs_streq(buf, "0")) {
+		lcd_workaround = false;
+		return len;
+	}
+
+	if (sscanf(buf, "delay=%d", &tmp)) {
+
+		if (tmp < 1 || tmp > 2000) {
+			pr_warning("[s6d27a1] Invaild input\n");
+			return -EINVAL;
+		}
+
+		lcd_workaround_delay = tmp;
+
+		return len;
+	}
+
+	pr_err("[s6d27a1] Invaild cmd\n");
+
+	return -EINVAL;
+}
+static DEVICE_ATTR(lcd_workaround, 0666,
+		s6d27a1_sysfs_show_lcd_workaround, s6d27a1_sysfs_store_lcd_workaround);
+
 static ssize_t s6d27a1_dpi_sysfs_store_lcd_power(struct device *dev,
 						struct device_attribute *attr,
 						const char *buf, size_t len)
@@ -1269,6 +1328,18 @@ out:
 	return ret;
 }
 
+static struct s6d27a1_dpi *lcd_data;
+
+static void reset_mcde_thread(struct work_struct *reset_mcde_work)
+{
+	pm_message_t dummy;
+
+	msleep(lcd_workaround_delay);
+	s6d27a1_dpi_mcde_suspend(lcd_data->mdd, dummy);
+	s6d27a1_dpi_mcde_resume(lcd_data->mdd);
+}
+static DECLARE_WORK(reset_mcde_work, reset_mcde_thread);
+
 static int __devinit s6d27a1_dpi_mcde_probe(
 				struct mcde_display_device *ddev)
 {
@@ -1354,18 +1425,23 @@ static int __devinit s6d27a1_dpi_mcde_probe(
 		dev_err(&(ddev->dev),
 			"failed to add lcd_power sysfs entries\n");
 
-ret = device_create_file(&(ddev->dev), &dev_attr_mcde_chnl);
+	ret = device_create_file(&(ddev->dev), &dev_attr_mcde_chnl);
 	if (ret < 0)
-		dev_err(&(ddev->dev), "failed to add sysfs entries\n");
+		dev_err(&(ddev->dev), "failed to add mcde_chnl sysfs entries\n");
 
 	ret = device_create_file(&(ddev->dev), &dev_attr_enable);
 	if (ret < 0)
-		dev_err(&(ddev->dev), "failed to add sysfs entries\n");
+		dev_err(&(ddev->dev), "failed to add enable sysfs entries\n");
+
+	ret = device_create_file(&(ddev->dev), &dev_attr_lcd_workaround);
+	if (ret < 0)
+		dev_err(&(ddev->dev), "failed to add lcd_workaround sysfs entries\n");
 
 	lcd->spi_drv.driver.name	= "pri_lcd_spi";
 	lcd->spi_drv.driver.bus		= &spi_bus_type;
 	lcd->spi_drv.driver.owner	= THIS_MODULE;
 	lcd->spi_drv.probe		= s6d27a1_dpi_spi_probe;
+	lcd_data			= lcd;
 	ret = spi_register_driver(&lcd->spi_drv);
 	if (ret < 0) {
 		dev_err(&(ddev->dev), "Failed to register SPI driver");
@@ -1431,7 +1507,7 @@ static void s6d27a1_dpi_mcde_shutdown(struct mcde_display_device *ddev)
 
 static int s6d27a1_dpi_mcde_resume(struct mcde_display_device *ddev)
 {
-	int ret;
+	int ret = 0;
 	struct s6d27a1_dpi *lcd = dev_get_drvdata(&ddev->dev);
 	DPI_DISP_TRACE;
 
@@ -1491,6 +1567,9 @@ static void s6d27a1_dpi_mcde_late_resume(
 						earlysuspend);
 
 	s6d27a1_dpi_mcde_resume(lcd->mdd);
+
+	if (lcd_workaround)
+		schedule_work(&reset_mcde_work);
 }
 #endif
 
