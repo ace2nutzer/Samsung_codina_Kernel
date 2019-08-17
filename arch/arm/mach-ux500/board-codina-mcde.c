@@ -50,8 +50,8 @@ enum {
 	MCDE_NR_OF_DISPLAYS
 };
 
-extern unsigned int is_lpm;
-extern unsigned int is_recovery;
+extern bool is_lpm;
+extern bool is_recovery;
 extern unsigned int system_rev;
 static int display_initialized_during_boot = (int)false;
 static struct ux500_pins *dpi_pins;

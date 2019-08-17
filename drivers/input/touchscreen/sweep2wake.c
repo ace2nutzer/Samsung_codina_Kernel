@@ -46,7 +46,7 @@ int s2w_switch = 0;
 bool is_suspend = false;
 static bool exec_count = true;
 static bool barrier[2] = {false, false};
-extern unsigned int is_lpm;
+extern bool is_lpm;
 extern bool sxa_engine_running;
 extern bool is_charger_present;
 

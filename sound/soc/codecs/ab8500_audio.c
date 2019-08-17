@@ -4453,7 +4453,7 @@ static int ab850x_codec_set_dai_fmt(struct snd_soc_dai *dai, unsigned int fmt)
 }
 
 static int ab850x_codec_set_dai_tdm_slot(struct snd_soc_dai *dai,
-		const long unsigned int tx_mask, unsigned int rx_mask,
+		const unsigned long tx_mask, const unsigned long rx_mask,
 		int slots, int slot_width)
 {
 	struct snd_soc_codec *codec = dai->codec;

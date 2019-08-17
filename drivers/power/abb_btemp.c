@@ -686,7 +686,6 @@ static int ab8500_btemp_id(struct ab8500_btemp *di)
 	if (di->batt_id == BATTERY_UNKNOWN) {
 		dev_info(di->dev, "Battery identified as unknown"
 			", resistance %d Ohm\n", res);
-		return -ENXIO;
 	}
 
 	/*
@@ -702,7 +701,7 @@ static int ab8500_btemp_id(struct ab8500_btemp *di)
 	/* re-enable the battery sense comparator */
 	/* for history */
 	/* if (di->bat->adc_therm == ADC_THERM_BATTEMP &&
-	   di->batt_id != BATTERY_UNKNOWN) { */
+	   di->batt_id != BATTERY_UNKNOWN) */
 
 	if (di->bat->adc_therm == ADC_THERM_BATTEMP) {
 		abx500_set_register_interruptible(di->dev,
@@ -735,9 +734,9 @@ static void ab8500_btemp_periodic_work(struct work_struct *work)
 		di->vf_ok_cnt = 2;
 		di->initial_vf_check = false;
 	}
-
+/*
 	if (batt_id < 0) {
-		/* If battery is identified as UNKNOWN */
+		// If battery is identified as UNKNOWN
 		if (!di->events.batt_rem) {
 			di->vf_ok_cnt = 0;
 			di->vf_error_cnt++;
@@ -753,6 +752,7 @@ static void ab8500_btemp_periodic_work(struct work_struct *work)
 			di->vf_error_cnt = 0;
 		}
 	} else {
+*/
 		if (di->events.batt_rem) {
 			di->vf_error_cnt = 0;
 			di->vf_ok_cnt++;
@@ -767,7 +767,7 @@ static void ab8500_btemp_periodic_work(struct work_struct *work)
 			di->vf_ok_cnt = 0;
 			di->vf_error_cnt = 0;
 		}
-	}
+//	}
 
 	if (di->vf_ok_cnt > 0 || di->vf_error_cnt > 0)
 		di->monitor_time = FAST_MONITOR;

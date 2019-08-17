@@ -208,7 +208,7 @@ static ssize_t bthid_write(struct file *file, const char __user *buffer, size_t 
     return 0;
 }
 
-static int bthid_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
+static long bthid_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
     int ret;
     char *name;

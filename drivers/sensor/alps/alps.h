@@ -19,7 +19,7 @@ int accsns_activate(int flgatm, int flg, int dtime);
 int hscd_get_magnetic_field_data(int *xyz);
 int hscd_activate(int flgatm, int flg, int dtime);
 #endif
-void bma222e_activate(int flgatm, int flg, int dtime);
+int bma222e_activate(int flgatm, int flg, int dtime);
 int bma222e_get_acceleration_data(int *xyz);
 int bma222e_open(void);
 

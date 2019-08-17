@@ -270,11 +270,8 @@ int led_classdev_register(struct device *parent, struct led_classdev *led_cdev)
 			led_cdev->name);
 
 #ifdef CONFIG_GENERIC_BLN
-	if (strcmp(led_cdev, "button-backlight"))
-	{
 		bln_led_cdev = led_cdev;
 		register_bln_implementation(&led_bln);
-	}
 #endif
 
 	return 0;
