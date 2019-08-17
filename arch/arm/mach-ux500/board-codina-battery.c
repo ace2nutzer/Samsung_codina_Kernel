@@ -504,19 +504,19 @@ static const struct chg_parameters chg = {
 };
 
 static const struct battery_info battery_info = {
-if (di->bat->batt_id == BATTERY_UNKNOWN) {
-	.charge_full_design = 1700,
-	.nominal_voltage = 3700,
-	.n_v_cap_tbl_elements = ARRAY_SIZE(cap_tbl),
-	.v_to_cap_tbl = cap_tbl,
-	.resis_high = 0,
-} else {
-	.charge_full_design = 1500,
-	.nominal_voltage = 3820,
-	.n_v_cap_tbl_elements = ARRAY_SIZE(cap_tbl_5ma),
-	.v_to_cap_tbl = cap_tbl_5ma,
-	.resis_high = 7990,
-}
+	if (di->bat->batt_id == BATTERY_UNKNOWN) {
+		.charge_full_design = 1700,
+		.nominal_voltage = 3700,
+		.n_v_cap_tbl_elements = ARRAY_SIZE(cap_tbl),
+		.v_to_cap_tbl = cap_tbl,
+		.resis_high = 0,
+	} else {
+		.charge_full_design = 1500,
+		.nominal_voltage = 3800,
+		.n_v_cap_tbl_elements = ARRAY_SIZE(cap_tbl_5ma),
+		.v_to_cap_tbl = cap_tbl_5ma,
+		.resis_high = 7990,
+	}
 	.resis_low = 0,
 	.battery_resistance = 100,
 	.line_impedance = 36,
@@ -682,21 +682,23 @@ sec_battery_platform_data_t sec_battery_pdata = {
 		SEC_BATTERY_FULL_CONDITION_SOC |
 		SEC_BATTERY_FULL_CONDITION_VCELL |
 		SEC_BATTERY_FULL_CONDITION_NOTIMEFULL,
-	.full_condition_soc = 95,
-if (di->bat->batt_id == BATTERY_UNKNOWN) {
-	.full_condition_vcell = 4088,
-} else {
-	.full_condition_vcell = 4241,
-}
+	if (di->bat->batt_id == BATTERY_UNKNOWN) {
+		.full_condition_soc = 96,
+		.full_condition_vcell = 4100,
+	} else {
+		.full_condition_soc = 95,
+		.full_condition_vcell = 4241,
+	}
 
 	.recharge_condition_type =
 		SEC_BATTERY_RECHARGE_CONDITION_VCELL,
-	.recharge_condition_soc = 98,
-if (di->bat->batt_id == BATTERY_UNKNOWN) {
-	.recharge_condition_vcell = 4120,
-} else {
-	.recharge_condition_vcell = 4281,
-}
+	if (di->bat->batt_id == BATTERY_UNKNOWN) {
+		.recharge_condition_soc = 99,
+		.recharge_condition_vcell = 4131,
+	} else {
+		.recharge_condition_soc = 98,
+		.recharge_condition_vcell = 4281,
+	}
 	.recharge_check_count = 4,
 
 	.charging_total_time = 5 * 60 * 60,
@@ -723,11 +725,11 @@ if (di->bat->batt_id == BATTERY_UNKNOWN) {
 	.chg_polarity_status = 0,
 	.chg_irq = 0,
 	.chg_irq_attr = 0,
-if (di->bat->batt_id == BATTERY_UNKNOWN) {
-	.chg_float_voltage = 4200,
-} else {
-	.chg_float_voltage = 4350,
-}
+	if (di->bat->batt_id == BATTERY_UNKNOWN) {
+		.chg_float_voltage = 4200,
+	} else {
+		.chg_float_voltage = 4350,
+	}
 };
 
 static struct platform_device sec_device_battery = {

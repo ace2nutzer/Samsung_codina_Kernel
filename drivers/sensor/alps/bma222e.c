@@ -90,6 +90,8 @@ static struct bma222e_power_data bma222e_power;
 static struct i2c_driver bma222e_driver;
 static struct i2c_client *client_bma222e;
 
+static struct device *dev;
+
 static atomic_t flgEna;
 static atomic_t delay;
 
@@ -245,7 +247,7 @@ static int bma222e_get_acceleration_rawdata(int *xyz)
 	return err;
 }
 
-void bma222e_activate(int flgatm, int flg, int dtime)
+int bma222e_activate(int flgatm, int flg, int dtime)
 {
 	u8 buf[2];
 
@@ -284,6 +286,7 @@ void bma222e_activate(int flgatm, int flg, int dtime)
 		atomic_set(&flgEna, flg);
 		atomic_set(&delay, dtime);
 	}
+	return reg;
 }
 EXPORT_SYMBOL(bma222e_activate);
 
@@ -471,7 +474,7 @@ static int bma222e_probe(struct i2c_client *client,
 {
 	int ret = 0;
 	struct device *bma_device = NULL;
-
+	struct device *dev = &client->dev;
 	this_client = client;
 
 	if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
@@ -540,7 +543,7 @@ exit:
 	return ret;
 }
 
-static int bma222e_suspend(struct i2c_client *client, pm_message_t mesg)
+static int bma222e_suspend(struct device *dev)
 {
 	if (atomic_read(&flgEna))
 		bma222e_activate(0, 0, atomic_read(&delay));
@@ -548,7 +551,7 @@ static int bma222e_suspend(struct i2c_client *client, pm_message_t mesg)
 	return 0;
 }
 
-static int bma222e_resume(struct i2c_client *client)
+static int bma222e_resume(struct device *dev)
 {
 	if (atomic_read(&flgEna))
 		bma222e_activate(0, 1, atomic_read(&delay));
@@ -559,21 +562,23 @@ static int bma222e_resume(struct i2c_client *client)
 static void bma222e_early_suspend(struct early_suspend *handler)
 {
 	struct bma222e_data *bma222e;
+
 	bma222e = container_of(handler, struct bma222e_data, early_suspend);
 
 	pr_info("%s\n", __func__);
 
-	bma222e_suspend(this_client, PMSG_SUSPEND);
+	bma222e_suspend(dev);
 }
 
 static void bma222e_early_resume(struct early_suspend *handler)
 {
 	struct bma222e_data *bma222e;
+
 	bma222e = container_of(handler, struct bma222e_data, early_suspend);
 
 	pr_info("%s\n", __func__);
 
-	bma222e_resume(this_client);
+	bma222e_resume(dev);
 }
 
 

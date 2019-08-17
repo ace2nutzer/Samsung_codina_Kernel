@@ -55,10 +55,10 @@
 
 bool is_charger_present = false;
 
-static unsigned int eoc_bln = 0;
+static bool eoc_bln = 0;
 
-extern unsigned int is_lpm;
-extern unsigned int is_recovery;
+extern bool is_lpm;
+extern bool is_recovery;
 extern bool force_late_resume_bt404_ts;
 extern void late_resume_bt404_ts(void);
 extern void early_suspend_bt404_ts(void);

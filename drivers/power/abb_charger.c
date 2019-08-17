@@ -1964,7 +1964,7 @@ static void ab8500_charger_ac_work(struct work_struct *work)
 	int cable_type, vbus_status;
 
 	struct ab8500_charger *di = container_of(work,
-		struct ab8500_charger, ac_work);
+		struct ab8500_charger, ac_work.work);
 
 	pr_info("[ABB-Charger] %s\n", __func__);
 	di->vbus_detect_charging = false;
@@ -3164,7 +3164,7 @@ static ssize_t abb_charger_data_show(struct kobject *kobj, struct kobj_attribute
 	sprintf(buf, "%s[usb_chg_current_input]\t%d\n", buf, di->bat->usb_chg_current_input);
 	sprintf(buf, "%s[usb_chg_current]\t%d\n\n", buf, di->bat->usb_chg_current);
 
-	sprintf(buf, "%s[Original Battery ?]\t[%s]\n", buf, (int) di->bat->batt_id == 1 ? "*" : " ");
+	sprintf(buf, "%s[Original Battery]\t[%s]\n", buf, (int) di->bat->batt_id == 1 ? "*" : " ");
 
 	return strlen(buf);
 }
