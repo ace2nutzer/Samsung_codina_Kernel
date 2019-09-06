@@ -386,33 +386,26 @@ void mali_utilization_function(struct work_struct *ptr)
 			}
 
 		/* Get dynamic boost_down_threshold */
-		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_6) {
+		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_6)
 			dynamic_boost_down_threshold = boost_down_threshold_6;
-		}
 
-		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_5) {
+		else if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_5)
 			dynamic_boost_down_threshold = boost_down_threshold_5;
-		}
 
-		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_4) {
+		else if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_4)
 			dynamic_boost_down_threshold = boost_down_threshold_4;
-		}
 
-		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_3) {
+		else if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_3)
 			dynamic_boost_down_threshold = boost_down_threshold_3;
-		}
 
-		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_2) {
+		else if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_2)
 			dynamic_boost_down_threshold = boost_down_threshold_2;
-		}
 
-		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_1) {
+		else if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_1)
 			dynamic_boost_down_threshold = boost_down_threshold_1;
-		}
 
-		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_0) {
+		else if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_0)
 			dynamic_boost_down_threshold = boost_down_threshold_0;
-		}
 
 		} else if (boost_required && !boost_working && mali_last_utilization < dynamic_boost_down_threshold) {
 			boost_required = false;
@@ -444,9 +437,8 @@ static void recalculate_boost_down_threshold(void)
 	boost_down_threshold_1 = ((boost_up_threshold * DEF_BOOST_FREQUENCY_STEP_7 / DEF_BOOST_FREQUENCY_STEP_1) - DOWN_THRESHOLD_MARGIN);
 	boost_down_threshold_0 = ((boost_up_threshold * DEF_BOOST_FREQUENCY_STEP_7 / DEF_BOOST_FREQUENCY_STEP_0) - DOWN_THRESHOLD_MARGIN);
 
-	if (!is_initialized) {
+	if (!is_initialized)
 		dynamic_boost_down_threshold = boost_down_threshold_6;
-	}
 }
 
 #define ATTR_RO(_name)	\
@@ -820,6 +812,7 @@ _mali_osk_errcode_t mali_platform_init()
 
 	if (!is_initialized) {
 
+		// init default values
 		recalculate_boost_down_threshold();
 		prcmu_write(PRCMU_PLLSOC0, PRCMU_PLLSOC0_INIT);
 		prcmu_write(PRCMU_SGACLK,  PRCMU_SGACLK_INIT);
