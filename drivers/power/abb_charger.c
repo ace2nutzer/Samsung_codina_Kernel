@@ -347,13 +347,11 @@ static void (*mxt224e_ts_vbus_state)(bool vbus_status);
 #endif
 
 /* Charger Control */
-static unsigned int ac_curr_max = 700;
-static unsigned int usb20_curr_max = 500;
+static unsigned int ac_curr_max = 600;
+static unsigned int usb_curr_max = 500;
 
 /* sysfs interfaces read-only */
 static unsigned int charging_curr = 0;
-
-module_param(charging_curr, uint, 0444);
 
 static void ab8500_charger_set_usb_connected(struct ab8500_charger *di,
 	bool connected)
@@ -1270,11 +1268,10 @@ static int ab8500_charger_set_main_in_curr(struct ab8500_charger *di, int ich_in
 		charge_curr = di->bat->usb_chg_current;
 	}
 
-	if (min_value < charge_curr) {
+	if (min_value < charge_curr)
 		charging_curr = min_value;
-	} else {
+	else
 		charging_curr = charge_curr;
-	}
 
 	input_curr_index = ab8500_main_in_curr_to_regval(min_value);
 	if (input_curr_index < 0) {
@@ -1442,7 +1439,9 @@ static int ab8500_charger_ac_en(struct ux500_charger *charger,
 
 	/* Charger Control */
 	di->bat->ta_chg_current_input = ac_curr_max;
-	di->bat->usb_chg_current_input = usb20_curr_max;
+	di->bat->ta_chg_current = ac_curr_max;
+	di->bat->usb_chg_current_input = usb_curr_max;
+	di->bat->usb_chg_current = usb_curr_max;
 
 	ab8500_charger_init_vdrop_state(di);
 
@@ -1484,7 +1483,7 @@ static int ab8500_charger_ac_en(struct ux500_charger *charger,
 				curr_index = ab8500_current_to_regval(
 					di->bat->ta_chg_current);
 			} else {
-				pr_info("[ABB-Charger] Enable MISC: %dmV %dmA\n",
+				pr_info("[ABB-Charger] Enable USB: %dmV %dmA\n",
 					 di->bat->usb_chg_voltage,
 					 di->bat->usb_chg_current);
 				volt_index =
@@ -2360,11 +2359,17 @@ static void ab8500_handle_vbus_voltage_drop_work(struct work_struct *work)
 			if (di->bat->ta_chg_current_input >= 100)
 				di->bat->ta_chg_current_input -= 100;
 
+			if (di->bat->ta_chg_current >= 100)
+				di->bat->ta_chg_current -= 100;
+
 			pr_warn("[ABB-Charger] AC: VBUS Dropped !!!\n");
 
 		} else if (di->cable_type == POWER_SUPPLY_TYPE_USB) {
 			if (di->bat->usb_chg_current_input >= 100)
 				di->bat->usb_chg_current_input -= 100;
+
+			if (di->bat->usb_chg_current >= 100)
+				di->bat->usb_chg_current -= 100;
 
 			pr_warn("[ABB-Charger] USB: VBUS Dropped !!!\n");
 
@@ -3111,11 +3116,11 @@ static int ab8500_charger_suspend(struct platform_device *pdev,
 
 static ssize_t abb_current_max_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	sprintf(buf, "%sAC input current: \t%d\n", buf, ac_curr_max);
+	sprintf(buf, "%sCharging current:   \t%d\n\n", buf, charging_curr);
 
-	sprintf(buf, "%sUSB 2.0 input current: \t%d\n\n", buf, usb20_curr_max);
+	sprintf(buf, "%sAC input current:   \t%d\n", buf, ac_curr_max);
 
-	sprintf(buf, "%sCharging current: \t%d\n", buf, charging_curr);
+	sprintf(buf, "%sUSB 2.0 input current:   \t%d\n", buf, usb_curr_max);
 
 	return strlen(buf);
 }
@@ -3127,22 +3132,24 @@ static ssize_t abb_current_max_store(struct kobject *kobj, struct kobj_attribute
 
 	if (sscanf(buf, "ac=%d", &ac)) {
 		if (ac < 100 || ac > 1500) {
-			pr_err("[ABB-Charger] Bad cmd\n");
+			pr_err("[ABB-Charger] Out of Range 100 - 1500.\n");
 			return -EINVAL;
 		}
 		ac_curr_max = ac;
 
 		di->bat->ta_chg_current_input = ac_curr_max;
+		di->bat->ta_chg_current = ac_curr_max;
 	}
 
 	if (sscanf(buf, "usb=%d", &usb)) {
 		if (usb < 100 || usb > 1500) {
-			pr_err("[ABB-Charger] Bad cmd\n");
+			pr_err("[ABB-Charger] Out of Range 100 - 1500.\n");
 			return -EINVAL;
 		}
-		usb20_curr_max = usb;
+		usb_curr_max = usb;
 
-		di->bat->usb_chg_current_input = usb20_curr_max;
+		di->bat->usb_chg_current_input = usb_curr_max;
+		di->bat->usb_chg_current = usb_curr_max;
 	}
 
 	return count;
