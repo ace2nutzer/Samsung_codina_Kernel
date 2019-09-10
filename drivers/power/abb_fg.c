@@ -2244,6 +2244,13 @@ static int ab8500_fg_reenable_charging(struct ab8500_fg *di)
 			return ret;
 		}
 
+		ret = abx500_set_register_interruptible(di->dev, AB8500_CHARGER,
+			AB8500_USBCH_CTRL1_REG, MAIN_CH_ENA | overshoot);
+		if (ret) {
+			dev_err(di->dev, "%s write failed\n", __func__);
+			return ret;
+		}
+
 		if (di->reenable_charging > 2000)
 			di->reenable_charging = 1;
 		else
