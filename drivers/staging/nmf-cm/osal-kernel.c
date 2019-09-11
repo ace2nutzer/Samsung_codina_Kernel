@@ -36,6 +36,9 @@ __iomem void *prcmu_tcdm_base = NULL;
 
 bool sxa_engine_running = false;
 extern void early_suspend_bt404_ts(void);
+extern void late_resume_bt404_ts(void);
+extern bool force_late_resume_bt404_ts;
+static bool forced_late_resume_bt404_ts = false;
 
 /* DSP Load Monitoring */
 #define FULL_OPP 100
@@ -751,6 +754,13 @@ static int dspload_monitor(void *idx)
 
 	sxa_engine_running = true;
 
+	if (s2w_switch && !s2w_use_wakelock && is_suspend && !forced_late_resume_bt404_ts) {
+		force_late_resume_bt404_ts = true;
+		pr_info("CM: sxa_engine_running && s2w enabled && is_suspend, --> forcing late_resume_bt404_ts ...");
+		late_resume_bt404_ts();
+		forced_late_resume_bt404_ts = true;
+	}
+
 	// Override vape2 voltage when sxa engine is running
 	prcmu_qos_lpa_override(true);
 
@@ -856,6 +866,8 @@ static int dspload_monitor(void *idx)
 				     (char*)mpc->name);
 
 	sxa_engine_running = false;
+
+	forced_late_resume_bt404_ts = false;
 
 	if (s2w_switch && !s2w_use_wakelock && is_suspend) {
 		pr_info("CM: !sxa_engine_running && s2w enabled && is_suspend, --> early_suspend_bt404_ts ...");
