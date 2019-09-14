@@ -40,8 +40,8 @@
 #define MALI_CLOCK_DEFLO		449280
 #define MALI_CLOCK_DEFHI		499200
 
-#define DEF_BOOST_UP_THRESHOLD		(166) /* 65% | min 60, max 256 */
-#define DOWN_THRESHOLD_MARGIN		(38) /* 15% */
+#define DEF_BOOST_UP_THRESHOLD		(115) /* 45 % | min 60, max 256 */
+#define DOWN_THRESHOLD_MARGIN		(51) /* 20 % */
 
 /* reversed logic */
 #define DEF_BOOST_FREQUENCY_STEP_7		(449280)
