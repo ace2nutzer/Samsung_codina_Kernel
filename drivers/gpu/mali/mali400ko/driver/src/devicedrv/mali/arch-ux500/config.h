@@ -23,9 +23,9 @@
 #endif
 
 #define MEGABYTE (1024*1024)
-#define MALI_MEM_BASE (512 * MEGABYTE)
-#define MALI_MEM_SIZE ( 512 * MEGABYTE)
-#define OS_MEM_SIZE   (512 * MEGABYTE)
+#define MALI_MEM_BASE (768 * MEGABYTE)
+#define MALI_MEM_SIZE ( 768 * MEGABYTE)
+#define OS_MEM_SIZE   (768 * MEGABYTE)
 
 /* Hardware revision u8500 v1: GX570-BU-00000-r0p1
  * Hardware revision u8500 v2: GX570-BU-00000-r1p0
@@ -87,7 +87,7 @@ static _mali_osk_resource_t arch_configuration [] =
 	{
 		.type = OS_MEMORY,
 		.description = "Linux kernel memory",
-		.alloc_order = 6, /* Medium preference for this memory */
+		.alloc_order = 5, /* Medium preference for this memory */
 		.size = OS_MEM_SIZE,
 		.flags = _MALI_CPU_WRITEABLE | _MALI_CPU_READABLE | _MALI_MMU_READABLE | _MALI_MMU_WRITEABLE
 	},
