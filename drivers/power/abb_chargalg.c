@@ -50,7 +50,6 @@
 #include <linux/ab8500-ponkey.h>
 #include <linux/earlysuspend.h>
 
-/* ace2nutzer: bln on eoc_real = 1 */
 #include <linux/bln.h>
 
 bool is_charger_present = false;
@@ -72,10 +71,10 @@ static struct early_suspend ab8500_chargalg_earlysuspend;
 
 static int charging_stats = CHARGING_STOPPED;
 
-static bool eoc_first = 0;
-static bool eoc_real = 0;
+static bool eoc_first = false;
+static bool eoc_real = false;
 static bool is_suspended = false;
-static bool eoc_bln_is_ongoing = 0;
+static bool eoc_bln_is_ongoing = false;
 
 static void ab8500_chargalg_early_suspend(struct early_suspend *h)
 {
@@ -999,7 +998,7 @@ static void ab8500_chargalg_end_of_charge(struct ab8500_chargalg *di)
 					 "Full charging status will be shown \
 					in the UI, BUT NOT Real Full charging\n");
 					power_supply_changed(&di->chargalg_psy);
-					eoc_first = 1;
+					eoc_first = true;
 				} else {
 					dev_dbg(di->dev,
 					"1st Full Charging EOC limit reached \
@@ -1021,12 +1020,12 @@ static void ab8500_chargalg_end_of_charge(struct ab8500_chargalg *di)
 				dev_dbg(di->dev, "real EOC reached!\n");
 				power_supply_changed(&di->chargalg_psy);
 				dev_dbg(di->dev, "Charging is end\n");
-				eoc_real = 1;
+				eoc_real = true;
 
 				/* enable BLN */
 				if ((eoc_bln && !bln_is_ongoing() && !eoc_bln_is_ongoing) && (is_suspended || is_lpm || is_recovery)) {
 					bln_enable_backlights(get_led_mask());
-					eoc_bln_is_ongoing = 1;
+					eoc_bln_is_ongoing = true;
 				}
 
 			} else {
@@ -1246,7 +1245,7 @@ static int ab8500_chargalg_get_ext_psy_data(struct device *dev, void *data)
 				/* disable EOC BLN */
 				if (eoc_bln_is_ongoing && !bln_is_ongoing()) {
 					bln_disable_backlights(gen_all_leds_mask());
-					eoc_bln_is_ongoing = 0;
+					eoc_bln_is_ongoing = false;
 				}
 
 			} else if (ret.intval && is_charger) {
@@ -2401,15 +2400,15 @@ static ssize_t abb_chargalg_eoc_stats_show(struct kobject *kobj, struct kobj_att
 {
 	char *txt;
 
-	if (eoc_first == 0) {
+	if (!eoc_first) {
 		txt = "Not reported yet\n";
 	}
 
-	if (eoc_first == 1) {
+	if (eoc_first) {
 		txt = "First EOC reached\n";
 	}
 
-	if (eoc_real == 1) {
+	if (eoc_real) {
 		txt = "Real EOC reached\n";
 	}
 

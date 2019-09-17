@@ -72,8 +72,8 @@ static struct early_suspend early_suspend;
 
 #ifdef CONFIG_CPU_FREQ_SUSPEND_LIMIT
 /* suspend min/max cpu freq tunable */
-unsigned int suspend_min_freq = 200000;
-unsigned int suspend_max_freq = 0;
+static unsigned int suspend_min_freq = 0;
+static unsigned int suspend_max_freq = 0;
 module_param(suspend_min_freq, uint, 0644);
 module_param(suspend_max_freq, uint, 0644);
 
@@ -82,32 +82,43 @@ static unsigned int tmp_max_freq = 0;
 static unsigned int set_suspend_min_freq = 0;
 static unsigned int set_suspend_max_freq = 0;
 
+static bool enable_suspend_freqs = false;
+module_param(enable_suspend_freqs, bool, 0644);
+
+static bool update_freqs = false;
+
 static void cpufreq_early_suspend(struct early_suspend *h)
 {
-	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
+	if (enable_suspend_freqs) {
+		struct cpufreq_policy *policy = cpufreq_cpu_get(0);
 
-	/* save current min/max cpu freq */
-	tmp_min_freq = policy->min;
-	tmp_max_freq = policy->max;
+		/* save current min/max cpu freq */
+		tmp_min_freq = policy->min;
+		tmp_max_freq = policy->max;
 
-	if (!suspend_min_freq)
-		set_suspend_min_freq = tmp_min_freq;
-	else
-		set_suspend_min_freq = suspend_min_freq;
+		if (!suspend_min_freq)
+			set_suspend_min_freq = tmp_min_freq;
+		else
+			set_suspend_min_freq = suspend_min_freq;
 
-	if (!suspend_max_freq)
-		set_suspend_max_freq = tmp_max_freq;
-	else
-		set_suspend_max_freq = suspend_max_freq;
+		if (!suspend_max_freq)
+			set_suspend_max_freq = tmp_max_freq;
+		else
+			set_suspend_max_freq = suspend_max_freq;
 
-	/* set min/max cpu freq for suspend */
-	cpufreq_update_freq(0, set_suspend_min_freq, set_suspend_max_freq);
+		/* set min/max cpu freq for suspend */
+		cpufreq_update_freq(0, set_suspend_min_freq, set_suspend_max_freq);
+
+		update_freqs = true;
+	}
 }
 
 static void cpufreq_late_resume(struct early_suspend *h)
 {
-	/* restore previous min/max cpu freq */
-	cpufreq_update_freq(0, tmp_min_freq, tmp_max_freq);
+	if (update_freqs) {
+		/* restore previous min/max cpu freq */
+		cpufreq_update_freq(0, tmp_min_freq, tmp_max_freq);
+	}
 }
 #endif
 
