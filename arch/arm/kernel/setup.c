@@ -50,10 +50,10 @@
 #include <asm/traps.h>
 #include <asm/unwind.h>
 
-bool is_lpm = 0;
+bool is_lpm = false;
 module_param_named(is_lpm, is_lpm, bool, 0444);
 
-bool is_recovery = 0;
+bool is_recovery = false;
 module_param_named(is_recovery, is_recovery, bool, 0444);
 
 #if defined(CONFIG_DEPRECATED_PARAM_STRUCT)
@@ -703,11 +703,11 @@ static int __init parse_tag_cmdline(const struct tag *tag)
 	}
 
 	if (!is_lpm && (strstr(default_command_line, "lpm_boot=1") != NULL)) {
-		is_lpm = 1;
+		is_lpm = true;
 	}
 
 	if (!is_recovery && (strstr(default_command_line, "bootmode=2") != NULL)) {
-		is_recovery = 1;
+		is_recovery = true;
 	}
 
 	return 0;
