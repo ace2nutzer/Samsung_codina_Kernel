@@ -42,8 +42,8 @@
  * 30720000	[S6D27A1]
  * 49920000	[WS2401]
  */
-#define PRCMU_DPI_CLK_SHARP_FREQ	31200000		/* s6d27a1 */
-#define PRCMU_DPI_CLK_SMD_FREQ		49920000		/* ws2401 */
+#define CUSTOM_DPI_CLK_SHARP_FREQ	45381818		/* s6d27a1 */
+#define CUSTOM_DPI_CLK_SMD_FREQ	71314285		/* ws2401 */
 
 enum {
 	PRIMARY_DISPLAY_ID,
@@ -98,7 +98,7 @@ static struct mcde_port port0 = {
 				DPI_ACT_LOW_HSYNC |
 				/* DPI_ACT_LOW_DATA_ENABLE | */
 				DPI_ACT_ON_FALLING_EDGE,
-			.lcd_freq = PRCMU_DPI_CLK_SHARP_FREQ
+			.lcd_freq = CUSTOM_DPI_CLK_SHARP_FREQ
 		},
 	},
 };
@@ -142,9 +142,9 @@ struct ssg_dpi_display_platform_data codina_dpi_pri_display_info = {
 	.pwr_gpio		= LCD_PWR_EN_CODINA_R0_0,
 	.bl_ctrl		= false,
 
-	.power_on_delay = 10,
-	.reset_delay = 10,
-	.display_off_delay = 25,
+	.power_on_delay = 1,
+	.reset_delay = 1,
+	.sleep_out_delay = 1,
 
 	.video_mode.xres	= 480,
 	.video_mode.yres	= 800,
@@ -155,7 +155,7 @@ struct ssg_dpi_display_platform_data codina_dpi_pri_display_info = {
 	 * setup elsewhere. But the pixclock value is visible in user
 	 * space.
 	 */
-	.video_mode.pixclock = (int)(1e+12 * (1.0 / PRCMU_DPI_CLK_SHARP_FREQ)),
+	.video_mode.pixclock = (int)(1e+12 * (1.0 / CUSTOM_DPI_CLK_SHARP_FREQ)),
 
 	.reset		= pri_display_reset,
 	.lcd_pwr_setup = pri_lcd_pwr_setup,	
@@ -229,8 +229,6 @@ static int pri_display_reset(struct ssg_dpi_display_platform_data *pd)
 
 	/* Reset LCD */
 	gpio_set_value(pd->reset_gpio, pd->reset_high);
-
-	/* Hold for minimum of 1ms */
 	msleep(1);
 
 	/* Release LCD from reset */
@@ -429,14 +427,14 @@ int __init init_codina_display_devices(void)
 	 */
 	if (lcd_type == LCD_PANEL_TYPE_SMD) {
 		port0.phy.dpi.clock_div = 2;
-		port0.phy.dpi.lcd_freq = PRCMU_DPI_CLK_SMD_FREQ;
+		port0.phy.dpi.lcd_freq = CUSTOM_DPI_CLK_SMD_FREQ;
 		codina_dpi_pri_display_info.video_mode.pixclock	=
-				(int)(1e+12 * (1.0 / PRCMU_DPI_CLK_SMD_FREQ));
+				(int)(1e+12 * (1.0 / CUSTOM_DPI_CLK_SMD_FREQ));
 	} else {
 		port0.phy.dpi.clock_div = 1;
-		port0.phy.dpi.lcd_freq = PRCMU_DPI_CLK_SHARP_FREQ;
+		port0.phy.dpi.lcd_freq = CUSTOM_DPI_CLK_SHARP_FREQ;
 		codina_dpi_pri_display_info.video_mode.pixclock	=
-				(int)(1e+12 * (1.0 / PRCMU_DPI_CLK_SHARP_FREQ));
+				(int)(1e+12 * (1.0 / CUSTOM_DPI_CLK_SHARP_FREQ));
 	}
 
 	codina_dpi_pri_display_info.video_mode.pixclock /=
@@ -468,19 +466,7 @@ int __init init_codina_display_devices(void)
 		codina_dpi_pri_display_info.video_mode.vbp = 8;
 		codina_dpi_pri_display_info.video_mode.vfp = 8;
 		codina_dpi_pri_display_info.video_mode.vsw = 8;
-		codina_dpi_pri_display_info.sleep_in_delay = 50;
-		codina_dpi_pri_display_info.sleep_out_delay = 100;
-		if (is_recovery) {
-			codina_dpi_pri_display_info.sleep_in_delay = 100;
-			codina_dpi_pri_display_info.sleep_out_delay = 50;
-		}
-		if (is_lpm) {
-			codina_dpi_pri_display_info.sleep_in_delay = 10;
-			codina_dpi_pri_display_info.sleep_out_delay = 10;
-		}
-
 	} else {
-
 		generic_display0.name = LCD_DRIVER_NAME_S6D27A1;
 		codina_dpi_pri_display_info.video_mode.hbp = 50;
 		codina_dpi_pri_display_info.video_mode.hfp = 50;
@@ -488,17 +474,14 @@ int __init init_codina_display_devices(void)
 		codina_dpi_pri_display_info.video_mode.vbp = 10;
 		codina_dpi_pri_display_info.video_mode.vfp = 10;
 		codina_dpi_pri_display_info.video_mode.vsw = 2;
-		codina_dpi_pri_display_info.sleep_in_delay = 50;
-		codina_dpi_pri_display_info.sleep_out_delay = 200;
-		if (is_recovery) {
-			codina_dpi_pri_display_info.sleep_in_delay = 200;
-			codina_dpi_pri_display_info.sleep_out_delay = 50;
-		}
-		if (is_lpm) {
-			codina_dpi_pri_display_info.sleep_in_delay = 10;
-			codina_dpi_pri_display_info.sleep_out_delay = 10;
-		}
+	}
 
+	if (is_recovery || is_lpm) {
+		codina_dpi_pri_display_info.sleep_in_delay = 1;
+		codina_dpi_pri_display_info.display_off_delay = 1;
+	} else {
+		codina_dpi_pri_display_info.sleep_in_delay = 25;
+		codina_dpi_pri_display_info.display_off_delay = 25;
 	}
 
 	prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
