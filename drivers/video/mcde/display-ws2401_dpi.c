@@ -51,14 +51,13 @@
 #define LDI_STATE_ON		1
 #define LDI_STATE_OFF		0
 /* Taken from the programmed value of the LCD clock in PRCMU */
-#define PIX_CLK_FREQ		25000000
 #define VMODE_XRES		480
 #define VMODE_YRES		800
 #define POWER_IS_ON(pwr)	((pwr) <= FB_BLANK_NORMAL)
 
-#define MIN_BRIGHTNESS		10
+#define MIN_BRIGHTNESS		30
 #define MAX_BRIGHTNESS		255
-#define DEFAULT_BRIGHTNESS	80
+#define DEFAULT_BRIGHTNESS	42
 
 #define DCS_CMD_COLMOD		0x3A	/* Set Pixel Format */
 #define DCS_CMD_WS2401_RESCTL	0xB8	/* Resolution Select Control */
@@ -99,11 +98,10 @@
 #define ESD_TEST
 */
 
-static bool lcd_workaround = false;
-static unsigned int lcd_workaround_delay = 500;
-
 static unsigned int ape_opp = PRCMU_QOS_HALF_VALUE;
 static unsigned int ddr_opp = PRCMU_QOS_HALF_VALUE;
+
+static struct ws2401_dpi *lcd_data;
 
 struct ws2401_dpi {
 	struct device				*dev;
@@ -195,10 +193,10 @@ static const u8 DCS_CMD_SEQ_WS2401_INIT[] = {
 
 	DCS_CMD_SEQ_END
 };
-
+/*
 static const u8 DCS_CMD_SEQ_WS2401_GAMMA_SET[] = {
 
-	18,	DCS_CMD_WS2401_GAMMA_R1,	0x00,	/*RED1*/
+	18,	DCS_CMD_WS2401_GAMMA_R1,	0x00,	//RED1
 						0x5B,
 						0x41,
 						0x41,
@@ -216,7 +214,7 @@ static const u8 DCS_CMD_SEQ_WS2401_GAMMA_SET[] = {
 						0x17,
 						0x00,
 
-	18,	DCS_CMD_WS2401_GAMMA_R2,	0x00,	/*RED2*/
+	18,	DCS_CMD_WS2401_GAMMA_R2,	0x00,	//RED2
 						0x5B,
 						0x41,
 						0x41,
@@ -234,7 +232,7 @@ static const u8 DCS_CMD_SEQ_WS2401_GAMMA_SET[] = {
 						0x17,
 						0x00,
 
-	18,	DCS_CMD_WS2401_GAMMA_G1,	0x00,	/*GREEN1*/
+	18,	DCS_CMD_WS2401_GAMMA_G1,	0x00,	//GREEN1
 						0x59,
 						0x3F,
 						0x3F,
@@ -252,7 +250,7 @@ static const u8 DCS_CMD_SEQ_WS2401_GAMMA_SET[] = {
 						0x07,
 						0x00,
 
-	18,	DCS_CMD_WS2401_GAMMA_G2,	0x00,	/*GREEN2*/
+	18,	DCS_CMD_WS2401_GAMMA_G2,	0x00,	//GREEN2
 						0x59,
 						0x3F,
 						0x3F,
@@ -270,7 +268,7 @@ static const u8 DCS_CMD_SEQ_WS2401_GAMMA_SET[] = {
 						0x07,
 						0x00,
 
-	18,	DCS_CMD_WS2401_GAMMA_B1,	0x00,	/*BLUE*/
+	18,	DCS_CMD_WS2401_GAMMA_B1,	0x00,	//BLUE
 						0x55,
 						0x3A,
 						0x3A,
@@ -288,7 +286,7 @@ static const u8 DCS_CMD_SEQ_WS2401_GAMMA_SET[] = {
 						0x03,
 						0x00,
 
-	18,	DCS_CMD_WS2401_GAMMA_B2,	0x00,	/*BLUE*/
+	18,	DCS_CMD_WS2401_GAMMA_B2,	0x00,	//BLUE
 						0x55,
 						0x3A,
 						0x3A,
@@ -307,7 +305,7 @@ static const u8 DCS_CMD_SEQ_WS2401_GAMMA_SET[] = {
 						0x00,
 	DCS_CMD_SEQ_END
 };
-
+*/
 static const u8 DCS_CMD_SEQ_WS2401_ENABLE_BACKLIGHT_CONTROL[] = {
 /*	Length	Command				Parameters */
 	2,	DCS_CMD_WS2401_WRCTRLD,		0x2C,
@@ -694,15 +692,14 @@ static int ws2401_dpi_ldi_init(struct ws2401_dpi *lcd)
 
 	ret |= ws2401_write_dcs_sequence(lcd, DCS_CMD_SEQ_WS2401_INIT);
 
-		ret |= ws2401_write_dcs_sequence(lcd, DCS_CMD_SEQ_WS2401_GAMMA_SET);
-/*
+	//ret |= ws2401_write_dcs_sequence(lcd, DCS_CMD_SEQ_WS2401_GAMMA_SET);
+
 	if (lcd->pd->bl_ctrl)
 		ret |= ws2401_write_dcs_sequence(lcd,
 				DCS_CMD_SEQ_WS2401_ENABLE_BACKLIGHT_CONTROL);
 	else
 		ret |= ws2401_write_dcs_sequence(lcd,
 				DCS_CMD_SEQ_WS2401_DISABLE_BACKLIGHT_CONTROL);
-*/
 
 	return ret;
 }
@@ -710,12 +707,14 @@ static int ws2401_dpi_ldi_init(struct ws2401_dpi *lcd)
 static int ws2401_dpi_ldi_enable(struct ws2401_dpi *lcd)
 {
 	int ret = 0;
+
 	dev_dbg(lcd->dev, "ws2401_dpi_ldi_enable\n");
-if (lcd->pd->sleep_out_delay)
-			msleep(lcd->pd->sleep_out_delay);
+
+	if (lcd->pd->sleep_out_delay)
+		msleep(lcd->pd->sleep_out_delay);
+
 	ret |= ws2401_write_dcs_sequence(lcd, DCS_CMD_SEQ_WS2401_DISPLAY_ON);
-if (lcd->pd->sleep_out_delay)
-			msleep(lcd->pd->sleep_out_delay);
+
 	if (!ret)
 		lcd->ldi_state = LDI_STATE_ON;
 
@@ -727,10 +726,11 @@ static int ws2401_dpi_ldi_disable(struct ws2401_dpi *lcd)
 	int ret;
 
 	dev_dbg(lcd->dev, "ws2401_dpi_ldi_disable\n");
-        ret = ws2401_write_dcs_sequence(lcd,
-					DCS_CMD_SEQ_WS2401_DISPLAY_OFF);
+
+	ret = ws2401_write_dcs_sequence(lcd,
+			DCS_CMD_SEQ_WS2401_DISPLAY_OFF);
 	ret |= ws2401_write_dcs_sequence(lcd,
-				DCS_CMD_SEQ_WS2401_ENTER_SLEEP_MODE);
+			DCS_CMD_SEQ_WS2401_ENTER_SLEEP_MODE);
 
 	if (lcd->pd->sleep_in_delay)
 		msleep(lcd->pd->sleep_in_delay);
@@ -772,7 +772,8 @@ static int ws2401_dpi_power_on(struct ws2401_dpi *lcd)
 	}
 
 	dpd->power_on(dpd, LCD_POWER_UP);
-	msleep(dpd->power_on_delay);
+	if (dpd->power_on_delay)
+		msleep(dpd->power_on_delay);
 
 	if (!dpd->gpio_cfg_lateresume) {
 		dev_err(lcd->dev, "gpio_cfg_lateresume is NULL.\n");
@@ -781,7 +782,8 @@ static int ws2401_dpi_power_on(struct ws2401_dpi *lcd)
 		dpd->gpio_cfg_lateresume();
 
 	dpd->reset(dpd);
-	msleep(dpd->reset_delay);
+	if (dpd->reset_delay)
+		msleep(dpd->reset_delay);
 
 	ret = ws2401_dpi_ldi_init(lcd);
 	if (ret) {
@@ -820,6 +822,9 @@ static int ws2401_dpi_power_off(struct ws2401_dpi *lcd)
 		dev_err(lcd->dev, "lcd setting failed.\n");
 		return -EIO;
 	}
+
+	if (dpd->display_off_delay)
+		msleep(dpd->display_off_delay);
 
 	if (!dpd->gpio_cfg_earlysuspend) {
 		dev_err(lcd->dev, "gpio_cfg_earlysuspend is NULL.\n");
@@ -1198,62 +1203,6 @@ static ssize_t ws2401_sysfs_store_enable(struct device *dev,
 static DEVICE_ATTR(enable, 0200,
 		NULL /*ws2401_sysfs_show_enable */, ws2401_sysfs_store_enable);
 
-static ssize_t ws2401_sysfs_show_lcd_workaround(struct device *dev,
-				      struct device_attribute *attr, char *buf)
-{
-	sprintf(buf,   "\n[ws2401 LCD Workaround]\n\n");
-
-	sprintf(buf, "%s[enable]\t[%s]\n", buf, lcd_workaround ? "*" : " ");
-	sprintf(buf, "%s[delay in ms]\t[%d]\n\n", buf, lcd_workaround_delay);
-
-	return strlen(buf);
-}
-
-static ssize_t ws2401_sysfs_store_lcd_workaround(struct device *dev,
-				       struct device_attribute *attr,
-				       const char *buf, size_t len)
-{
-	int tmp;
-
-	if (!strncmp(buf, "true", 1)) {
-		lcd_workaround = true;
-		return len;
-	}
-
-	if (!strncmp(buf, "false", 2)) {
-		lcd_workaround = false;
-		return len;
-	}
-
-	if (sysfs_streq(buf, "1")) {
-		lcd_workaround = true;
-		return len;
-	}
-
-	if (sysfs_streq(buf, "0")) {
-		lcd_workaround = false;
-		return len;
-	}
-
-	if (sscanf(buf, "delay=%d", &tmp)) {
-
-		if (tmp < 1 || tmp > 2000) {
-			pr_warning("[ws2401] Invaild input\n");
-			return -EINVAL;
-		}
-
-		lcd_workaround_delay = tmp;
-
-		return len;
-	}
-
-	pr_err("[ws2401] Invaild cmd\n");
-
-	return -EINVAL;
-}
-static DEVICE_ATTR(lcd_workaround, 0666,
-		ws2401_sysfs_show_lcd_workaround, ws2401_sysfs_store_lcd_workaround);
-
 static ssize_t ws2401_dpi_sysfs_store_lcd_power(struct device *dev,
 						struct device_attribute *attr,
 						const char *buf, size_t len)
@@ -1409,18 +1358,6 @@ out:
 	return ret;
 }
 
-static struct ws2401_dpi *lcd_data;
-
-static void reset_mcde_thread(struct work_struct *reset_mcde_work)
-{
-	pm_message_t dummy;
-
-	msleep(lcd_workaround_delay);
-	ws2401_dpi_mcde_suspend(lcd_data->mdd, dummy);
-	ws2401_dpi_mcde_resume(lcd_data->mdd);
-}
-static DECLARE_WORK(reset_mcde_work, reset_mcde_thread);
-
 static int __devinit ws2401_dpi_mcde_probe(
 				struct mcde_display_device *ddev)
 {
@@ -1509,10 +1446,6 @@ static int __devinit ws2401_dpi_mcde_probe(
 	if (ret < 0)
 		dev_err(&(ddev->dev), "failed to add mcde_chnl sysfs entries\n");
 
-	ret = device_create_file(&(ddev->dev), &dev_attr_lcd_workaround);
-	if (ret < 0)
-		dev_err(&(ddev->dev), "failed to add lcd_workaround sysfs entries\n");
-
 	ret = device_create_file(&(ddev->dev), &dev_attr_enable);
 	if (ret < 0)
 		dev_err(&(ddev->dev), "failed to add enable sysfs entries\n");
@@ -1522,6 +1455,7 @@ static int __devinit ws2401_dpi_mcde_probe(
 	lcd->spi_drv.driver.owner	= THIS_MODULE;
 	lcd->spi_drv.probe		= ws2401_dpi_spi_probe;
 	lcd_data			= lcd;
+
 	ret = spi_register_driver(&lcd->spi_drv);
 	if (ret < 0) {
 		dev_err(&(ddev->dev), "Failed to register SPI driver");
@@ -1680,9 +1614,6 @@ static void ws2401_dpi_mcde_late_resume(
 	#endif
 
 	ws2401_dpi_mcde_resume(lcd->mdd);
-
-	if (lcd_workaround)
-		schedule_work(&reset_mcde_work);
 
 	#ifdef ESD_OPERATION
 	if (lcd->lcd_connected) {

@@ -46,11 +46,29 @@
 #include "mcde_trace.h"
 #endif
 
-//#define MCDE_DPI_UNDERFLOW
+#define MCDE_DPI_UNDERFLOW
 #ifdef MCDE_DPI_UNDERFLOW
 #include <linux/fb.h>
 #include <video/mcde_fb.h>
 #endif
+
+#include "../../../kernel/power/power.h"
+#include <linux/kobject.h>
+#include <linux/mfd/dbx500-prcmu.h>
+#include <linux/mfd/db8500-prcmu.h>
+#include <linux/wakelock.h>
+
+extern bool is_s6d(void);
+extern int deepest_allowed_state;
+extern bool is_deep_sleep;
+
+static unsigned int lcdclk_usr = 4;
+static unsigned int lcdclk_s6d_usr = 6;
+static unsigned int custom_lcdclk = 0;
+
+#define LCDCLK_SET(clk) prcmu_set_clock_rate(PRCMU_LCDCLK, (unsigned long) clk);
+
+static struct wake_lock mcde_wake_lock;
 
 static int set_channel_state_atomic(struct mcde_chnl_state *chnl,
 							enum chnl_state state);
@@ -186,13 +204,13 @@ void mcde_wreg(u32 reg, u32 val)
 
 static struct mcde_ovly_state *overlays;
 static struct mcde_chnl_state *channels;
-static inline u32 get_ovly_bw(struct mcde_ovly_state *ovly)
+
+static inline u32 get_ovly_bw(struct mcde_ovly_state *ovly, struct mcde_video_mode *video_mode)
 {
 	if (!ovly || !ovly->regs.enabled)
 		return 0;
 
-	//TODO: Use pixclock for fps
-	return ovly->regs.ppl * ovly->regs.lpf * 60;
+	return ovly->regs.ppl * ovly->regs.lpf * video_mode->pixclock;
 }
 
 static void update_opp_requirements(void)
@@ -209,12 +227,12 @@ static void update_opp_requirements(void)
 		struct mcde_chnl_state *chnl = &channels[i];
 		if (chnl->regs.roten)
 			rot++;
-		tmp = get_ovly_bw(chnl->ovly0);
+		tmp = get_ovly_bw(chnl->ovly0, &chnl->vmode);
 		if (tmp) {
 			ovly++;
 			bw += tmp;
 		}
-		tmp = get_ovly_bw(chnl->ovly1);
+		tmp = get_ovly_bw(chnl->ovly1, &chnl->vmode);
 		if (tmp) {
 			ovly++;
 			bw += tmp;
@@ -1215,17 +1233,11 @@ static int wait_for_vsync(struct mcde_chnl_state *chnl)
 		return 0;
 	}
 }
+
 /* PRCMU LCDCLK
  * 30720000	[S6D27A1]
  * 49920000	[WS2401]
  */
-#include <linux/kobject.h>
-#include <linux/mfd/dbx500-prcmu.h>
-#include <linux/mfd/db8500-prcmu.h>
-
-extern bool is_s6d(void);
-
-#define LCDCLK_SET(clk) prcmu_set_clock_rate(PRCMU_LCDCLK, (unsigned long) clk);
 
 struct lcdclk_prop
 {
@@ -1295,15 +1307,9 @@ static struct lcdclk_prop lcdclk_s6d_prop[] = {
 		},
 };
 
-static unsigned int lcdclk_usr = 4;
-static unsigned int lcdclk_s6d_usr = 6;
-static unsigned int custom_lcdclk = 0;
-
-static void lcdclk_thread(struct work_struct *lcdclk_work)
+static void lcdclk_set(void)
 {
-	int ret = 0;
-
-	msleep(1000);
+	int ret;
 
 	if ((custom_lcdclk != 0) && (lcdclk_usr == 0 || lcdclk_s6d_usr == 0)) {
 		ret = LCDCLK_SET(custom_lcdclk);
@@ -1331,7 +1337,6 @@ static void lcdclk_thread(struct work_struct *lcdclk_work)
 		}
 	}
 }
-static DECLARE_WORK(lcdclk_work, lcdclk_thread);
 
 #define ATTR_RO(_name)	\
 	static struct kobj_attribute _name##_interface = __ATTR(_name, 0444, _name##_show, NULL);
@@ -1377,7 +1382,7 @@ static ssize_t lcd_clk_show(struct kobject *kobj, struct kobj_attribute *attr, c
 static ssize_t lcd_clk_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
 	int ret, tmp;
-	
+
 	if (sscanf(buf, "lcdclk=%d", &tmp)) {
 		custom_lcdclk = tmp;
 		if (is_s6d())
@@ -1406,7 +1411,7 @@ static ssize_t lcd_clk_store(struct kobject *kobj, struct kobj_attribute *attr, 
 		lcdclk_usr = tmp;
 
 out:
-	schedule_work(&lcdclk_work);
+	lcdclk_set();
 
 	return count;
 }
@@ -1514,15 +1519,8 @@ static int update_channel_static_registers(struct mcde_chnl_state *chnl)
 	}
 
 	if (port->type == MCDE_PORTTYPE_DPI) {
-		if (port->phy.dpi.lcd_freq != clk_round_rate(chnl->clk_dpi,
-							port->phy.dpi.lcd_freq))
-			//dev_warn(&mcde_dev->dev, "Could not set lcd freq"
-					//" to %d\n", port->phy.dpi.lcd_freq);
-		WARN_ON_ONCE(clk_set_rate(chnl->clk_dpi,
-						port->phy.dpi.lcd_freq));
-		WARN_ON_ONCE(clk_enable(chnl->clk_dpi));
-
-		schedule_work(&lcdclk_work);
+		lcdclk_set();
+		(clk_enable(chnl->clk_dpi));
 	}
 
 	mcde_wfld(MCDE_CR, MCDEEN, true);
@@ -4570,18 +4568,20 @@ int __init mcde_init(void)
 	int ret = 0;
   
 	mutex_init(&mcde_hw_lock);
-	
+
 	mcde_kobject = kobject_create_and_add("mcde", kernel_kobj);
 	if (!mcde_kobject) {
 		pr_err("[MCDE] Failed to create kobject interface\n");
 		goto out;
 	}
-	
+
 	ret = sysfs_create_group(mcde_kobject, &mcde_interface_group);
 	if (ret) {
 		kobject_put(mcde_kobject);
 	}
-	
+
+	wake_lock_init(&mcde_wake_lock, WAKE_LOCK_SUSPEND, "mcde_kernel_wake_lock");
+
 out:
 	return platform_driver_register(&mcde_driver);
 }

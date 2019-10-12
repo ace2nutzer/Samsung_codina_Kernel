@@ -51,14 +51,13 @@
 #define LDI_STATE_ON			1
 #define LDI_STATE_OFF			0
 /* Taken from the programmed value of the LCD clock in PRCMU */
-#define PIX_CLK_FREQ			25000000
 #define VMODE_XRES			480
 #define VMODE_YRES			800
 #define POWER_IS_ON(pwr)		((pwr) <= FB_BLANK_NORMAL)
 
-#define MIN_BRIGHTNESS			10
+#define MIN_BRIGHTNESS			30
 #define MAX_BRIGHTNESS			255
-#define DEFAULT_BRIGHTNESS		80
+#define DEFAULT_BRIGHTNESS		42
 
 #define DCS_CMD_S6D27A1_RESCTL		0xB3	/* Resolution Select Control */
 #define DCS_CMD_S6D27A1_PANELCTL2	0xB4	/* ASG Signal Control */
@@ -89,11 +88,10 @@
 #define ESD_TEST
 */
 
-static bool lcd_workaround = false;
-static unsigned int lcd_workaround_delay = 500;
-
 static unsigned int ape_opp = PRCMU_QOS_HALF_VALUE;
 static unsigned int ddr_opp = PRCMU_QOS_HALF_VALUE;
+
+static struct s6d27a1_dpi *lcd_data;
 
 struct s6d27a1_dpi {
 	struct device				*dev;
@@ -177,7 +175,7 @@ static const u8 DCS_CMD_SEQ_S6D27A1_INIT[] = {
 						0x08, 0x01, 0x05, 0x01, 0x0E,
 						0x19, 0x11, 0x23, 0x28, 0x31,
 						0x35, 0x3C, 0x2F,
-*/						
+*/
 	3,	DCS_CMD_S6D27A1_PASSWD_L2,	0xA5, 0xA5,
 
 	DCS_CMD_SEQ_END
@@ -570,7 +568,6 @@ static int s6d27a1_dpi_ldi_init(struct s6d27a1_dpi *lcd)
 
 	ret |= s6d27a1_write_dcs_sequence(lcd, DCS_CMD_SEQ_S6D27A1_INIT);
 
-
 	if (lcd->pd->bl_ctrl)
 		ret |= s6d27a1_write_dcs_sequence(lcd,
 				DCS_CMD_SEQ_S6D27A1_ENABLE_BACKLIGHT_CONTROL);
@@ -584,9 +581,16 @@ static int s6d27a1_dpi_ldi_init(struct s6d27a1_dpi *lcd)
 static int s6d27a1_dpi_ldi_enable(struct s6d27a1_dpi *lcd)
 {
 	int ret = 0;
+
 	dev_dbg(lcd->dev, "s6d27a1_dpi_ldi_enable\n");
 
+	if (lcd->pd->sleep_out_delay)
+		msleep(lcd->pd->sleep_out_delay);
+
 	ret |= s6d27a1_write_dcs_sequence(lcd, DCS_CMD_SEQ_S6D27A1_DISPLAY_ON);
+
+	if (!ret)
+		lcd->ldi_state = LDI_STATE_ON;
 
 	return ret;
 }
@@ -596,8 +600,11 @@ static int s6d27a1_dpi_ldi_disable(struct s6d27a1_dpi *lcd)
 	int ret;
 
 	dev_dbg(lcd->dev, "s6d27a1_dpi_ldi_disable\n");
+
 	ret = s6d27a1_write_dcs_sequence(lcd,
-				DCS_CMD_SEQ_S6D27A1_ENTER_SLEEP_MODE);
+			DCS_CMD_SEQ_S6D27A1_DISPLAY_OFF);
+	ret = s6d27a1_write_dcs_sequence(lcd,
+			DCS_CMD_SEQ_S6D27A1_ENTER_SLEEP_MODE);
 
 	if (lcd->pd->sleep_in_delay)
 		msleep(lcd->pd->sleep_in_delay);
@@ -639,7 +646,8 @@ static int s6d27a1_dpi_power_on(struct s6d27a1_dpi *lcd)
 	}
 
 	dpd->power_on(dpd, LCD_POWER_UP);
-	msleep(dpd->power_on_delay);
+	if (dpd->power_on_delay)
+		msleep(dpd->power_on_delay);
 
 	if (!dpd->gpio_cfg_lateresume) {
 		dev_err(lcd->dev, "gpio_cfg_lateresume is NULL.\n");
@@ -648,7 +656,8 @@ static int s6d27a1_dpi_power_on(struct s6d27a1_dpi *lcd)
 		dpd->gpio_cfg_lateresume();
 
 	dpd->reset(dpd);
-	msleep(dpd->reset_delay);
+	if (dpd->reset_delay)
+		msleep(dpd->reset_delay);
 
 	ret = s6d27a1_dpi_ldi_init(lcd);
 	if (ret) {
@@ -717,6 +726,9 @@ static int s6d27a1_dpi_power_off(struct s6d27a1_dpi *lcd)
 		dev_err(lcd->dev, "lcd setting failed.\n");
 		return -EIO;
 	}
+
+	if (dpd->display_off_delay)
+		msleep(dpd->display_off_delay);
 
 	if (!dpd->gpio_cfg_earlysuspend) {
 		dev_err(lcd->dev, "gpio_cfg_earlysuspend is NULL.\n");
@@ -1106,62 +1118,6 @@ static ssize_t s6d27a1_sysfs_store_enable(struct device *dev,
 static DEVICE_ATTR(enable, 0200,
 		NULL /*s6d27a1_sysfs_show_enable */, s6d27a1_sysfs_store_enable);
 
-static ssize_t s6d27a1_sysfs_show_lcd_workaround(struct device *dev,
-				      struct device_attribute *attr, char *buf)
-{
-	sprintf(buf,   "\n[s6d27a1 LCD Workaround]\n\n");
-
-	sprintf(buf, "%s[enable]\t[%s]\n", buf, lcd_workaround ? "*" : " ");
-	sprintf(buf, "%s[delay in ms]\t[%d]\n\n", buf, lcd_workaround_delay);
-
-	return strlen(buf);
-}
-
-static ssize_t s6d27a1_sysfs_store_lcd_workaround(struct device *dev,
-				       struct device_attribute *attr,
-				       const char *buf, size_t len)
-{
-	int tmp;
-
-	if (!strncmp(buf, "true", 1)) {
-		lcd_workaround = true;
-		return len;
-	}
-
-	if (!strncmp(buf, "false", 2)) {
-		lcd_workaround = false;
-		return len;
-	}
-
-	if (sysfs_streq(buf, "1")) {
-		lcd_workaround = true;
-		return len;
-	}
-
-	if (sysfs_streq(buf, "0")) {
-		lcd_workaround = false;
-		return len;
-	}
-
-	if (sscanf(buf, "delay=%d", &tmp)) {
-
-		if (tmp < 1 || tmp > 2000) {
-			pr_warning("[s6d27a1] Invaild input\n");
-			return -EINVAL;
-		}
-
-		lcd_workaround_delay = tmp;
-
-		return len;
-	}
-
-	pr_err("[s6d27a1] Invaild cmd\n");
-
-	return -EINVAL;
-}
-static DEVICE_ATTR(lcd_workaround, 0666,
-		s6d27a1_sysfs_show_lcd_workaround, s6d27a1_sysfs_store_lcd_workaround);
-
 static ssize_t s6d27a1_dpi_sysfs_store_lcd_power(struct device *dev,
 						struct device_attribute *attr,
 						const char *buf, size_t len)
@@ -1328,18 +1284,6 @@ out:
 	return ret;
 }
 
-static struct s6d27a1_dpi *lcd_data;
-
-static void reset_mcde_thread(struct work_struct *reset_mcde_work)
-{
-	pm_message_t dummy;
-
-	msleep(lcd_workaround_delay);
-	s6d27a1_dpi_mcde_suspend(lcd_data->mdd, dummy);
-	s6d27a1_dpi_mcde_resume(lcd_data->mdd);
-}
-static DECLARE_WORK(reset_mcde_work, reset_mcde_thread);
-
 static int __devinit s6d27a1_dpi_mcde_probe(
 				struct mcde_display_device *ddev)
 {
@@ -1433,15 +1377,12 @@ static int __devinit s6d27a1_dpi_mcde_probe(
 	if (ret < 0)
 		dev_err(&(ddev->dev), "failed to add enable sysfs entries\n");
 
-	ret = device_create_file(&(ddev->dev), &dev_attr_lcd_workaround);
-	if (ret < 0)
-		dev_err(&(ddev->dev), "failed to add lcd_workaround sysfs entries\n");
-
 	lcd->spi_drv.driver.name	= "pri_lcd_spi";
 	lcd->spi_drv.driver.bus		= &spi_bus_type;
 	lcd->spi_drv.driver.owner	= THIS_MODULE;
 	lcd->spi_drv.probe		= s6d27a1_dpi_spi_probe;
 	lcd_data			= lcd;
+
 	ret = spi_register_driver(&lcd->spi_drv);
 	if (ret < 0) {
 		dev_err(&(ddev->dev), "Failed to register SPI driver");
@@ -1567,9 +1508,6 @@ static void s6d27a1_dpi_mcde_late_resume(
 						earlysuspend);
 
 	s6d27a1_dpi_mcde_resume(lcd->mdd);
-
-	if (lcd_workaround)
-		schedule_work(&reset_mcde_work);
 }
 #endif
 
