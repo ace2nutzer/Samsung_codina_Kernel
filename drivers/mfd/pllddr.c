@@ -47,7 +47,6 @@
 #define PRCMU_UICCCLK_REG					0x027c
 #define PRCMU_PLLSOC1_REG					0x0084
 #define PRCMU_PLLDDR_REG					0x008C
-#define PRCMU_PLLDSICLK_REG				0x0500
 
 
 /*
@@ -61,7 +60,6 @@
 #define ORIG_HDMICLK			66560
 #define ORIG_UNIPROCLK			133120
 #define ORIG_PLLSOC1			99840
-#define ORIG_PLLDSICLK			159744
 #define ORIG_SXACLK			399360
 
 
@@ -113,7 +111,6 @@ static struct prcmu_regs_table prcmu_regs[] = {
 	{PRCMU_UNIPROCLK_REG,	0x126,		0x126,		"uniproclk"},
 	{PRCMU_UICCCLK_REG,	0x8,		0x8,		"uiccclk"},
 	{PRCMU_PLLSOC1_REG,     0x40128,        0x40128,        "pllsoc1"},
-	{PRCMU_PLLDSICLK_REG,     0x40165,        0x40165,        "plldsiclk"},
 };
 
 enum {
@@ -136,7 +133,6 @@ enum {
       UNIPROCLK,
       UICCCLK,
       PLLSOC1,
-      PLLDSICLK,
 } clkddr;
 
 static void ddr_cross_clocks_boost(bool state)
@@ -226,7 +222,7 @@ static void do_oc_ddr(int new_val_)
 	int sdmmc_old_divider, sdmmc_new_divider,
 	    perx_new_divider, pllsoc1_new_divider,
 	    hdmi_new_divider, unipro_new_divider,
-	    mcde_new_divider, plldsi_new_divider,
+	    mcde_new_divider,
 	    sxa_new_divider, // used for SIACLK and SVACLK
 	    hsirx_new_divider; // used also for uiccclk
 
@@ -238,6 +234,7 @@ static void do_oc_ddr(int new_val_)
 
 		// Recalibrate PER1CLK - PER6CLK
 		perx_new_divider = (pllddr_freq - (pllddr_freq % ORIG_PERXCLK)) / ORIG_PERXCLK;
+		perx_new_divider = perx_new_divider + 1;
 		if (perx_new_divider > 15) perx_new_divider = 15;
 
 		prcmu_regs[PER1CLK].boost_value = perx_new_divider;
@@ -248,6 +245,7 @@ static void do_oc_ddr(int new_val_)
 
 		// Recalibrate MCDECLK
 		mcde_new_divider = (pllddr_freq - (pllddr_freq % ORIG_MCDECLK)) / ORIG_MCDECLK;
+		mcde_new_divider = mcde_new_divider + 1;
 		if (mcde_new_divider > 15) mcde_new_divider = 15;
 
 		prcmu_regs[MCDECLK].boost_value = mcde_new_divider;
@@ -267,6 +265,7 @@ static void do_oc_ddr(int new_val_)
 
 		// Recalibrate UNIPROCLK
 		unipro_new_divider = (pllddr_freq - (pllddr_freq % ORIG_UNIPROCLK)) / ORIG_UNIPROCLK;
+		unipro_new_divider = unipro_new_divider + 1;
 		if (unipro_new_divider > 15) unipro_new_divider = 15;
 
 		prcmu_regs[UNIPROCLK].boost_value = unipro_new_divider;
@@ -276,12 +275,6 @@ static void do_oc_ddr(int new_val_)
 		if (pllsoc1_new_divider > 15) pllsoc1_new_divider = 15;
 
 		prcmu_regs[PLLSOC1].boost_value = pllsoc1_new_divider;
-
-		// Recalibrate PLLDSICLK
-		plldsi_new_divider = (pllddr_freq - (pllddr_freq % ORIG_PLLDSICLK)) / ORIG_PLLDSICLK;
-		if (plldsi_new_divider > 15) plldsi_new_divider = 15;
-
-		prcmu_regs[PLLDSICLK].boost_value = plldsi_new_divider;
 
 		// Recalibrate SIACLK and SVACLK
 		sxa_new_divider = (pllddr_freq - (pllddr_freq % ORIG_SXACLK)) / ORIG_SXACLK;
