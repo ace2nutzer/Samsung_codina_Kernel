@@ -347,7 +347,7 @@ static void (*mxt224e_ts_vbus_state)(bool vbus_status);
 #endif
 
 /* Charger Control */
-static unsigned int ac_curr_max = 600;
+static unsigned int ac_curr_max = 800;
 static unsigned int usb_curr_max = 500;
 
 /* sysfs interfaces read-only */
