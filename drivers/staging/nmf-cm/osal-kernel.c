@@ -44,7 +44,7 @@ static bool forced_late_resume_bt404_ts = false;
 #define FULL_OPP 100
 #define HALF_OPP 50
 static unsigned long running_dsp = 0;
-static unsigned int dspLoadMonitorPeriod = 67;
+static unsigned int dspLoadMonitorPeriod = 1000;
 module_param(dspLoadMonitorPeriod, uint, S_IWUSR|S_IRUGO);
 MODULE_PARM_DESC(dspLoadMonitorPeriod, "Period of the DSP-Load monitoring in ms");
 static unsigned int dspLoadHighThreshold = 45;
