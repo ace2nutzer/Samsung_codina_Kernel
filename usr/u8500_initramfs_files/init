@@ -9,8 +9,6 @@ rm init
 mount -t proc proc /proc
 mount -t sysfs sysfs /sys
 
-echo 400000 > /sys/devices/system/cpu/cpu0/cpufreq/user_scaling_min_freq
-
 mount -t ext4 /dev/block/mmcblk0p17 /ramdisk
 chmod 755 /ramdisk/sh
 
