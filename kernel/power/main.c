@@ -319,8 +319,8 @@ power_attr(wake_unlock);
 #endif
 
 #ifdef CONFIG_DVFS_LIMIT
-static int cpufreq_max_limit_val = 800 * 1000;
-static int cpufreq_min_limit_val = 200 * 1000;
+static int cpufreq_max_limit_val = -1;
+static int cpufreq_min_limit_val = -1;
 static int min_replacement = 0;
 
 static ssize_t cpufreq_table_show(struct kobject *kobj,
@@ -344,13 +344,8 @@ static ssize_t cpufreq_table_show(struct kobject *kobj,
 
 	policy = cpufreq_cpu_get(0);
 	if (policy) {
-	#if 0 /* /sys/devices/system/cpu/cpu0/cpufreq/scaling_min&max_freq */
-		min_freq = policy->min_freq;
-		max_freq = policy->max_freq;
-	#else /* /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min&max_freq */
-		min_freq = policy->cpuinfo.min_freq;
-		max_freq = policy->cpuinfo.max_freq;
-	#endif
+		min_freq = policy->min;
+		max_freq = policy->max;
 	}
 
 	// Get frequency table length
