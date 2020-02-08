@@ -5,6 +5,7 @@
  *
  * Author: Marta Lofstedt <marta.lofstedt@stericsson.com> for ST-Ericsson.
  * Author: Huang Ji (cocafe@xda) <cocafehj@gmail.com>
+ * Author: Silvestro Sanfilippo (ace2nutzer@xda) <ace2nutzer@gmail.com>
  * 
  * License terms: GNU General Public License (GPL) version 2.
  */
@@ -25,7 +26,6 @@
 #include <linux/version.h>
 #include <linux/moduleparam.h>
 #include <linux/kobject.h>
-#include <linux/jiffies.h>
 
 #if CONFIG_HAS_WAKELOCK
 #include <linux/wakelock.h>
@@ -37,26 +37,29 @@
 #include <linux/mfd/dbx500-prcmu.h>
 #endif
 
-#define MALI_CLOCK_DEFLO		449280
-#define MALI_CLOCK_DEFHI		499200
+#include <linux/delay.h>
 
-#define DEF_BOOST_UP_THRESHOLD		(115) /* 45 % | min 60, max 256 */
-#define DOWN_THRESHOLD_MARGIN		(51) /* 20 % */
+#define MIN_FREQ		0
+#define MAX_FREQ		2
 
-/* reversed logic */
-#define DEF_BOOST_FREQUENCY_STEP_7		(449280)
-#define DEF_BOOST_FREQUENCY_STEP_6		(499200)
-#define DEF_BOOST_FREQUENCY_STEP_5		(549120)
-#define DEF_BOOST_FREQUENCY_STEP_4		(599040)
-#define DEF_BOOST_FREQUENCY_STEP_3		(652800)
-#define DEF_BOOST_FREQUENCY_STEP_2		(698880)
-#define DEF_BOOST_FREQUENCY_STEP_1		(748800)
-#define DEF_BOOST_FREQUENCY_STEP_0		(798720)
+#define UP_THRESHOLD					95	/* min 20 %, max 99 % */
+#define DOWN_THRESHOLD_MARGIN		10
+#define DEF_FREQUENCY_STEP			1
+#define DEF_BOOST							0
 
-#define MALI_LOW_TO_HIGH_LEVEL_UTILIZATION_LIMIT 51 /* 20% */
-#define MALI_HIGH_TO_LOW_LEVEL_UTILIZATION_LIMIT 13 /* 5% */
+#define DEF_FREQUENCY_STEP_300000		0
+#define DEF_FREQUENCY_STEP_350000		1
+#define DEF_FREQUENCY_STEP_400000		2
+#define DEF_FREQUENCY_STEP_450000		3
+#define DEF_FREQUENCY_STEP_500000		4
+#define DEF_FREQUENCY_STEP_550000		5
+#define DEF_FREQUENCY_STEP_600000		6
+#define DEF_FREQUENCY_STEP_650000		7
+#define DEF_FREQUENCY_STEP_700000		8
+#define DEF_FREQUENCY_STEP_750000		9
+#define DEF_FREQUENCY_STEP_800000		10
 
-#define MALI_UX500_VERSION		"1.0.1"
+#define MALI_UX500_VERSION		"2.1"
 
 #define MALI_MAX_UTILIZATION		256
 
@@ -64,7 +67,7 @@
 #define PRCMU_PLLSOC0			0x0080
 
 #define PRCMU_SGACLK_INIT		0x00000121
-#define PRCMU_PLLSOC0_INIT		0x01050175
+#define PRCMU_PLLSOC0_INIT		0x0105014E
 
 #define AB8500_VAPE_SEL1 		0x0E
 #define AB8500_VAPE_SEL2	 	0x0F
@@ -72,41 +75,32 @@
 #define AB8500_VAPE_MIN_UV		700000
 #define AB8500_VAPE_MAX_UV		1387500
 
-static u32 boost_down_threshold_6 = 0;
-static u32 boost_down_threshold_5 = 0;
-static u32 boost_down_threshold_4 = 0;
-static u32 boost_down_threshold_3 = 0;
-static u32 boost_down_threshold_2 = 0;
-static u32 boost_down_threshold_1 = 0;
-static u32 boost_down_threshold_0 = 0;
-
 struct mali_dvfs_data
 {
 	u32 	freq;
+	u32 	freq_raw;
 	u32 	clkpll;
 	u8 	vape_raw;
 };
 
-/* reversed logic */
 static struct mali_dvfs_data mali_dvfs[] = {
-	{798720, 0x010501D0, 0x37},
-	{748800, 0x010501C3, 0x37},
-	{698880, 0x010501B6, 0x37},
-	{652800, 0x010501AA, 0x37},
-	{599040, 0x0105019C, 0x37},
-	{549120, 0x0105018F, 0x37},
-	{499200, 0x01050182, 0x25},
-	{449280, 0x01050175, 0x22},
+	{300000, 299520, 0x0105014E, 0x20},
+	{350000, 349440, 0x0105015B, 0x21},
+	{400000, 399360, 0x01050168, 0x22},
+	{450000, 449280, 0x01050175, 0x24},
+	{500000, 499200, 0x01050182, 0x28},
+	{550000, 549120, 0x0105018F, 0x2d},
+	{600000, 599040, 0x0105019C, 0x32},
+	{650000, 652800, 0x010501AA, 0x37},
+	{700000, 698880, 0x010501B6, 0x37},
+	{750000, 748800, 0x010501C3, 0x37},
+	{800000, 798720, 0x010501D0, 0x37},
 };
 
-int mali_utilization_high_to_low = MALI_HIGH_TO_LOW_LEVEL_UTILIZATION_LIMIT;
-int mali_utilization_low_to_high = MALI_LOW_TO_HIGH_LEVEL_UTILIZATION_LIMIT;
-
+extern u32 mali_utilization_sampling_rate;
 static bool is_running;
 static bool is_initialized;
-
 static u32 mali_last_utilization;
-module_param(mali_last_utilization, uint, 0444);
 
 static struct regulator *regulator;
 static struct clk *clk_sga;
@@ -117,19 +111,14 @@ static struct workqueue_struct *mali_utilization_workqueue;
 static struct wake_lock wakelock;
 #endif
 
-static u32 boost_enable 	= 1;
-static u32 boost_working 	= 0;
-static u32 boost_scheduled 	= 0;
-static u32 boost_required 	= 0;
-static u32 boost_delay 		= 0;
-static u32 boost_low 		= 0;
-static u32 boost_high 		= 0;
-static u32 boost_up_threshold 	= DEF_BOOST_UP_THRESHOLD;
-static u32 dynamic_boost_down_threshold	= 0;
-//mutex to protect above variables
-static DEFINE_MUTEX(mali_boost_lock);
-
-static struct delayed_work mali_boost_delayedwork;
+static u32 min_freq 		= MIN_FREQ;
+static u32 max_freq 		= MAX_FREQ;
+static u32 requested_freq = MIN_FREQ;
+static u32 freq_step 		= DEF_FREQUENCY_STEP;
+static u32 up_threshold 	= UP_THRESHOLD * 256 / 100;
+static u32 down_threshold;
+static u32 down_threshold_margin = DOWN_THRESHOLD_MARGIN * 256 / 100;
+static bool boost = DEF_BOOST;
 
 static int vape_voltage(u8 raw)
 {
@@ -157,7 +146,7 @@ static int pllsoc0_freq(u32 raw)
 	return pll;
 }
 
-static int sgaclk_freq(void)
+static u32 sgaclk_freq(void)
 {
 	u32 soc0pll = prcmu_read(PRCMU_PLLSOC0);
 	u32 sgaclk = prcmu_read(PRCMU_SGACLK);
@@ -171,87 +160,54 @@ static int sgaclk_freq(void)
 	return (pllsoc0_freq(soc0pll) / (sgaclk & 0xf));
 }
 
-static void mali_boost_update(void)
+static void mali_min_freq_apply(u32 freq)
 {
 	u8 vape;
 	u32 pll;
 
-	if (boost_required) {
-		vape = mali_dvfs[boost_high].vape_raw;
-		pll = mali_dvfs[boost_high].clkpll;
+	vape = mali_dvfs[freq].vape_raw;
+	pll = mali_dvfs[freq].clkpll;
 
-		pr_err("[Mali] @%u kHz - Boost\n", mali_dvfs[boost_high].freq);
+	prcmu_write(PRCMU_PLLSOC0, pll);
 
-		prcmu_abb_write(AB8500_REGU_CTRL2,
-			AB8500_VAPE_SEL1,
-			&vape,
-			1);
-		prcmu_write(PRCMU_PLLSOC0, pll);
-		boost_working = true;
-	} else {
-		vape = mali_dvfs[boost_low].vape_raw;
-		pll = mali_dvfs[boost_low].clkpll;
-
-		pr_err("[Mali] @%u kHz - Deboost\n", mali_dvfs[boost_low].freq);
-
-		prcmu_write(PRCMU_PLLSOC0, pll);
-		prcmu_abb_write(AB8500_REGU_CTRL2,
-			AB8500_VAPE_SEL1,
-			&vape,
-			1);
-
-		boost_working = false;
-	}
-}
-
-static void mali_clock_apply(u32 idx)
-{
-	u8 vape;
-	u32 pll;
-
-	vape = mali_dvfs[idx].vape_raw;
-	pll = mali_dvfs[idx].clkpll;
+	udelay(20);
 
 	prcmu_abb_write(AB8500_REGU_CTRL2, 
 		AB8500_VAPE_SEL1, 
 		&vape, 
 		1);
-	prcmu_write(PRCMU_PLLSOC0, pll);
+
+	requested_freq = freq;
 }
 
-static void mali_boost_work(struct work_struct *work)
+static void mali_max_freq_apply(u32 freq)
 {
-	mutex_lock(&mali_boost_lock);
-	mali_boost_update();
-	boost_scheduled = false;
-	mutex_unlock(&mali_boost_lock);
+	u8 vape;
+	u32 pll;
+
+	vape = mali_dvfs[freq].vape_raw;
+	pll = mali_dvfs[freq].clkpll;
+
+		prcmu_abb_write(AB8500_REGU_CTRL2, 
+			AB8500_VAPE_SEL1, 
+			&vape, 
+			1);
+
+		udelay(80);
+
+		prcmu_write(PRCMU_PLLSOC0, pll);
+
+		requested_freq = freq;
 }
 
 static void mali_boost_init(void)
 {
-	int i;
+	if (sgaclk_freq() != mali_dvfs[MIN_FREQ].freq_raw)
+		mali_min_freq_apply(MIN_FREQ);
 
-	for (i = 0; i < ARRAY_SIZE(mali_dvfs); i++) {
-		if (mali_dvfs[i].freq == MALI_CLOCK_DEFLO) {
-			boost_low = i;
-			break;
-		}
-	}
-
-	for (i = 0; i < ARRAY_SIZE(mali_dvfs); i++) {
-		if (mali_dvfs[i].freq == MALI_CLOCK_DEFHI) {
-			boost_high = i;
-			break;
-		}
-	}
-
-	if (sgaclk_freq() != mali_dvfs[boost_low].freq) {
-		mali_clock_apply(boost_low);
-	}
-
-	pr_info("[Mali] Booster: %u kHz - %u kHz\n", 
-			mali_dvfs[boost_low].freq, 
-			mali_dvfs[boost_high].freq);
+	pr_info("[Mali] Dynamic governor min %u kHz - max %u kHz\n", 
+			mali_dvfs[MIN_FREQ].freq, 
+			mali_dvfs[MAX_FREQ].freq);
 }
 
 static _mali_osk_errcode_t mali_platform_powerdown(void)
@@ -303,142 +259,49 @@ error:
 	MALI_ERROR(_MALI_OSK_ERR_FAULT);
 }
 
-/* Rationale behind the values for: (switching between APE_50_OPP and APE_100_OPP)
-* MALI_HIGH_LEVEL_UTILIZATION_LIMIT and MALI_LOW_LEVEL_UTILIZATION_LIMIT
-* When operating at half clock frequency a faster clock is requested when
-* reaching 75% utilization. When operating at full clock frequency a slower
-* clock is requested when reaching 25% utilization. There is a margin of 25%
-* at the high range of the slow clock to avoid complete saturation of the
-* hardware and there is some overlap to avoid an oscillating situation where
-* the clock goes back and forth from high to low.
-*
-* Utilization on full speed clock
-* 0               64             128             192              255
-* |---------------|---------------|---------------|---------------|
-*                 XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-*                 |       ^
-*                 V       |
-* XXXXXXXXXXXXXXXXXXXXXXXXX
-* 0       64     128     192      255
-* |-------|-------|-------|-------|
-* Utilization on half speed clock
-*/
-
-/* boost switching logic:
- * - boost_working means that freq is already set to high value
- * - boost_scheduled means that job is scheduled to turn boost either on or off
- * - boost_required is a flag for scheduled job telling it what to do with boost
- *
- * if we are in APE_50_OPP, skip boost
- * if we are in APE_100_OPP and util>boost_up_thresh, shedule boost if its not on or - if its on and scheduled to be turned off -  cancel that schedule
- * if boost is scheduled and not yet working and util < util_high_to_low, then cancel scheduled boost
- * if boost is on and util < boost_down_thresh, schedule boost to be turned off
- */
 void mali_utilization_function(struct work_struct *ptr)
 {
-	/*By default, platform start with 50% APE OPP and 25% DDR OPP*/
-	static u32 has_requested_low = 1;
+	/* Check for frequency increase only if we are in APE_100_OPP mode */
+	if (prcmu_get_ape_opp() == APE_100_OPP) {
+		if (mali_last_utilization > up_threshold) {
 
-	MALI_DEBUG_PRINT(5, ("MALI GPU utilization: %u\n", mali_last_utilization));
+			/* if we are already at full speed then break out early */
+			if (requested_freq == max_freq)
+				return;
 
-	mutex_lock(&mali_boost_lock);
-	if ((!boost_required && !boost_working && !boost_scheduled) || !boost_enable) {
-		// consider power saving mode (APE_50_OPP) only if we're not on boost
-		if (mali_last_utilization > mali_utilization_low_to_high) {
-			if (has_requested_low) {
-				MALI_DEBUG_PRINT(5, ("MALI GPU utilization: %u SIGNAL_HIGH\n", mali_last_utilization));
-				/*Request 100% APE_OPP.*/
-				prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP, "mali", PRCMU_QOS_MAX_VALUE);
-				/*
-				* Since the utilization values will be reported higher
-				* if DDR_OPP is lowered, we also request 100% DDR_OPP.
-				*/
-				prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP, "mali", PRCMU_QOS_MAX_VALUE);
-				has_requested_low = 0;
-				mutex_unlock(&mali_boost_lock);
-				return;		//After we switch to APE_100_OPP we want to measure utilization once again before entering boost logic
-			}
-		} else {
-			if (mali_last_utilization < mali_utilization_high_to_low) {
-				if (!has_requested_low) {
-					/* Update APE_OPP and DDR_OPP requests*/
-					prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP, "mali", PRCMU_QOS_DEFAULT_VALUE);
-					prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP, "mali", PRCMU_QOS_DEFAULT_VALUE);
-					MALI_DEBUG_PRINT(5, ("MALI GPU utilization: %u SIGNAL_LOW\n", mali_last_utilization));
-					has_requested_low = 1;
-				}
-			}
+			if (!boost) {
+				requested_freq += freq_step;
+
+				if (requested_freq > max_freq)
+					requested_freq = max_freq;
+			} else
+				requested_freq = max_freq;
+
+			mali_max_freq_apply(requested_freq);
+
+			return;
 		}
 	}
 
-	if (!has_requested_low && boost_enable) {
-		// consider boost only if we are in APE_100_OPP mode
-		if (!boost_required && mali_last_utilization > boost_up_threshold) {
-			boost_required = true;
-			if (!boost_scheduled) {
-				//schedule job to turn boost on
-				boost_scheduled = true;
-				schedule_delayed_work(&mali_boost_delayedwork, msecs_to_jiffies(boost_delay));
-			} else {
-				//cancel job meant to turn boost off
-				boost_scheduled = false;
-				cancel_delayed_work(&mali_boost_delayedwork);
-			}
+	/* if we cannot reduce the frequency anymore, break out early */
+	if (requested_freq == min_freq)
+		return;
 
-		/* Get dynamic boost_down_threshold */
-		if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_6)
-			dynamic_boost_down_threshold = boost_down_threshold_6;
+	/* Check for frequency decrease */
+	if (mali_last_utilization < down_threshold) {
 
-		else if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_5)
-			dynamic_boost_down_threshold = boost_down_threshold_5;
+		requested_freq -= freq_step;
 
-		else if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_4)
-			dynamic_boost_down_threshold = boost_down_threshold_4;
+		if (requested_freq < min_freq)
+			requested_freq = min_freq;
 
-		else if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_3)
-			dynamic_boost_down_threshold = boost_down_threshold_3;
-
-		else if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_2)
-			dynamic_boost_down_threshold = boost_down_threshold_2;
-
-		else if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_1)
-			dynamic_boost_down_threshold = boost_down_threshold_1;
-
-		else if (mali_dvfs[boost_high].freq == DEF_BOOST_FREQUENCY_STEP_0)
-			dynamic_boost_down_threshold = boost_down_threshold_0;
-
-		} else if (boost_required && !boost_working && mali_last_utilization < dynamic_boost_down_threshold) {
-			boost_required = false;
-			if (boost_scheduled) {
-				//if it's not working yet, but is scheduled to be turned on, than cancel scheduled job
-				cancel_delayed_work(&mali_boost_delayedwork);
-				boost_scheduled = false;
-			}
-		} else if (boost_working && mali_last_utilization < dynamic_boost_down_threshold) {
-			boost_required = false;
-			if (!boost_scheduled) {
-				// if boost is on and isn't yet scheduled to be turned off then schedule it
-				boost_scheduled = true;
-				schedule_delayed_work(&mali_boost_delayedwork, msecs_to_jiffies(boost_delay));
-			}
-		}
+		mali_min_freq_apply(requested_freq);
 	}
-	mutex_unlock(&mali_boost_lock);
-
 }
 
-static void recalculate_boost_down_threshold(void)
+static void calc_down_threshold(void)
 {
-	boost_down_threshold_6 = ((boost_up_threshold * DEF_BOOST_FREQUENCY_STEP_7 / DEF_BOOST_FREQUENCY_STEP_6) - DOWN_THRESHOLD_MARGIN);
-	boost_down_threshold_5 = ((boost_up_threshold * DEF_BOOST_FREQUENCY_STEP_7 / DEF_BOOST_FREQUENCY_STEP_5) - DOWN_THRESHOLD_MARGIN);
-	boost_down_threshold_4 = ((boost_up_threshold * DEF_BOOST_FREQUENCY_STEP_7 / DEF_BOOST_FREQUENCY_STEP_4) - DOWN_THRESHOLD_MARGIN);
-	boost_down_threshold_3 = ((boost_up_threshold * DEF_BOOST_FREQUENCY_STEP_7 / DEF_BOOST_FREQUENCY_STEP_3) - DOWN_THRESHOLD_MARGIN);
-	boost_down_threshold_2 = ((boost_up_threshold * DEF_BOOST_FREQUENCY_STEP_7 / DEF_BOOST_FREQUENCY_STEP_2) - DOWN_THRESHOLD_MARGIN);
-	boost_down_threshold_1 = ((boost_up_threshold * DEF_BOOST_FREQUENCY_STEP_7 / DEF_BOOST_FREQUENCY_STEP_1) - DOWN_THRESHOLD_MARGIN);
-	boost_down_threshold_0 = ((boost_up_threshold * DEF_BOOST_FREQUENCY_STEP_7 / DEF_BOOST_FREQUENCY_STEP_0) - DOWN_THRESHOLD_MARGIN);
-
-	if (!is_initialized)
-		dynamic_boost_down_threshold = boost_down_threshold_6;
+	down_threshold = ((up_threshold * mali_dvfs[DEF_FREQUENCY_STEP_300000].freq / mali_dvfs[DEF_FREQUENCY_STEP_350000].freq) - down_threshold_margin);
 }
 
 #define ATTR_RO(_name)	\
@@ -452,47 +315,17 @@ static void recalculate_boost_down_threshold(void)
 
 static ssize_t version_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	return sprintf(buf, "DB8500 GPU OC Driver (%s), cocafe\n", MALI_UX500_VERSION);
+	return sprintf(buf, "DB8500 GPU OC Driver (%s), cocafe, ace2nutzer\n", MALI_UX500_VERSION);
 }
 ATTR_RO(version);
 
-static ssize_t mali_gpu_clock_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+static ssize_t cur_freq_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	return sprintf(buf, "%d kHz\n", sgaclk_freq());
+	return sprintf(buf, "%u kHz\n", sgaclk_freq());
 }
+ATTR_RO(cur_freq);
 
-static ssize_t mali_gpu_clock_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
-{
-	int val;
-	int i;
-
-	if (sscanf(buf, "idx=%u", &val)) {
-		if (val >= ARRAY_SIZE(mali_dvfs))
-			return -EINVAL;
-
-		mali_clock_apply(val);
-
-		return count;
-	}
-
-	if (sscanf(buf, "%u", &val)) {
-		for (i = 0; i < ARRAY_SIZE(mali_dvfs); i++) {
-			if (mali_dvfs[i].freq == val) {
-				mali_clock_apply(i);
-
-				break;
-			}
-		}
-
-		return count;
-	}
-
-	return -EINVAL;
-}
-
-ATTR_RW(mali_gpu_clock);
-
-static ssize_t mali_gpu_vape_50_opp_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+static ssize_t vape_50_opp_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
 	u8 value;
 
@@ -504,7 +337,7 @@ static ssize_t mali_gpu_vape_50_opp_show(struct kobject *kobj, struct kobj_attri
 	return sprintf(buf, "%u uV - 0x%x\n", vape_voltage(value), value);
 }
 
-static ssize_t mali_gpu_vape_50_opp_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
+static ssize_t vape_50_opp_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
 	int val;
 	u8 vape;
@@ -520,42 +353,24 @@ static ssize_t mali_gpu_vape_50_opp_store(struct kobject *kobj, struct kobj_attr
 
 	return -EINVAL;
 }
+ATTR_RW(vape_50_opp);
 
-ATTR_RW(mali_gpu_vape_50_opp);
-
-static ssize_t mali_gpu_fullspeed_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+static ssize_t fullspeed_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
 	/*
 	 * Check APE OPP status, on OPP50, clock is half.
 	 */
 	return sprintf(buf, "%s\n", (prcmu_get_ape_opp() == APE_100_OPP) ? "1" : "0");
 }
+ATTR_RO(fullspeed);
 
-static ssize_t mali_gpu_fullspeed_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
+static ssize_t cur_load_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	int val;
-
-	if (sscanf(buf, "%d", &val)) {
-		if (val)
-			prcmu_set_ape_opp(APE_100_OPP);
-		else
-			prcmu_set_ape_opp(APE_50_OPP);
-
-		return count;
-	}
-
-	return -EINVAL;
+	return sprintf(buf, "%u %%\n", mali_last_utilization * 100 / 256);
 }
+ATTR_RO(cur_load);
 
-ATTR_RW(mali_gpu_fullspeed);
-
-static ssize_t mali_gpu_load_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
-{
-	return sprintf(buf, "%d (%d%%)\n", mali_last_utilization, mali_last_utilization * 100 / 256);
-}
-ATTR_RO(mali_gpu_load);
-
-static ssize_t mali_gpu_vape_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+static ssize_t vape_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
 	u8 value;
 	bool opp50;
@@ -574,86 +389,27 @@ static ssize_t mali_gpu_vape_show(struct kobject *kobj, struct kobj_attribute *a
 
 	return sprintf(buf, "%u uV - 0x%x (OPP:%d)\n", vape_voltage(value), value, opp50 ? 50 : 100);
 }
-ATTR_RO(mali_gpu_vape);
+ATTR_RO(vape);
 
-static ssize_t mali_auto_boost_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+static ssize_t min_freq_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	return sprintf(buf, "enabled: %d, required: %d, scheduled: %d, working: %d\n", boost_enable, boost_required, boost_scheduled, boost_working);
-}
-
-static ssize_t mali_auto_boost_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
-{
-	if(sysfs_streq(buf, "0")) {
-		boost_enable = 0;
-
-		if (boost_scheduled) {
-			cancel_delayed_work(&mali_boost_delayedwork);
-			boost_scheduled = false;
-		}
-		if (boost_working) {
-			boost_working = false;
-			mali_clock_apply(boost_low);
-		}
-		boost_required = 0;
-	} else {
-		boost_enable = 1;
-		mali_clock_apply(boost_low);
-	}
-
-	return count;
-}
-ATTR_RW(mali_auto_boost);
-
-static ssize_t mali_boost_delay_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
-{
-	return sprintf(buf, "%u\n", boost_delay);
-}
-
-static ssize_t mali_boost_delay_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
-{
-	int val;
-
-	if (sscanf(buf, "%u", &val)) {
-		boost_delay = val;
-	}
-
-	return count;
-}
-ATTR_RW(mali_boost_delay);
-
-static ssize_t mali_boost_low_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
-{
-	sprintf(buf, "%sDynamic_DOWN_threshold: %u\n", buf, dynamic_boost_down_threshold);
-	sprintf(buf, "%sDVFS idx: %u\n", buf, boost_low);
-	sprintf(buf, "%sfrequency: %u kHz\n", buf, mali_dvfs[boost_low].freq);
-	sprintf(buf, "%sVape: %u uV\n", buf, vape_voltage(mali_dvfs[boost_low].vape_raw));
+	sprintf(buf, "%sDVFS idx: %u\n", buf, min_freq);
+	sprintf(buf, "%sFrequency: %u kHz\n", buf, mali_dvfs[min_freq].freq);
+	sprintf(buf, "%sRaw Frequency: %u kHz\n", buf, mali_dvfs[min_freq].freq_raw);
+	sprintf(buf, "%sVape: %u uV\n", buf, vape_voltage(mali_dvfs[min_freq].vape_raw));
 
 	return strlen(buf);
 }
-ATTR_RO(mali_boost_low);
 
-/*
-static ssize_t mali_boost_low_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
+static ssize_t min_freq_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
-	int val;
-	int i;
+	u32 val, i;
 
 	if (sscanf(buf, "idx=%u", &val)) {
 		if (val >= ARRAY_SIZE(mali_dvfs))
 			return -EINVAL;
 
-		boost_low = val;
-		if (boost_enable)
-			mali_clock_apply(boost_low);
-
-		return count;
-	}
-
-	if (sscanf(buf, "threshold=%u", &val)) {
-		if (val > 256 || val < 1)
-			return -EINVAL;
-
-		dynamic_boost_down_threshold = val;
+		min_freq = val;
 
 		return count;
 	}
@@ -661,10 +417,7 @@ static ssize_t mali_boost_low_store(struct kobject *kobj, struct kobj_attribute 
 	if (sscanf(buf, "%u", &val)) {
 		for (i = 0; i < ARRAY_SIZE(mali_dvfs); i++) {
 			if (mali_dvfs[i].freq == val) {
-				boost_low = i;
-				if (boost_enable)
-					mali_clock_apply(boost_low);
-
+				min_freq = i;
 				break;
 			}
 		}
@@ -674,40 +427,27 @@ static ssize_t mali_boost_low_store(struct kobject *kobj, struct kobj_attribute 
 
 	return -EINVAL;
 }
-ATTR_RW(mali_boost_low);
-*/
+ATTR_RW(min_freq);
 
-static ssize_t mali_boost_high_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+static ssize_t max_freq_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	sprintf(buf, "%sUP_threshold: %u\n", buf, boost_up_threshold);
-	sprintf(buf, "%sDVFS idx: %u\n", buf, boost_high);
-	sprintf(buf, "%sfrequency: %u kHz\n", buf, mali_dvfs[boost_high].freq);
-	sprintf(buf, "%sVape: %u uV\n", buf, vape_voltage(mali_dvfs[boost_high].vape_raw));
+	sprintf(buf, "%sDVFS idx: %u\n", buf, max_freq);
+	sprintf(buf, "%sFrequency: %u kHz\n", buf, mali_dvfs[max_freq].freq);
+	sprintf(buf, "%sRaw Frequency: %u kHz\n", buf, mali_dvfs[max_freq].freq_raw);
+	sprintf(buf, "%sVape: %u uV\n", buf, vape_voltage(mali_dvfs[max_freq].vape_raw));
 
 	return strlen(buf);
 }
 
-static ssize_t mali_boost_high_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
+static ssize_t max_freq_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
-	int val;
-	int i;
+	u32 val, i;
 
 	if (sscanf(buf, "idx=%u", &val)) {
 		if (val >= ARRAY_SIZE(mali_dvfs))
 			return -EINVAL;
 
-		boost_high = val;
-
-		return count;
-	}
-
-	if (sscanf(buf, "threshold=%u", &val)) {
-		if (val > 256 || val < 60)
-			return -EINVAL;
-
-		boost_up_threshold = val;
-
-		recalculate_boost_down_threshold();
+		max_freq = val;
 
 		return count;
 	}
@@ -715,8 +455,7 @@ static ssize_t mali_boost_high_store(struct kobject *kobj, struct kobj_attribute
 	if (sscanf(buf, "%u", &val)) {
 		for (i = 0; i < ARRAY_SIZE(mali_dvfs); i++) {
 			if (mali_dvfs[i].freq == val) {
-				boost_high = i;
-
+				max_freq = i;
 				break;
 			}
 		}
@@ -726,13 +465,68 @@ static ssize_t mali_boost_high_store(struct kobject *kobj, struct kobj_attribute
 
 	return -EINVAL;
 }
-ATTR_RW(mali_boost_high);
+ATTR_RW(max_freq);
 
-static ssize_t mali_dvfs_config_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+static ssize_t up_threshold_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	int i;
+	return sprintf(buf, "%u %%\n", up_threshold * 100 / 256);
+}
 
-	sprintf(buf, "idx freq   rawfreq clkpll     Vape\n");
+static ssize_t up_threshold_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
+{
+	u32 val;
+
+	if (sscanf(buf, "%u", &val)) {
+		if (val > 99 || val < 20)
+			return -EINVAL;
+
+		up_threshold = val * 256 / 100;
+
+		/* recalculate down_threshold */
+		calc_down_threshold();
+
+		return count;
+	}
+
+	return -EINVAL;
+}
+ATTR_RW(up_threshold);
+
+static ssize_t sampling_rate_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+{
+	u32 min_sampling_rate = jiffies_to_msecs(10);
+
+	sprintf(buf, "%s min_sampling_rate: %u ms\n", buf, min_sampling_rate);
+	sprintf(buf, "%s max_sampling_rate: 2000 ms\n", buf);
+	sprintf(buf, "%s sampling_rate: %u ms\n", buf, mali_utilization_sampling_rate);
+	return strlen(buf);
+}
+
+static ssize_t sampling_rate_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
+{
+	u32 val;
+	u32 min_sampling_rate = jiffies_to_msecs(10);
+
+	if (sscanf(buf, "%u", &val)) {
+		if (val > 2000)
+			val = 2000;
+		else if (val < min_sampling_rate)
+			val = min_sampling_rate;
+
+		mali_utilization_sampling_rate = val;
+
+		return count;
+	}
+
+	return -EINVAL;
+}
+ATTR_RW(sampling_rate);
+
+static ssize_t dvfs_config_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+{
+	u32 i;
+
+	sprintf(buf, "idx freq   freq_raw  clkpll     Vape\n");
 
 	for (i = 0; i < ARRAY_SIZE(mali_dvfs); i++) {
 		sprintf(buf, "%s%3u%7u%7u  %#010x%8u %#04x\n", 
@@ -748,7 +542,7 @@ static ssize_t mali_dvfs_config_show(struct kobject *kobj, struct kobj_attribute
 	return strlen(buf);
 }
 
-static ssize_t mali_dvfs_config_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
+static ssize_t dvfs_config_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
 	int idx, val;
 
@@ -766,11 +560,11 @@ static ssize_t mali_dvfs_config_store(struct kobject *kobj, struct kobj_attribut
 
 	return -EINVAL;
 }
-ATTR_RW(mali_dvfs_config);
+ATTR_RW(dvfs_config);
 
-static ssize_t mali_available_frequencies_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+static ssize_t available_frequencies_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	int i;
+	u32 i;
 
 	for (i = 0; i < ARRAY_SIZE(mali_dvfs); i++) {
 		sprintf(buf, "%s%u\n", buf, mali_dvfs[i].freq);
@@ -778,21 +572,67 @@ static ssize_t mali_available_frequencies_show(struct kobject *kobj, struct kobj
 
 	return strlen(buf);
 }
-ATTR_RO(mali_available_frequencies);
+ATTR_RO(available_frequencies);
+
+static ssize_t freq_step_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", freq_step);
+}
+
+static ssize_t freq_step_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
+{
+	u32 val;
+
+	if (sscanf(buf, "%u", &val)) {
+		if (val > 4 || val < 1)
+			return -EINVAL;
+
+		freq_step = val;
+
+		return count;
+	}
+
+	return -EINVAL;
+}
+ATTR_RW(freq_step);
+
+static ssize_t boost_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", boost);
+}
+
+static ssize_t boost_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
+{
+	u32 val;
+
+	if (sscanf(buf, "%u", &val)) {
+		if (val > 1 || val < 0)
+			return -EINVAL;
+
+		boost = val;
+
+		return count;
+	}
+
+	return -EINVAL;
+}
+ATTR_RW(boost);
 
 static struct attribute *mali_attrs[] = {
 	&version_interface.attr, 
-	&mali_gpu_clock_interface.attr, 
-	&mali_gpu_fullspeed_interface.attr, 
-	&mali_gpu_load_interface.attr, 
-	&mali_gpu_vape_interface.attr, 
-	&mali_gpu_vape_50_opp_interface.attr,
-	&mali_auto_boost_interface.attr, 
-	&mali_boost_delay_interface.attr, 
-	&mali_boost_low_interface.attr, 
-	&mali_boost_high_interface.attr, 
-	&mali_dvfs_config_interface.attr, 
-	&mali_available_frequencies_interface.attr, 
+	&cur_freq_interface.attr, 
+	&fullspeed_interface.attr, 
+	&cur_load_interface.attr, 
+	&vape_interface.attr, 
+	&vape_50_opp_interface.attr,
+	&min_freq_interface.attr, 
+	&max_freq_interface.attr, 
+	&dvfs_config_interface.attr, 
+	&available_frequencies_interface.attr, 
+	&up_threshold_interface.attr, 
+	&sampling_rate_interface.attr, 
+	&freq_step_interface.attr, 
+	&boost_interface.attr, 
 	NULL,
 };
 
@@ -808,12 +648,13 @@ _mali_osk_errcode_t mali_platform_init()
 	int ret;
 
 	is_running = false;
+
+	mali_utilization_sampling_rate = jiffies_to_msecs(10);
+
 	mali_last_utilization = 0;
 
 	if (!is_initialized) {
-
-		// init default values
-		recalculate_boost_down_threshold();
+		calc_down_threshold();
 		prcmu_write(PRCMU_PLLSOC0, PRCMU_PLLSOC0_INIT);
 		prcmu_write(PRCMU_SGACLK,  PRCMU_SGACLK_INIT);
 		mali_boost_init();
@@ -825,7 +666,6 @@ _mali_osk_errcode_t mali_platform_init()
 		}
 
 		INIT_WORK(&mali_utilization_work, mali_utilization_function);
-		INIT_DELAYED_WORK(&mali_boost_delayedwork, mali_boost_work);
 
 		regulator = regulator_get(NULL, "v-mali");
 		if (IS_ERR(regulator)) {
@@ -854,9 +694,6 @@ _mali_osk_errcode_t mali_platform_init()
 			kobject_put(mali_kobject);
 		}
 
-		prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP, "mali", PRCMU_QOS_DEFAULT_VALUE);
-		prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP, "mali", PRCMU_QOS_DEFAULT_VALUE);
-
 		pr_info("[Mali] DB8500 GPU OC Initialized (%s)\n", MALI_UX500_VERSION);
 
 		is_initialized = true;
@@ -880,8 +717,6 @@ _mali_osk_errcode_t mali_platform_deinit()
 	kobject_put(mali_kobject);
 	is_running = false;
 	mali_last_utilization = 0;
-	prcmu_qos_remove_requirement(PRCMU_QOS_APE_OPP, "mali");
-	prcmu_qos_remove_requirement(PRCMU_QOS_DDR_OPP, "mali");
 	is_initialized = false;
 	MALI_DEBUG_PRINT(2, ("SGA terminated.\n"));
 	MALI_SUCCESS;
