@@ -56,19 +56,16 @@
 #include <linux/kobject.h>
 #include <linux/mfd/dbx500-prcmu.h>
 #include <linux/mfd/db8500-prcmu.h>
-#include <linux/wakelock.h>
 
 extern bool is_s6d(void);
-extern int deepest_allowed_state;
-extern bool is_deep_sleep;
+extern bool is_lpm;
+extern bool is_recovery;
 
 static unsigned int lcdclk_usr = 4;
 static unsigned int lcdclk_s6d_usr = 6;
 static unsigned int custom_lcdclk = 0;
 
 #define LCDCLK_SET(clk) prcmu_set_clock_rate(PRCMU_LCDCLK, (unsigned long) clk);
-
-static struct wake_lock mcde_wake_lock;
 
 static int set_channel_state_atomic(struct mcde_chnl_state *chnl,
 							enum chnl_state state);
@@ -1519,7 +1516,14 @@ static int update_channel_static_registers(struct mcde_chnl_state *chnl)
 	}
 
 	if (port->type == MCDE_PORTTYPE_DPI) {
-		lcdclk_set();
+
+		if ((!is_recovery) && (!is_lpm)) {
+			lcdclk_set();
+		} else {
+			lcdclk_s6d_usr = 1;
+			lcdclk_usr = 1;
+		}
+
 		(clk_enable(chnl->clk_dpi));
 	}
 
@@ -4579,8 +4583,6 @@ int __init mcde_init(void)
 	if (ret) {
 		kobject_put(mcde_kobject);
 	}
-
-	wake_lock_init(&mcde_wake_lock, WAKE_LOCK_SUSPEND, "mcde_kernel_wake_lock");
 
 out:
 	return platform_driver_register(&mcde_driver);
