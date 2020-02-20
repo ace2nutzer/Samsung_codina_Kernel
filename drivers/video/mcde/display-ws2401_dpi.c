@@ -715,6 +715,9 @@ static int ws2401_dpi_ldi_enable(struct ws2401_dpi *lcd)
 
 	ret |= ws2401_write_dcs_sequence(lcd, DCS_CMD_SEQ_WS2401_DISPLAY_ON);
 
+	if (lcd->pd->sleep_out_delay)
+		msleep(lcd->pd->sleep_out_delay);
+
 	if (!ret)
 		lcd->ldi_state = LDI_STATE_ON;
 
@@ -822,9 +825,6 @@ static int ws2401_dpi_power_off(struct ws2401_dpi *lcd)
 		dev_err(lcd->dev, "lcd setting failed.\n");
 		return -EIO;
 	}
-
-	if (dpd->display_off_delay)
-		msleep(dpd->display_off_delay);
 
 	if (!dpd->gpio_cfg_earlysuspend) {
 		dev_err(lcd->dev, "gpio_cfg_earlysuspend is NULL.\n");
