@@ -1970,7 +1970,7 @@ KSM_ATTR_RO(pages_sharing);
 static ssize_t sharing_in_mb_show(struct kobject *kobj,
 				  struct kobj_attribute *attr, char *buf)
 {
-	return sprintf(buf, "%sMB:   \t%lu\n", buf, ksm_pages_sharing / 256);
+	return sprintf(buf, "%sShared RAM: %lu MB\n", buf, ksm_pages_sharing / 256);
 }
 KSM_ATTR_RO(sharing_in_mb);
 
