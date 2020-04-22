@@ -29,7 +29,7 @@
  * It helps to keep variable names smaller, simpler
  */
 
-#define DEF_FREQUENCY_UP_THRESHOLD		(95) /* min 30, max 99 */
+#define DEF_FREQUENCY_UP_THRESHOLD		(95) /* min 30, max 100 */
 #define DOWN_THRESHOLD_MARGIN			(10)
 #define DEF_BOOST				(0)
 
@@ -232,7 +232,7 @@ static ssize_t store_up_threshold(struct kobject *a, struct attribute *b,
 	int ret;
 	ret = sscanf(buf, "%u", &input);
 
-	if (ret != 1 || input > 99 || input < 30)
+	if (ret != 1 || input > 100 || input < 30)
 		return -EINVAL;
 
 	dbs_tuners_ins.up_threshold = input;
@@ -383,7 +383,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	}
 
 	/* Check for frequency increase */
-	if (max_load > dbs_tuners_ins.up_threshold) {
+	if (max_load >= dbs_tuners_ins.up_threshold) {
 		this_dbs_info->down_skip = 0;
 
 		/* if we are already at full speed then break out early */
