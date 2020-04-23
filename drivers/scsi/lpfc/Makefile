@@ -20,7 +20,7 @@
 ######################################################################
 
 ccflags-$(GCOV) := -fprofile-arcs -ftest-coverage
-ccflags-$(GCOV) += -O0
+ccflags-$(GCOV) += -O2
 
 obj-$(CONFIG_SCSI_LPFC) := lpfc.o
 

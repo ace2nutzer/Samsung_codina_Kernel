@@ -248,9 +248,9 @@ HOSTCXX      = g++
 HOSTCFLAGS   := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer
 HOSTCXXFLAGS := -O2
 
-# Host specifc Flags
-HOSTCFLAGS   += -m64 -march=core2 -mtune=core2 -Wno-format-overflow -pipe
-HOSTCXXFLAGS += -m64 -march=core2 -mtune=core2 -Wno-format-overflow -pipe
+# Host specific Flags
+HOSTCFLAGS   += -march=core2 -mtune=core2 -mfpmath=sse -mssse3 -mhard-float -ftree-vectorize -pipe -Wno-format-overflow
+HOSTCXXFLAGS += -march=core2 -mtune=core2 -mfpmath=sse -mssse3 -mhard-float -ftree-vectorize -pipe -Wno-format-overflow
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -383,7 +383,12 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 KBUILD_CFLAGS   += \
 		   -march=armv7-a \
 		   -mcpu=cortex-a9 \
-		   -mtune=cortex-a9
+		   -mtune=cortex-a9 \
+		   -marm \
+		   -mno-thumb-interwork \
+		   -mfpu=neon \
+		   -msoft-float \
+		   -mfloat-abi=soft
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=

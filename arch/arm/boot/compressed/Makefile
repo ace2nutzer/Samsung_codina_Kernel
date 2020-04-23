@@ -4,8 +4,6 @@
 # create a compressed vmlinuz image from the original vmlinux
 #
 
-KBUILD_CFLAGS += -fno-stack-protector
-
 OBJS		=
 
 # Ensure that mmcif loader code appears early in the image
@@ -21,6 +19,8 @@ AFLAGS_head.o += -DTEXT_OFFSET=$(TEXT_OFFSET)
 HEAD	= head.o
 OBJS	+= misc.o decompress.o
 FONTC	= $(srctree)/drivers/video/console/font_acorn_8x8.c
+
+CFLAGS_decompress.o	:= -fno-stack-protector
 
 #
 # Architecture dependencies
@@ -112,7 +112,7 @@ extra-y       += piggy.gzip piggy.lzo piggy.lz4 piggy.lzma lib1funcs.S $(libfdt)
 
 ifeq ($(CONFIG_FUNCTION_TRACER),y)
 ORIG_CFLAGS := $(KBUILD_CFLAGS)
-KBUILD_CFLAGS += $(subst -pg, , $(ORIG_CFLAGS))
+KBUILD_CFLAGS := $(subst -pg, , $(ORIG_CFLAGS))
 endif
 
 ccflags-y := -fpic -fno-builtin -I$(src)
