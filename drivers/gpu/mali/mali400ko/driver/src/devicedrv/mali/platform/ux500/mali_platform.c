@@ -42,7 +42,7 @@
 #define MIN_FREQ		0
 #define MAX_FREQ		2
 
-#define UP_THRESHOLD					95	/* min 20 %, max 99 % */
+#define UP_THRESHOLD					95	/* min 20 %, max 100 % */
 #define DOWN_THRESHOLD_MARGIN		10
 #define DEF_FREQUENCY_STEP			1
 #define DEF_BOOST							0
@@ -263,7 +263,7 @@ void mali_utilization_function(struct work_struct *ptr)
 {
 	/* Check for frequency increase only if we are in APE_100_OPP mode */
 	if (prcmu_get_ape_opp() == APE_100_OPP) {
-		if (mali_last_utilization > up_threshold) {
+		if (mali_last_utilization >= up_threshold) {
 
 			/* if we are already at full speed then break out early */
 			if (requested_freq == max_freq)
@@ -477,7 +477,7 @@ static ssize_t up_threshold_store(struct kobject *kobj, struct kobj_attribute *a
 	u32 val;
 
 	if (sscanf(buf, "%u", &val)) {
-		if (val > 99 || val < 20)
+		if (val > 100 || val < 20)
 			return -EINVAL;
 
 		up_threshold = val * 256 / 100;
