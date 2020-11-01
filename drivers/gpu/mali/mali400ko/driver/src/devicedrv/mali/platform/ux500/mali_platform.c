@@ -42,10 +42,9 @@
 #define MIN_FREQ		0
 #define MAX_FREQ		2
 
-#define UP_THRESHOLD					95	/* min 20 %, max 100 % */
-#define DOWN_THRESHOLD_MARGIN		10
-#define DEF_FREQUENCY_STEP			1
-#define DEF_BOOST							0
+#define UP_THRESHOLD					75	/* min 35 %, max 100 % */
+#define DOWN_THRESHOLD_MARGIN		25
+#define DEF_BOOST							1
 
 #define DEF_FREQUENCY_STEP_300000		0
 #define DEF_FREQUENCY_STEP_350000		1
@@ -59,7 +58,11 @@
 #define DEF_FREQUENCY_STEP_750000		9
 #define DEF_FREQUENCY_STEP_800000		10
 
-#define MALI_UX500_VERSION		"2.1"
+#define MALI_UX500_VERSION		"2.2"
+
+#define MIN_SAMPLING_RATE_MS			jiffies_to_msecs(2)
+#define SAMPLING_RATE_RATIO			10
+#define MAX_SAMPLING_RATE_MS			MIN_SAMPLING_RATE_MS * SAMPLING_RATE_RATIO
 
 #define MALI_MAX_UTILIZATION		256
 
@@ -98,9 +101,10 @@ static struct mali_dvfs_data mali_dvfs[] = {
 };
 
 extern u32 mali_utilization_sampling_rate;
-static bool is_running;
-static bool is_initialized;
-static u32 mali_last_utilization;
+extern u32 mali_sampling_rate_ratio;
+static bool is_running = false;
+static bool is_initialized = false;
+static u32 mali_last_utilization = 0;
 
 static struct regulator *regulator;
 static struct clk *clk_sga;
@@ -111,12 +115,11 @@ static struct workqueue_struct *mali_utilization_workqueue;
 static struct wake_lock wakelock;
 #endif
 
-static u32 min_freq 		= MIN_FREQ;
-static u32 max_freq 		= MAX_FREQ;
-static u32 requested_freq = MIN_FREQ;
-static u32 freq_step 		= DEF_FREQUENCY_STEP;
-static u32 up_threshold 	= UP_THRESHOLD * 256 / 100;
-static u32 down_threshold;
+static u32 min_freq = MIN_FREQ;
+static u32 max_freq = MAX_FREQ;
+static u32 last_freq = MIN_FREQ;
+static u32 up_threshold = UP_THRESHOLD * 256 / 100;
+static u32 down_threshold = 0;
 static u32 down_threshold_margin = DOWN_THRESHOLD_MARGIN * 256 / 100;
 static bool boost = DEF_BOOST;
 
@@ -177,7 +180,7 @@ static void mali_min_freq_apply(u32 freq)
 		&vape, 
 		1);
 
-	requested_freq = freq;
+	last_freq = freq;
 }
 
 static void mali_max_freq_apply(u32 freq)
@@ -197,7 +200,7 @@ static void mali_max_freq_apply(u32 freq)
 
 		prcmu_write(PRCMU_PLLSOC0, pll);
 
-		requested_freq = freq;
+		last_freq = freq;
 }
 
 static void mali_boost_init(void)
@@ -261,45 +264,97 @@ error:
 
 void mali_utilization_function(struct work_struct *ptr)
 {
+	u32 new_freq = 0;
+
 	/* Check for frequency increase only if we are in APE_100_OPP mode */
 	if (prcmu_get_ape_opp() == APE_100_OPP) {
 		if (mali_last_utilization >= up_threshold) {
 
 			/* if we are already at full speed then break out early */
-			if (requested_freq == max_freq)
+			if (last_freq == max_freq)
 				return;
 
 			if (!boost) {
-				requested_freq += freq_step;
+				if (last_freq == DEF_FREQUENCY_STEP_300000)
+					new_freq = DEF_FREQUENCY_STEP_350000;
+				else if (last_freq == DEF_FREQUENCY_STEP_350000)
+					new_freq = DEF_FREQUENCY_STEP_400000;
+				else if (last_freq == DEF_FREQUENCY_STEP_400000)
+					new_freq = DEF_FREQUENCY_STEP_450000;
+				else if (last_freq == DEF_FREQUENCY_STEP_450000)
+					new_freq = DEF_FREQUENCY_STEP_500000;
+				else if (last_freq == DEF_FREQUENCY_STEP_500000)
+					new_freq = DEF_FREQUENCY_STEP_550000;
+				else if (last_freq == DEF_FREQUENCY_STEP_550000)
+					new_freq = DEF_FREQUENCY_STEP_600000;
+				else if (last_freq == DEF_FREQUENCY_STEP_600000)
+					new_freq = DEF_FREQUENCY_STEP_650000;
+				else if (last_freq == DEF_FREQUENCY_STEP_650000)
+					new_freq = DEF_FREQUENCY_STEP_700000;
+				else if (last_freq == DEF_FREQUENCY_STEP_700000)
+					new_freq = DEF_FREQUENCY_STEP_750000;
+				else if (last_freq == DEF_FREQUENCY_STEP_750000)
+					new_freq = DEF_FREQUENCY_STEP_800000;
+				else
+					return;
 
-				if (requested_freq > max_freq)
-					requested_freq = max_freq;
-			} else
-				requested_freq = max_freq;
+				if (new_freq > max_freq)
+					new_freq = max_freq;
+			} else {
+				/* Boost */
+				new_freq = max_freq;
+			}
 
-			mali_max_freq_apply(requested_freq);
+			/* If switching to max speed, apply sampling_rate_ratio */
+			if (new_freq == max_freq)
+				mali_sampling_rate_ratio = SAMPLING_RATE_RATIO;
 
+			mali_max_freq_apply(new_freq);
 			return;
 		}
 	}
 
 	/* if we cannot reduce the frequency anymore, break out early */
-	if (requested_freq == min_freq)
+	if (last_freq == min_freq)
 		return;
 
+	/* No longer fully busy, reset sampling_rate_ratio */
+	mali_sampling_rate_ratio = 1;
+
 	/* Check for frequency decrease */
-	if (mali_last_utilization < down_threshold) {
+	if (mali_last_utilization <= down_threshold) {
 
-		requested_freq -= freq_step;
+		if (last_freq == DEF_FREQUENCY_STEP_800000)
+			new_freq = DEF_FREQUENCY_STEP_750000;
+		else if (last_freq == DEF_FREQUENCY_STEP_750000)
+			new_freq = DEF_FREQUENCY_STEP_700000;
+		else if (last_freq == DEF_FREQUENCY_STEP_700000)
+			new_freq = DEF_FREQUENCY_STEP_650000;
+		else if (last_freq == DEF_FREQUENCY_STEP_650000)
+			new_freq = DEF_FREQUENCY_STEP_600000;
+		else if (last_freq == DEF_FREQUENCY_STEP_600000)
+			new_freq = DEF_FREQUENCY_STEP_550000;
+		else if (last_freq == DEF_FREQUENCY_STEP_550000)
+			new_freq = DEF_FREQUENCY_STEP_500000;
+		else if (last_freq == DEF_FREQUENCY_STEP_500000)
+			new_freq = DEF_FREQUENCY_STEP_450000;
+		else if (last_freq == DEF_FREQUENCY_STEP_450000)
+			new_freq = DEF_FREQUENCY_STEP_400000;
+		else if (last_freq == DEF_FREQUENCY_STEP_400000)
+			new_freq = DEF_FREQUENCY_STEP_350000;
+		else if (last_freq == DEF_FREQUENCY_STEP_350000)
+			new_freq = DEF_FREQUENCY_STEP_300000;
+		else
+			return;
 
-		if (requested_freq < min_freq)
-			requested_freq = min_freq;
+		if (new_freq < min_freq)
+			new_freq = min_freq;
 
-		mali_min_freq_apply(requested_freq);
+		mali_min_freq_apply(new_freq);
 	}
 }
 
-static void calc_down_threshold(void)
+static void update_down_threshold(void)
 {
 	down_threshold = ((up_threshold * mali_dvfs[DEF_FREQUENCY_STEP_300000].freq / mali_dvfs[DEF_FREQUENCY_STEP_350000].freq) - down_threshold_margin);
 }
@@ -477,13 +532,13 @@ static ssize_t up_threshold_store(struct kobject *kobj, struct kobj_attribute *a
 	u32 val;
 
 	if (sscanf(buf, "%u", &val)) {
-		if (val > 100 || val < 20)
+		if (val > 100 || val < 35)
 			return -EINVAL;
 
 		up_threshold = val * 256 / 100;
 
-		/* recalculate down_threshold */
-		calc_down_threshold();
+		/* update down_threshold */
+		update_down_threshold();
 
 		return count;
 	}
@@ -494,10 +549,8 @@ ATTR_RW(up_threshold);
 
 static ssize_t sampling_rate_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	u32 min_sampling_rate = jiffies_to_msecs(10);
-
-	sprintf(buf, "%s min_sampling_rate: %u ms\n", buf, min_sampling_rate);
-	sprintf(buf, "%s max_sampling_rate: 2000 ms\n", buf);
+	sprintf(buf, "%s min_sampling_rate: %u ms\n", buf, (u32)MIN_SAMPLING_RATE_MS);
+	sprintf(buf, "%s max_sampling_rate: %u ms\n", buf, (u32)MAX_SAMPLING_RATE_MS);
 	sprintf(buf, "%s sampling_rate: %u ms\n", buf, mali_utilization_sampling_rate);
 	return strlen(buf);
 }
@@ -505,13 +558,12 @@ static ssize_t sampling_rate_show(struct kobject *kobj, struct kobj_attribute *a
 static ssize_t sampling_rate_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
 	u32 val;
-	u32 min_sampling_rate = jiffies_to_msecs(10);
 
 	if (sscanf(buf, "%u", &val)) {
-		if (val > 2000)
-			val = 2000;
-		else if (val < min_sampling_rate)
-			val = min_sampling_rate;
+		if (val > MAX_SAMPLING_RATE_MS)
+			val = MAX_SAMPLING_RATE_MS;
+		else if (val < MIN_SAMPLING_RATE_MS)
+			val = MIN_SAMPLING_RATE_MS;
 
 		mali_utilization_sampling_rate = val;
 
@@ -574,28 +626,6 @@ static ssize_t available_frequencies_show(struct kobject *kobj, struct kobj_attr
 }
 ATTR_RO(available_frequencies);
 
-static ssize_t freq_step_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
-{
-	return sprintf(buf, "%u\n", freq_step);
-}
-
-static ssize_t freq_step_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
-{
-	u32 val;
-
-	if (sscanf(buf, "%u", &val)) {
-		if (val > 4 || val < 1)
-			return -EINVAL;
-
-		freq_step = val;
-
-		return count;
-	}
-
-	return -EINVAL;
-}
-ATTR_RW(freq_step);
-
 static ssize_t boost_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
 	return sprintf(buf, "%u\n", boost);
@@ -631,7 +661,6 @@ static struct attribute *mali_attrs[] = {
 	&available_frequencies_interface.attr, 
 	&up_threshold_interface.attr, 
 	&sampling_rate_interface.attr, 
-	&freq_step_interface.attr, 
 	&boost_interface.attr, 
 	NULL,
 };
@@ -649,12 +678,11 @@ _mali_osk_errcode_t mali_platform_init()
 
 	is_running = false;
 
-	mali_utilization_sampling_rate = jiffies_to_msecs(10);
-
 	mali_last_utilization = 0;
+	mali_utilization_sampling_rate = MIN_SAMPLING_RATE_MS;
 
 	if (!is_initialized) {
-		calc_down_threshold();
+		update_down_threshold();
 		prcmu_write(PRCMU_PLLSOC0, PRCMU_PLLSOC0_INIT);
 		prcmu_write(PRCMU_SGACLK,  PRCMU_SGACLK_INIT);
 		mali_boost_init();

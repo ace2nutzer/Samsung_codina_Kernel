@@ -31,6 +31,9 @@
 #include "cm_debug.h"
 #include "cm_dma.h"
 
+#define MIN_SAMPLING_RATE_MS			jiffies_to_msecs(2)
+#define SAMPLING_RATE_RATIO			10
+
 __iomem void *prcmu_base = NULL;
 __iomem void *prcmu_tcdm_base = NULL;
 
@@ -44,13 +47,13 @@ static bool forced_late_resume_bt404_ts = false;
 #define FULL_OPP 100
 #define HALF_OPP 50
 static unsigned long running_dsp = 0;
-static unsigned int dspLoadMonitorPeriod = 1000;
+static unsigned int dspLoadMonitorPeriod = 0;
 module_param(dspLoadMonitorPeriod, uint, S_IWUSR|S_IRUGO);
 MODULE_PARM_DESC(dspLoadMonitorPeriod, "Period of the DSP-Load monitoring in ms");
-static unsigned int dspLoadHighThreshold = 95;
+static unsigned int dspLoadHighThreshold = 75;
 module_param(dspLoadHighThreshold, uint, S_IWUSR|S_IRUGO);
 MODULE_PARM_DESC(dspLoadHighThreshold, "Threshold above which 100 APE OPP is requested");
-static unsigned int dspLoadLowThreshold = 37;
+static unsigned int dspLoadLowThreshold = 12;
 module_param(dspLoadLowThreshold, uint, S_IWUSR|S_IRUGO);
 MODULE_PARM_DESC(dspLoadLowThreshold, "Threshold below which 100 APE OPP request is removed");
 static bool cm_use_ftrace;
@@ -819,7 +822,7 @@ static int dspload_monitor(void *idx)
 			continue;
 		/* check if we must request more opp */
 		if ((current_opp_request == HALF_OPP)
-		    && (load > dspLoadHighThreshold)) {
+		    && (load >= dspLoadHighThreshold)) {
 #ifdef CONFIG_DEBUG_FS
 			mpc->opp_request =
 #endif
@@ -836,7 +839,7 @@ static int dspload_monitor(void *idx)
 		}
 		/* check if we can request less opp */
 		else if ((current_opp_request == FULL_OPP)
-			 && (load < dspLoadLowThreshold)) {
+			 && (load <= dspLoadLowThreshold)) {
 #ifdef CONFIG_DEBUG_FS
 			mpc->opp_request =
 #endif
@@ -1013,6 +1016,8 @@ void OSAL_DisablePwrRessource(t_nmf_power_resource resource, t_uint32 firstParam
  */
 t_cm_error OSAL_EnablePwrRessource(t_nmf_power_resource resource, t_uint32 firstParam, t_uint32 secondParam)
 {
+	dspLoadMonitorPeriod = MIN_SAMPLING_RATE_MS * SAMPLING_RATE_RATIO;
+
 	switch (resource) {
 	case CM_OSAL_POWER_SxA_CLOCK: {
 		unsigned idx = COREIDX(firstParam);
