@@ -40,6 +40,17 @@
 #include <linux/usb_switcher.h>
 #endif
 
+/* Charger Control */
+static unsigned int ac_curr_max = 1000;
+static unsigned int usb_curr_max = 500;
+static int charging_curr = 0;
+static bool overheat_protection_ongoing = false;
+extern int get_bat_temp(void);
+static int bat_temp = 0;
+
+#define MAX_TEMP			45
+#define HIGH_TEMP_CURRENT		500
+
 #define MAIN_CH_OUT_CUR_LIM		0xf6
 #define MAIN_CH_OUT_CUR_LIM_SHIFT	4
 #define MAIN_CH_OUT_CUR_LIM_100_MA	0
@@ -346,13 +357,6 @@ extern void mxt224e_ts_change_vbus_state(bool vbus_status);
 static void (*mxt224e_ts_vbus_state)(bool vbus_status);
 #endif
 
-/* Charger Control */
-static unsigned int ac_curr_max = 800;
-static unsigned int usb_curr_max = 500;
-
-/* sysfs interfaces read-only */
-static int charging_curr = 0;
-
 static void ab8500_charger_set_usb_connected(struct ab8500_charger *di,
 	bool connected)
 {
@@ -466,7 +470,6 @@ static int ab8500_charger_get_usb_current(struct ab8500_charger *di)
 */
 static void ab8500_charger_set_main_charger_usb_current_limiter(struct ab8500_charger *di)
 {
-
 	abx500_set_register_interruptible(di->dev, AB8500_CHARGER,
                        MAIN_CH_OUT_CUR_LIM,             
 			MAIN_CH_OUT_CUR_LIM_ENABLE|
@@ -919,6 +922,7 @@ static int ab8500_charger_read_usb_type(struct ab8500_charger *di)
 {
 	int ret;
 	u8 val;
+
 	if (usb_switch_get_current_connection() & (EXTERNAL_CAR_KIT|EXTERNAL_DEDICATED_CHARGER)) {
 		val = USB_STAT_DEDICATED_CHG ;
 	}
@@ -956,6 +960,7 @@ static int ab8500_charger_detect_usb_type(struct ab8500_charger *di)
 {
 	int i, ret;
 	u8 val;
+
 	if (usb_switch_get_current_connection() & (EXTERNAL_CAR_KIT|EXTERNAL_DEDICATED_CHARGER)) {
 		val= USB_STAT_DEDICATED_CHG ;
 	}
@@ -1257,17 +1262,10 @@ static int ab8500_charger_set_main_in_curr(struct ab8500_charger *di, int ich_in
 	int ret = 0;
 	int input_curr_index;
 	int prev_input_curr_index;
-	int min_value;
 
-	/* We should always use to lowest current limit */
-	if (di->cable_type == POWER_SUPPLY_TYPE_MAINS)
-		min_value = min(di->bat->ta_chg_current_input, ich_in);
-	else
-		min_value = min(di->bat->usb_chg_current_input, ich_in);
+	charging_curr = ich_in;
 
-	charging_curr = min_value;
-
-	input_curr_index = ab8500_main_in_curr_to_regval(min_value);
+	input_curr_index = ab8500_main_in_curr_to_regval(ich_in);
 	if (input_curr_index < 0) {
 		pr_err("[ABB-Charger] MAIN input current limit too high, %d\n",
 			input_curr_index);
@@ -1421,7 +1419,6 @@ static int ab8500_charger_ac_en(struct ux500_charger *charger,
 	int vbus_status;
 
 	struct ab8500_charger *di = to_ab8500_charger_usb_device_info(charger);
-
 
 	charger_status = ab8500_charger_detect_chargers(di);
 	vbus_status = ab8500_vbus_is_detected(di);
@@ -1758,23 +1755,20 @@ static void ab8500_charger_siop_activation(
 				struct ux500_charger *charger,
 				bool enable)
 {
-	struct ab8500_charger *di;
+	struct ab8500_charger *di = static_di;
 	int ich_in;
 
-	if (charger->psy.type == POWER_SUPPLY_TYPE_MAINS) {
-		di = to_ab8500_charger_ac_device_info(charger);
-
-		if (enable) {
-			/* USB input current limit */
-			ich_in = di->bat->usb_chg_current_input;
-		} else {
-			/* AC input current limit */
-			ich_in = di->bat->ta_chg_current_input;
-		}
-
-		dev_dbg(di->dev, "adjust input current to %dmA\n", ich_in);
-		ab8500_charger_set_main_in_curr(di, ich_in);
+	if (enable) {
+		ich_in = HIGH_TEMP_CURRENT;
+	} else {
+		if (di->cable_type == POWER_SUPPLY_TYPE_MAINS)
+			ich_in = ac_curr_max;
+		else
+			ich_in = usb_curr_max;
 	}
+
+	dev_dbg(di->dev, "adjust input current to %dmA\n", ich_in);
+	ab8500_charger_set_main_in_curr(di, ich_in);
 }
 
 /**
@@ -1789,20 +1783,50 @@ static int ab8500_charger_update_charger_input_current(
 				struct ux500_charger *charger,
 				int ich_in)
 {
-	int ret = 0;
-	struct ab8500_charger *di;
+	int ret, min_value, input_current = 0;
+	struct ab8500_charger *di = static_di;
+
+	bat_temp = get_bat_temp();
+
+	/* Reduce input_current to HIGH_TEMP_CURRENT if batt temp is > MAX_TEMP */
+	if (bat_temp > MAX_TEMP) {
+		if (!overheat_protection_ongoing) {
+			pr_err("[ABB-Charger] %s Battery Temp is over %d °C ! - reducing input_current to %d mA ...\n", __func__ , (int)MAX_TEMP , (int)HIGH_TEMP_CURRENT);
+			input_current = HIGH_TEMP_CURRENT;
+			di->bat->ta_chg_current_input = input_current;
+			di->bat->usb_chg_current_input = input_current;
+			overheat_protection_ongoing = true;
+		}
+	} else {
+		if (overheat_protection_ongoing) {
+			pr_warn("[ABB-Charger] %s Battery Temp is no longer over %d °C - restore custom input_curent ...\n", __func__ , (int)MAX_TEMP);
+
+			if (charger->psy.type == POWER_SUPPLY_TYPE_MAINS) {
+				di->bat->ta_chg_current_input = ac_curr_max;
+				input_current = di->bat->ta_chg_current_input;
+			} else {
+				di->bat->usb_chg_current_input = usb_curr_max;
+				input_current = di->bat->usb_chg_current_input;
+			}
+			overheat_protection_ongoing = false;
+		}
+	}
+
+	if (!input_current)
+		min_value = ich_in;
+	else
+		min_value = min(ich_in, input_current);
 
 	if (charger->psy.type == POWER_SUPPLY_TYPE_MAINS) {
-		di = to_ab8500_charger_ac_device_info(charger);
-		dev_dbg(di->dev, "adjust input current to %dmA\n", ich_in);
-		ab8500_charger_set_main_in_curr(di, ich_in);
+		dev_dbg(di->dev, "adjust input current to %dmA\n", min_value);
+		ab8500_charger_set_main_in_curr(di, min_value);
 
 	} else if (charger->psy.type == POWER_SUPPLY_TYPE_USB) {
-		di = to_ab8500_charger_usb_device_info(charger);
-		dev_dbg(di->dev, "adjust input current to %dmA\n", ich_in);
-		ab8500_charger_set_vbus_in_curr(di, ich_in);
-	} else
+		dev_dbg(di->dev, "adjust input current to %dmA\n", min_value);
+		ab8500_charger_set_vbus_in_curr(di, min_value);
+	} else {
 		return -ENXIO;
+	}
 
 	return ret;
 }
@@ -1996,7 +2020,6 @@ static void ab8500_charger_attached_work(struct work_struct *work)
 	u8 statval;
 	struct ab8500_charger *di = container_of(work,
 		struct ab8500_charger, charger_attached_work.work);
-
 
 	for (i = 0 ; i < 10; i++) {
 
@@ -2269,6 +2292,7 @@ static void ab8500_charger_check_usbchargernotok_work(struct work_struct *work)
 	struct ab8500_charger *di = container_of(work,
 					struct ab8500_charger, 
 					check_usbchgnotok_work.work);
+
 	prev_status = di->flags.usbchargernotok;
 	if (usb_switch_get_current_connection() & (EXTERNAL_CAR_KIT|EXTERNAL_DEDICATED_CHARGER)) {
 		di->flags.usbchargernotok = false;
@@ -2598,6 +2622,7 @@ static irqreturn_t ab8500_charger_vbusdetr_handler(int irq, void *_di)
 static irqreturn_t ab8500_charger_usblinkstatus_handler(int irq, void *_di)
 {
 	struct ab8500_charger *di = _di;
+
 	dev_dbg(di->dev, "%s\n",__FUNCTION__);
 	pr_info("[ABB-Charger] USB link status changed\n");
 	queue_work(di->charger_wq, &di->usb_link_status_work);
@@ -3121,6 +3146,10 @@ static ssize_t abb_current_max_store(struct kobject *kobj, struct kobj_attribute
 		ac_curr_max = ac;
 
 		di->bat->ta_chg_current_input = ac_curr_max;
+
+		if (di->cable_type == POWER_SUPPLY_TYPE_MAINS)
+			ab8500_charger_set_main_in_curr(di, di->bat->ta_chg_current_input);
+
 		return count;
 	}
 
@@ -3132,6 +3161,10 @@ static ssize_t abb_current_max_store(struct kobject *kobj, struct kobj_attribute
 		usb_curr_max = usb;
 
 		di->bat->usb_chg_current_input = usb_curr_max;
+
+		if (di->cable_type == POWER_SUPPLY_TYPE_USB)
+			ab8500_charger_set_main_in_curr(di, di->bat->usb_chg_current_input);
+
 		return count;
 	}
 
@@ -3139,7 +3172,6 @@ static ssize_t abb_current_max_store(struct kobject *kobj, struct kobj_attribute
 
 	return -EINVAL;
 }
-
 static struct kobj_attribute abb_current_max_interface = __ATTR(curr_max, 0666, abb_current_max_show, abb_current_max_store);
 
 static ssize_t abb_charger_data_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
@@ -3156,16 +3188,28 @@ static ssize_t abb_charger_data_show(struct kobject *kobj, struct kobj_attribute
 	sprintf(buf, "%s[usb_chg_current_input]\t%d\n", buf, di->bat->usb_chg_current_input);
 	sprintf(buf, "%s[usb_chg_current]\t%d\n\n", buf, di->bat->usb_chg_current);
 
-	sprintf(buf, "%s[Original Battery]\t[%s]\n", buf, (int) di->bat->batt_id == 1 ? "*" : " ");
+	sprintf(buf, "%s[Original Battery]\t[%s]\n", buf, (int) di->bat->batt_id == 1 ? "Y" : "N");
 
 	return strlen(buf);
 }
-
 static struct kobj_attribute abb_charger_data_interface = __ATTR(charger_data, 0444, abb_charger_data_show, NULL);
+
+static ssize_t abb_bat_temp_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+{
+	struct ab8500_charger *di = static_di;
+
+	bat_temp = get_bat_temp();
+
+	sprintf(buf, "%sBattery Temp: \t%d °C / %d °F\n", buf, bat_temp, ((bat_temp * 9) * 2 + 5) / 5 / 2 + 32);
+
+	return strlen(buf);
+}
+static struct kobj_attribute abb_bat_temp_interface = __ATTR(bat_temp, 0444, abb_bat_temp_show, NULL);
 
 static struct attribute *abb_charger_attrs[] = {
 	&abb_current_max_interface.attr, 
 	&abb_charger_data_interface.attr, 
+	&abb_bat_temp_interface.attr, 
 	NULL,
 };
 
@@ -3222,6 +3266,7 @@ static int dummy(struct ux500_charger *charger,
        int enable, int vset, int iset)
 {
        struct ab8500_charger *di = to_ab8500_charger_ac_device_info(charger);
+
        dev_dbg(di->dev, "%s enable %d, vset %d, iset %d\n",
                __func__, enable, vset, iset);
        return 0;
