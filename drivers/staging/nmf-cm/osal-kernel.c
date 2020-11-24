@@ -31,8 +31,18 @@
 #include "cm_debug.h"
 #include "cm_dma.h"
 
-#define MIN_SAMPLING_RATE_MS			jiffies_to_msecs(2)
-#define SAMPLING_RATE_RATIO			10
+#ifdef CONFIG_HZ_100
+#define MIN_SAMPLING_RATE_MS			200
+#endif
+#ifdef CONFIG_HZ_250
+#define MIN_SAMPLING_RATE_MS			80
+#endif
+#ifdef CONFIG_HZ_300
+#define MIN_SAMPLING_RATE_MS			66
+#endif
+#ifdef CONFIG_HZ_1000
+#define MIN_SAMPLING_RATE_MS			20
+#endif
 
 __iomem void *prcmu_base = NULL;
 __iomem void *prcmu_tcdm_base = NULL;
@@ -47,7 +57,7 @@ static bool forced_late_resume_bt404_ts = false;
 #define FULL_OPP 100
 #define HALF_OPP 50
 static unsigned long running_dsp = 0;
-static unsigned int dspLoadMonitorPeriod = 0;
+static unsigned int dspLoadMonitorPeriod = MIN_SAMPLING_RATE_MS;
 module_param(dspLoadMonitorPeriod, uint, S_IWUSR|S_IRUGO);
 MODULE_PARM_DESC(dspLoadMonitorPeriod, "Period of the DSP-Load monitoring in ms");
 static unsigned int dspLoadHighThreshold = 75;
@@ -1016,8 +1026,6 @@ void OSAL_DisablePwrRessource(t_nmf_power_resource resource, t_uint32 firstParam
  */
 t_cm_error OSAL_EnablePwrRessource(t_nmf_power_resource resource, t_uint32 firstParam, t_uint32 secondParam)
 {
-	dspLoadMonitorPeriod = MIN_SAMPLING_RATE_MS * SAMPLING_RATE_RATIO;
-
 	switch (resource) {
 	case CM_OSAL_POWER_SxA_CLOCK: {
 		unsigned idx = COREIDX(firstParam);
