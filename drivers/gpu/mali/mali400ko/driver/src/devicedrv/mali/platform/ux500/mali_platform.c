@@ -61,8 +61,8 @@
 #define MALI_UX500_VERSION		"2.2"
 
 #define MIN_SAMPLING_RATE_MS			jiffies_to_msecs(2)
-#define SAMPLING_RATE_RATIO			10
-#define MAX_SAMPLING_RATE_MS			MIN_SAMPLING_RATE_MS * SAMPLING_RATE_RATIO
+#define SAMPLING_RATE_RATIO			1 /* like sampling_down_factor */
+#define MAX_SAMPLING_RATE_MS			MIN_SAMPLING_RATE_MS * 10
 
 #define MALI_MAX_UTILIZATION		256
 
