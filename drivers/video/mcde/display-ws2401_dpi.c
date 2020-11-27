@@ -978,9 +978,13 @@ static ssize_t ws2401_sysfs_show_mcde_chnl(struct device *dev,
 	sprintf(buf, "%shsw: %d\n", buf, lcd->mdd->video_mode.hsw);
 	sprintf(buf, "%svbp: %d\n", buf, lcd->mdd->video_mode.vbp);
 	sprintf(buf, "%svfp: %d\n", buf, lcd->mdd->video_mode.vfp);
-	sprintf(buf, "%svsw: %d\n", buf, lcd->mdd->video_mode.vsw);
+	sprintf(buf, "%svsw: %d\n\n", buf, lcd->mdd->video_mode.vsw);
 	sprintf(buf, "%sape_opp: %d\n", buf, ape_opp);
-	sprintf(buf, "%sddr_opp: %d\n", buf, ddr_opp);
+	sprintf(buf, "%sddr_opp: %d\n\n", buf, ddr_opp);
+	sprintf(buf, "%spower_on_delay: %d\n", buf, lcd->pd->power_on_delay);
+	sprintf(buf, "%sreset_delay: %d\n", buf, lcd->pd->reset_delay);
+	sprintf(buf, "%ssleep_in_delay: %d\n", buf, lcd->pd->sleep_in_delay);
+	sprintf(buf, "%ssleep_out_delay: %d\n", buf, lcd->pd->sleep_out_delay);
 
 	return strlen(buf);
 }
@@ -990,7 +994,7 @@ static ssize_t ws2401_sysfs_store_mcde_chnl(struct device *dev,
 				       const char *buf, size_t len)
 {
 	struct ws2401_dpi *lcd = dev_get_drvdata(dev);
-	int ret, tmp;
+	static int ret, tmp = 0;
 	u32 hbp;	/* horizontal back porch: left margin (excl. hsync) */
 	u32 hfp;	/* horizontal front porch: right margin (excl. hsync) */
 	u32 hsw;	/* horizontal sync width */
@@ -998,7 +1002,6 @@ static ssize_t ws2401_sysfs_store_mcde_chnl(struct device *dev,
 	u32 vfp;	/* vertical front porch: lower margin (excl. vsync) */
 	u32 vsw;	/* vertical sync width */
 	u32 enable;
-
 
 	if (sscanf(buf, "apeopp=%d", &tmp)) {
 
@@ -1159,6 +1162,38 @@ static ssize_t ws2401_sysfs_store_mcde_chnl(struct device *dev,
 
 		pr_err("[ws2401] vsw: %d\n", vsw);
 		lcd->mdd->video_mode.vsw = vsw;
+
+		return len;
+	}
+
+	if (sscanf(buf, "power_on_delay=%d", &tmp))
+	{
+		pr_err("[ws2401] power_on_delay: %d\n", tmp);
+		lcd->pd->power_on_delay = tmp;
+
+		return len;
+	}
+
+	if (sscanf(buf, "reset_delay=%d", &tmp))
+	{
+		pr_err("[ws2401] reset_delay: %d\n", tmp);
+		lcd->pd->reset_delay = tmp;
+
+		return len;
+	}
+
+	if (sscanf(buf, "sleep_in_delay=%d", &tmp))
+	{
+		pr_err("[ws2401] sleep_in_delay: %d\n", tmp);
+		lcd->pd->sleep_in_delay = tmp;
+
+		return len;
+	}
+
+	if (sscanf(buf, "sleep_out_delay=%d", &tmp))
+	{
+		pr_err("[ws2401] sleep_out_delay: %d\n", tmp);
+		lcd->pd->sleep_out_delay = tmp;
 
 		return len;
 	}
