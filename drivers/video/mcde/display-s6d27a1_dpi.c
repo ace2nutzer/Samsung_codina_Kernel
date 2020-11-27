@@ -896,7 +896,11 @@ static ssize_t s6d27a1_sysfs_show_mcde_chnl(struct device *dev,
 	sprintf(buf, "%svfp: %d\n", buf, lcd->mdd->video_mode.vfp);
 	sprintf(buf, "%svsw: %d\n\n", buf, lcd->mdd->video_mode.vsw);
 	sprintf(buf, "%sape_opp: %d\n", buf, ape_opp);
-	sprintf(buf, "%sddr_opp: %d\n", buf, ddr_opp);
+	sprintf(buf, "%sddr_opp: %d\n\n", buf, ddr_opp);
+	sprintf(buf, "%spower_on_delay: %d\n", buf, lcd->pd->power_on_delay);
+	sprintf(buf, "%sreset_delay: %d\n", buf, lcd->pd->reset_delay);
+	sprintf(buf, "%ssleep_in_delay: %d\n", buf, lcd->pd->sleep_in_delay);
+	sprintf(buf, "%ssleep_out_delay: %d\n", buf, lcd->pd->sleep_out_delay);
 
 	return strlen(buf);
 }
@@ -906,7 +910,7 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 				       const char *buf, size_t len)
 {
 	struct s6d27a1_dpi *lcd = dev_get_drvdata(dev);
-	int ret, tmp;
+	static int ret, tmp = 0;
 	u32 hbp;	/* horizontal back porch: left margin (excl. hsync) */
 	u32 hfp;	/* horizontal front porch: right margin (excl. hsync) */
 	u32 hsw;	/* horizontal sync width */
@@ -1074,6 +1078,38 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 
 		pr_err("[s6d27a1] vsw: %d\n", vsw);
 		lcd->mdd->video_mode.vsw = vsw;
+
+		return len;
+	}
+
+	if (sscanf(buf, "power_on_delay=%d", &tmp))
+	{
+		pr_err("[s6d27a1] power_on_delay: %d\n", tmp);
+		lcd->pd->power_on_delay = tmp;
+
+		return len;
+	}
+
+	if (sscanf(buf, "reset_delay=%d", &tmp))
+	{
+		pr_err("[s6d27a1] reset_delay: %d\n", tmp);
+		lcd->pd->reset_delay = tmp;
+
+		return len;
+	}
+
+	if (sscanf(buf, "sleep_in_delay=%d", &tmp))
+	{
+		pr_err("[s6d27a1] sleep_in_delay: %d\n", tmp);
+		lcd->pd->sleep_in_delay = tmp;
+
+		return len;
+	}
+
+	if (sscanf(buf, "sleep_out_delay=%d", &tmp))
+	{
+		pr_err("[s6d27a1] sleep_out_delay: %d\n", tmp);
+		lcd->pd->sleep_out_delay = tmp;
 
 		return len;
 	}

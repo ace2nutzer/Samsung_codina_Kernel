@@ -60,9 +60,12 @@
 extern bool is_s6d(void);
 extern bool is_lpm;
 extern bool is_recovery;
+extern bool landscape_mode;
 
-static unsigned int lcdclk_usr = 4;
-static unsigned int lcdclk_s6d_usr = 6;
+static unsigned int lcdclk_ws24_v = 5;
+static unsigned int lcdclk_ws24_h = 1;
+static unsigned int lcdclk_s6d_v = 1; /* 3 */
+static unsigned int lcdclk_s6d_h = 1; /* 2 */
 static unsigned int custom_lcdclk = 0;
 
 #define LCDCLK_SET(clk) prcmu_set_clock_rate(PRCMU_LCDCLK, (unsigned long) clk);
@@ -1245,7 +1248,7 @@ struct lcdclk_prop
 /* LCD Freqs in (...) are valid for PLLDDR_FREQ 1000 */
 
 // WS2401
-static struct lcdclk_prop lcdclk_prop[] = {
+static struct lcdclk_prop lcdclk_ws24_prop[] = {
 		[1] = {
 			.name = "50 MHz",
 			.clk = 49920000,
@@ -1304,35 +1307,73 @@ static struct lcdclk_prop lcdclk_s6d_prop[] = {
 		},
 };
 
-static void lcdclk_set(void)
+static void lcdclk_thread(struct work_struct *lcdclk_work)
 {
-	int ret;
+	static int ret = 0;
 
-	if ((custom_lcdclk != 0) && (lcdclk_usr == 0 || lcdclk_s6d_usr == 0)) {
-		ret = LCDCLK_SET(custom_lcdclk);
-			if (ret) {
-				pr_err("[MCDE] Failed to set Custom LCDCLK to %d Hz\n",  custom_lcdclk);
-			} else {
-				pr_info("[MCDE] Set Custom LCDCLK to %d Hz\n",  custom_lcdclk);
-			}
-
+	if (is_s6d()) {
+		ret = LCDCLK_SET(lcdclk_s6d_prop[1].clk);
+		if (ret)
+			pr_err("[MCDE] Failed to set LCDCLK to start freq %d Hz\n",  lcdclk_s6d_prop[1].clk);
+		else
+			pr_info("[MCDE] Set LCDCLK to start freq %d Hz\n",  lcdclk_s6d_prop[1].clk);
 	} else {
-		if (is_s6d()) {
-			ret = LCDCLK_SET(lcdclk_s6d_prop[lcdclk_s6d_usr].clk);
-			if (ret) {
-				pr_err("[MCDE] Failed to set LCDCLK to %d Hz\n",  lcdclk_s6d_prop[lcdclk_s6d_usr].clk);
-			} else {
-				pr_info("[MCDE] Set LCDCLK to %d Hz\n",  lcdclk_s6d_prop[lcdclk_s6d_usr].clk);
-			}
+		ret = LCDCLK_SET(lcdclk_ws24_prop[1].clk);
+		if (ret)
+			pr_err("[MCDE] Failed to set LCDCLK to start freq %d Hz\n",  lcdclk_ws24_prop[1].clk);
+		else
+			pr_info("[MCDE] Set LCDCLK to start freq %d Hz\n",  lcdclk_ws24_prop[1].clk);
+	}
+
+	if ((is_recovery) || (is_lpm))
+		return;
+
+	msleep(500);
+
+	if (custom_lcdclk) {
+		ret = LCDCLK_SET(custom_lcdclk);
+		if (ret)
+			pr_err("[MCDE] Failed to set Custom LCDCLK to %d Hz\n",  custom_lcdclk);
+		else
+			pr_info("[MCDE] Set Custom LCDCLK to %d Hz\n",  custom_lcdclk);
+		return;
+	}
+
+	if (is_s6d()) {
+		if (!landscape_mode) {
+			ret = LCDCLK_SET(lcdclk_s6d_prop[lcdclk_s6d_v].clk);
+			if (ret)
+				pr_err("[MCDE] Failed to set LCDCLK V to %d Hz\n",  lcdclk_s6d_prop[lcdclk_s6d_v].clk);
+			else
+				pr_info("[MCDE] Set LCDCLK V to %d Hz\n",  lcdclk_s6d_prop[lcdclk_s6d_v].clk);
 		} else {
-			ret = LCDCLK_SET(lcdclk_prop[lcdclk_usr].clk);
-			if (ret) {
-				pr_err("[MCDE] Failed to set LCDCLK to %d Hz\n",  lcdclk_prop[lcdclk_usr].clk);
-			} else {
-				pr_info("[MCDE] Set LCDCLK to %d Hz\n",  lcdclk_prop[lcdclk_usr].clk);
-			}
+			ret = LCDCLK_SET(lcdclk_s6d_prop[lcdclk_s6d_h].clk);
+			if (ret)
+				pr_err("[MCDE] Failed to set LCDCLK H to %d Hz\n",  lcdclk_s6d_prop[lcdclk_s6d_h].clk);
+			else
+				pr_info("[MCDE] Set LCDCLK H to %d Hz\n",  lcdclk_s6d_prop[lcdclk_s6d_h].clk);
+		}
+	} else {
+		if (!landscape_mode) {
+			ret = LCDCLK_SET(lcdclk_ws24_prop[lcdclk_ws24_v].clk);
+			if (ret)
+				pr_err("[MCDE] Failed to set LCDCLK V to %d Hz\n",  lcdclk_ws24_prop[lcdclk_ws24_v].clk);
+			else
+				pr_info("[MCDE] Set LCDCLK V to %d Hz\n",  lcdclk_ws24_prop[lcdclk_ws24_v].clk);
+		} else {
+			ret = LCDCLK_SET(lcdclk_ws24_prop[lcdclk_ws24_h].clk);
+			if (ret)
+				pr_err("[MCDE] Failed to set LCDCLK H to %d Hz\n",  lcdclk_ws24_prop[lcdclk_ws24_h].clk);
+			else
+				pr_info("[MCDE] Set LCDCLK H to %d Hz\n",  lcdclk_ws24_prop[lcdclk_ws24_h].clk);
 		}
 	}
+}
+static DECLARE_WORK(lcdclk_work, lcdclk_thread);
+
+void lcdclk_set(void)
+{
+	schedule_work(&lcdclk_work);
 }
 
 #define ATTR_RO(_name)	\
@@ -1356,20 +1397,25 @@ static ssize_t lcd_clk_show(struct kobject *kobj, struct kobj_attribute *attr, c
 
 	sprintf(buf, "%sCurrent LCDCLK freq: %d\n", buf, (int) prcmu_clock_rate(PRCMU_LCDCLK));
 
-	if (is_s6d())
-		sprintf(buf, "%s[0][%s] Custom\n", buf, lcdclk_s6d_usr == 0 ? "*" : " ");
-	else
-		sprintf(buf, "%s[0][%s] Custom\n", buf, lcdclk_usr == 0 ? "*" : " ");
+	sprintf(buf, "%s[0][%s] Custom\n", buf, custom_lcdclk ? "*" : " ");
 
 	if (is_s6d()) {
+		sprintf(buf, "%sVertical:\n", buf);
 		for (i = 1; i < ARRAY_SIZE(lcdclk_s6d_prop); i++) {
-			sprintf(buf, "%s[%d][%s] %s\n", buf, i, i == lcdclk_s6d_usr ? "*" : " ", lcdclk_s6d_prop[i].name);
+			sprintf(buf, "%s[%d][%s] %s\n", buf, i, i == lcdclk_s6d_v ? "*" : " ", lcdclk_s6d_prop[i].name);
 		}
-
+		sprintf(buf, "%sHorizontal:\n", buf);
+		for (i = 1; i < ARRAY_SIZE(lcdclk_s6d_prop); i++) {
+			sprintf(buf, "%s[%d][%s] %s\n", buf, i, i == lcdclk_s6d_h ? "*" : " ", lcdclk_s6d_prop[i].name);
+		}
 	} else {
-
-		for (i = 1; i < ARRAY_SIZE(lcdclk_prop); i++) {
-			sprintf(buf, "%s[%d][%s] %s\n", buf, i, i == lcdclk_usr ? "*" : " ", lcdclk_prop[i].name);
+		sprintf(buf, "%sVertical:\n", buf);
+		for (i = 1; i < ARRAY_SIZE(lcdclk_ws24_prop); i++) {
+			sprintf(buf, "%s[%d][%s] %s\n", buf, i, i == lcdclk_ws24_v ? "*" : " ", lcdclk_ws24_prop[i].name);
+		}
+		sprintf(buf, "%sHorizontal:\n", buf);
+		for (i = 1; i < ARRAY_SIZE(lcdclk_ws24_prop); i++) {
+			sprintf(buf, "%s[%d][%s] %s\n", buf, i, i == lcdclk_ws24_h ? "*" : " ", lcdclk_ws24_prop[i].name);
 		}
 	}
 
@@ -1381,31 +1427,59 @@ static ssize_t lcd_clk_store(struct kobject *kobj, struct kobj_attribute *attr, 
 	int ret, tmp;
 
 	if (sscanf(buf, "lcdclk=%d", &tmp)) {
-		custom_lcdclk = tmp;
-		if (is_s6d())
-			lcdclk_s6d_usr = 0;
-		else
-			lcdclk_usr = 0;
-		goto out;
-	}
-
-	ret = sscanf(buf, "%d", &tmp);
-	if (is_s6d()) {
-		if (!ret || (tmp < 1) || (tmp > ARRAY_SIZE(lcdclk_s6d_prop) - 1)) {
+		if (tmp < 20000000 || tmp > 100000000) {
 			pr_err("[MCDE] Bad cmd\n");
 			return -EINVAL;
+		} else {
+			custom_lcdclk = tmp;
+			goto out;
+		}
+	}
+
+	if (is_s6d()) {
+		if (sscanf(buf, "v=%d", &tmp)) {
+			if ((tmp < 1) || (tmp > ARRAY_SIZE(lcdclk_s6d_prop) - 1)) {
+				pr_err("[MCDE] Bad cmd\n");
+				return -EINVAL;
+			} else {
+				lcdclk_s6d_v = tmp;
+				custom_lcdclk = 0;
+				goto out;
+			}
+		} else if (sscanf(buf, "h=%d", &tmp)) {
+			if ((tmp < 1) || (tmp > ARRAY_SIZE(lcdclk_s6d_prop) - 1)) {
+				pr_err("[MCDE] Bad cmd\n");
+				return -EINVAL;
+			} else {
+				lcdclk_s6d_h = tmp;
+				custom_lcdclk = 0;
+				goto out;
+			}
 		}
 	} else {
-		if (!ret || (tmp < 1) || (tmp > ARRAY_SIZE(lcdclk_prop) - 1)) {
-			pr_err("[MCDE] Bad cmd\n");
-			return -EINVAL;
+		if (sscanf(buf, "v=%d", &tmp)) {
+			if ((tmp < 1) || (tmp > ARRAY_SIZE(lcdclk_ws24_prop) - 1)) {
+				pr_err("[MCDE] Bad cmd\n");
+				return -EINVAL;
+			} else {
+				lcdclk_ws24_v = tmp;
+				custom_lcdclk = 0;
+				goto out;
+			}
+		} else if (sscanf(buf, "h=%d", &tmp)) {
+			if ((tmp < 1) || (tmp > ARRAY_SIZE(lcdclk_ws24_prop) - 1)) {
+				pr_err("[MCDE] Bad cmd\n");
+				return -EINVAL;
+			} else {
+				lcdclk_ws24_h = tmp;
+				custom_lcdclk = 0;
+				goto out;
+			}
 		}
 	}
 
-	if (is_s6d())
-		lcdclk_s6d_usr = tmp;
-	else
-		lcdclk_usr = tmp;
+	pr_err("[MCDE] Bad cmd\n");
+	return -EINVAL;
 
 out:
 	lcdclk_set();
@@ -1516,14 +1590,11 @@ static int update_channel_static_registers(struct mcde_chnl_state *chnl)
 	}
 
 	if (port->type == MCDE_PORTTYPE_DPI) {
-
-		if ((!is_recovery) && (!is_lpm)) {
-			lcdclk_set();
-		} else {
-			lcdclk_s6d_usr = 1;
-			lcdclk_usr = 1;
+		if ((is_recovery) || (is_lpm)) {
+			lcdclk_s6d_v = 1;
+			lcdclk_ws24_v = 1;
 		}
-
+		lcdclk_set();
 		(clk_enable(chnl->clk_dpi));
 	}
 

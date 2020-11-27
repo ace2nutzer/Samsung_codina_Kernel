@@ -52,6 +52,11 @@ enum {
 
 extern bool is_lpm;
 extern bool is_recovery;
+extern void lcdclk_set(void);
+extern bool is_s6d(void);
+static bool boost = false;
+bool landscape_mode = false;
+
 extern unsigned int system_rev;
 static int display_initialized_during_boot = (int)false;
 static struct ux500_pins *dpi_pins;
@@ -144,7 +149,6 @@ struct ssg_dpi_display_platform_data codina_dpi_pri_display_info = {
 
 	.power_on_delay = 10,
 	.reset_delay = 10,
-	.sleep_in_delay = 50,
 
 	.video_mode.xres	= 480,
 	.video_mode.yres	= 800,
@@ -262,12 +266,24 @@ static int lcd_gpio_cfg_earlysuspend(void)
 	ret = nmk_config_pins(codina_lcd_spi_pins_disable,
 		ARRAY_SIZE(codina_lcd_spi_pins_disable));
 
+	if (is_s6d()) {
+		if (boost)
+			prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
+				"mcde", PRCMU_QOS_DEFAULT_VALUE);
+	}
+
 	return ret;
 }
 
 static int lcd_gpio_cfg_lateresume(void)
 {
 	int ret = 0;
+
+	if (is_s6d()) {
+		if (boost)
+			prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
+				"mcde", PRCMU_QOS_MAX_VALUE);
+	}
 
 	ret = nmk_config_pins(codina_lcd_spi_pins_enable,
 		ARRAY_SIZE(codina_lcd_spi_pins_enable));
@@ -361,50 +377,39 @@ static void update_mcde_opp(struct device *dev,
 					struct mcde_opp_requirements *reqs)
 {
 	static s32 requested_qos;
-	s32 req_ape = PRCMU_QOS_DEFAULT_VALUE;
-	static bool update_first = true;
-	s32 req_ddr = PRCMU_QOS_DEFAULT_VALUE;
-
+	static s32 req_ape = PRCMU_QOS_DEFAULT_VALUE;
 	static u8 prev_rot_channels;
-	static ktime_t rot_time;
-	s64 diff;
 
 	/* If a rotation is detected, clock up CPU to max */
-	if (reqs->num_rot_channels != prev_rot_channels) {
+	if (reqs->num_rot_channels != prev_rot_channels)
 		prev_rot_channels = reqs->num_rot_channels;
-		rot_time = ktime_get();
-	}
-	diff = ktime_to_ms(ktime_sub(ktime_get(),rot_time));
 
-/*
- * Wait a while before clocking down again
-	 * unless we have an overlay
- */
-if ((reqs->num_rot_channels && reqs->num_overlays > 1) ||
-		 (diff < 5000)) {
+	if (reqs->num_rot_channels) {
 		req_ape = PRCMU_QOS_MAX_VALUE;
-		req_ddr = PRCMU_QOS_MAX_VALUE;
+		boost = true;
+		landscape_mode = true;
 	} else {
 		req_ape = PRCMU_QOS_DEFAULT_VALUE;
-		req_ddr = PRCMU_QOS_DEFAULT_VALUE;
+		boost = false;
+		landscape_mode = false;
 	}
 
 	if (req_ape != requested_qos) {
 		requested_qos = req_ape;
-		prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
-						"mcde", req_ape);
-		prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
-						"mcde", req_ddr);
-		pr_info("Requested APE QOS = %d\n", req_ape);
 
-		if (update_first == true) {
-			codina_backlight_on_off(false);
-			msleep(1);
-			codina_backlight_on_off(true);
-			update_first = false;
+		if (is_s6d()) {
+			prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
+				"mcde", req_ape);
+			pr_info("Requested APE QOS = %d\n", req_ape);
 		}
+
+		lcdclk_set();
+/*
+		codina_backlight_on_off(false);
+		msleep(1);
+		codina_backlight_on_off(true);
+*/
 	}
-	
 }
 
 int __init init_codina_display_devices(void)
@@ -467,16 +472,18 @@ int __init init_codina_display_devices(void)
 		codina_dpi_pri_display_info.video_mode.vbp = 8;
 		codina_dpi_pri_display_info.video_mode.vfp = 8;
 		codina_dpi_pri_display_info.video_mode.vsw = 8;
+		codina_dpi_pri_display_info.sleep_in_delay = 50;
 		codina_dpi_pri_display_info.sleep_out_delay = 50;
 	} else {
 		generic_display0.name = LCD_DRIVER_NAME_S6D27A1;
-		codina_dpi_pri_display_info.video_mode.hbp = 50;
-		codina_dpi_pri_display_info.video_mode.hfp = 50;
-		codina_dpi_pri_display_info.video_mode.hsw = 2;
-		codina_dpi_pri_display_info.video_mode.vbp = 10;
-		codina_dpi_pri_display_info.video_mode.vfp = 10;
-		codina_dpi_pri_display_info.video_mode.vsw = 2;
-		codina_dpi_pri_display_info.sleep_out_delay = 100;
+		codina_dpi_pri_display_info.video_mode.hbp = 6;
+		codina_dpi_pri_display_info.video_mode.hfp = 6;
+		codina_dpi_pri_display_info.video_mode.hsw = 6;
+		codina_dpi_pri_display_info.video_mode.vbp = 6;
+		codina_dpi_pri_display_info.video_mode.vfp = 6;
+		codina_dpi_pri_display_info.video_mode.vsw = 6;
+		codina_dpi_pri_display_info.sleep_in_delay = 50;
+		codina_dpi_pri_display_info.sleep_out_delay = 50;
 	}
 
 	if (is_recovery || is_lpm) {
@@ -485,8 +492,6 @@ int __init init_codina_display_devices(void)
 	}
 
 	prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
-				"mcde", PRCMU_QOS_DEFAULT_VALUE);
-	prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
 				"mcde", PRCMU_QOS_DEFAULT_VALUE);
 
 	ret = mcde_display_device_register(&generic_display0);
