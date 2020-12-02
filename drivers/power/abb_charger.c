@@ -45,11 +45,12 @@ static unsigned int ac_curr_max = 1000;
 static unsigned int usb_curr_max = 500;
 static int charging_curr = 0;
 static bool overheat_protection_ongoing = false;
+static unsigned int batt_max_temp = 40; /* °C */
 extern int get_bat_temp(void);
 static int bat_temp = 0;
+extern int get_bat_volt(void);
 
-#define MAX_TEMP			45
-#define HIGH_TEMP_CURRENT		500
+#define HIGH_TEMP_CURRENT		500	/* mA */
 
 #define MAIN_CH_OUT_CUR_LIM		0xf6
 #define MAIN_CH_OUT_CUR_LIM_SHIFT	4
@@ -1788,10 +1789,10 @@ static int ab8500_charger_update_charger_input_current(
 
 	bat_temp = get_bat_temp();
 
-	/* Reduce input_current to HIGH_TEMP_CURRENT if batt temp is > MAX_TEMP */
-	if (bat_temp > MAX_TEMP) {
+	/* Reduce input_current to HIGH_TEMP_CURRENT if batt temp is > batt_max_temp */
+	if (bat_temp > batt_max_temp) {
 		if (!overheat_protection_ongoing) {
-			pr_err("[ABB-Charger] %s Battery Temp is over %d °C ! - reducing input_current to %d mA ...\n", __func__ , (int)MAX_TEMP , (int)HIGH_TEMP_CURRENT);
+			pr_err("[ABB-Charger] %s Battery Temp is over %u °C ! - reducing input_current to %d mA ...\n", __func__ , batt_max_temp , (int)HIGH_TEMP_CURRENT);
 			input_current = HIGH_TEMP_CURRENT;
 			di->bat->ta_chg_current_input = input_current;
 			di->bat->usb_chg_current_input = input_current;
@@ -1799,7 +1800,7 @@ static int ab8500_charger_update_charger_input_current(
 		}
 	} else {
 		if (overheat_protection_ongoing) {
-			pr_warn("[ABB-Charger] %s Battery Temp is no longer over %d °C - restore custom input_curent ...\n", __func__ , (int)MAX_TEMP);
+			pr_warn("[ABB-Charger] %s Battery Temp is no longer over %u °C - restore custom input_curent ...\n", __func__ , batt_max_temp);
 
 			if (charger->psy.type == POWER_SUPPLY_TYPE_MAINS) {
 				di->bat->ta_chg_current_input = ac_curr_max;
@@ -3196,8 +3197,6 @@ static struct kobj_attribute abb_charger_data_interface = __ATTR(charger_data, 0
 
 static ssize_t abb_bat_temp_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	struct ab8500_charger *di = static_di;
-
 	bat_temp = get_bat_temp();
 
 	sprintf(buf, "%sBattery Temp: \t%d °C / %d °F\n", buf, bat_temp, ((bat_temp * 9) * 2 + 5) / 5 / 2 + 32);
@@ -3206,10 +3205,53 @@ static ssize_t abb_bat_temp_show(struct kobject *kobj, struct kobj_attribute *at
 }
 static struct kobj_attribute abb_bat_temp_interface = __ATTR(bat_temp, 0444, abb_bat_temp_show, NULL);
 
+static ssize_t abb_bat_volt_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+{
+	int bat_volt = get_bat_volt();
+
+	sprintf(buf, "%sBattery Voltage: \t%d mV\n", buf, bat_volt);
+
+	return strlen(buf);
+}
+static struct kobj_attribute abb_bat_volt_interface = __ATTR(bat_volt, 0444, abb_bat_volt_show, NULL);
+
+static ssize_t abb_batt_max_temp_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+{
+	sprintf(buf,   "%s[Battery temperature control]\n\n", buf);
+
+	sprintf(buf, "%s[max_temp] \t[%u °C]\n", buf, batt_max_temp);
+
+	return strlen(buf);
+}
+
+static ssize_t abb_batt_max_temp_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
+{
+	unsigned int tmp;
+
+	if (sscanf(buf, "%u", &tmp)) {
+
+		if (tmp < 35 || tmp > 45) {
+			pr_err("[ABB-Charger] Invaild cmd\n");
+			return -EINVAL;
+		}
+
+		batt_max_temp = tmp;
+
+		return count;
+	}
+
+	pr_err("[ABB-Charger] invalid cmd\n");
+
+	return -EINVAL;
+}
+static struct kobj_attribute abb_batt_max_temp_interface = __ATTR(batt_max_temp, 0666, abb_batt_max_temp_show, abb_batt_max_temp_store);
+
 static struct attribute *abb_charger_attrs[] = {
 	&abb_current_max_interface.attr, 
 	&abb_charger_data_interface.attr, 
 	&abb_bat_temp_interface.attr, 
+	&abb_bat_volt_interface.attr, 
+	&abb_batt_max_temp_interface.attr, 
 	NULL,
 };
 

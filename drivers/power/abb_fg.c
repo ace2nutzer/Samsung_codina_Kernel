@@ -3384,6 +3384,13 @@ static struct attribute_group abb_fg_interface_group = {
 
 static struct kobject *abb_fg_kobject;
 
+static struct ab8500_fg *static_di;
+
+int get_bat_volt(void)
+{
+	return static_di->vbat;
+}
+
 static int __devexit ab8500_fg_remove(struct platform_device *pdev)
 {
 	int ret = 0;
@@ -3426,6 +3433,8 @@ static int __devinit ab8500_fg_probe(struct platform_device *pdev)
 		kzalloc(sizeof(struct ab8500_fg), GFP_KERNEL);
 	if (!di)
 		return -ENOMEM;
+
+	static_di = di;
 
 	mutex_init(&di->cc_lock);
 
