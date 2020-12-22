@@ -30,7 +30,7 @@
 
 #define DEF_FREQUENCY_UP_THRESHOLD		(75)
 #define DOWN_THRESHOLD_MARGIN			(25)
-#define DEF_SAMPLING_DOWN_FACTOR		(1)
+#define DEF_SAMPLING_DOWN_FACTOR		(25)
 #define MAX_SAMPLING_DOWN_FACTOR		(100000)
 #define MICRO_FREQUENCY_UP_THRESHOLD		(75)
 #define MIN_FREQUENCY_UP_THRESHOLD		(60)
@@ -59,7 +59,6 @@
  * All times here are in uS.
  */
 #define MIN_SAMPLING_RATE_RATIO		(2)
-#define MIN_SAMPLING_RATE_US			jiffies_to_usecs(2)
 
 static unsigned int min_sampling_rate = 0;
 static unsigned int down_threshold = 0;
@@ -698,7 +697,7 @@ static int __init cpufreq_gov_dbs_init(void)
 		 * not depending on HZ, but fixed (very low). The deferred
 		 * timer might skip some samples if idle/sleeping as needed.
 		*/
-		min_sampling_rate = MIN_SAMPLING_RATE_US;
+		min_sampling_rate = jiffies_to_usecs(1);
 	} else {
 		/* For correct statistics, we need 10 ticks for each measure */
 		min_sampling_rate =

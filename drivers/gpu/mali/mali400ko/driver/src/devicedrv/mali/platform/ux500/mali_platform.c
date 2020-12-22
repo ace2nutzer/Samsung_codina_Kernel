@@ -60,7 +60,7 @@
 
 #define MALI_UX500_VERSION		"2.2"
 
-#define MIN_SAMPLING_RATE_MS			jiffies_to_msecs(2)
+#define MIN_SAMPLING_RATE_MS			jiffies_to_msecs(20)
 #define SAMPLING_RATE_RATIO			1 /* like sampling_down_factor */
 #define MAX_SAMPLING_RATE_MS			MIN_SAMPLING_RATE_MS * 10
 
@@ -100,8 +100,8 @@ static struct mali_dvfs_data mali_dvfs[] = {
 	{800000, 798720, 0x010501D0, 0x37},
 };
 
-extern u32 mali_utilization_sampling_rate;
-extern u32 mali_sampling_rate_ratio;
+u32 mali_utilization_sampling_rate = 0;
+u32 mali_sampling_rate_ratio = 1;
 static bool is_running = false;
 static bool is_initialized = false;
 static u32 mali_last_utilization = 0;
@@ -677,8 +677,6 @@ _mali_osk_errcode_t mali_platform_init()
 	int ret;
 
 	is_running = false;
-
-	mali_last_utilization = 0;
 	mali_utilization_sampling_rate = MIN_SAMPLING_RATE_MS;
 
 	if (!is_initialized) {
