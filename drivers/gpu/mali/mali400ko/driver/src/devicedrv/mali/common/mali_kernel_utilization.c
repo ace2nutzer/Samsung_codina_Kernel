@@ -13,8 +13,8 @@
 #include "mali_platform.h"
 #include <linux/jiffies.h>
 
-u32 mali_utilization_sampling_rate = 0;
-u32 mali_sampling_rate_ratio = 1;
+extern u32 mali_utilization_sampling_rate;
+extern u32 mali_sampling_rate_ratio;
 
 static _mali_osk_lock_t *time_data_lock;
 

@@ -38,7 +38,7 @@
 #define MIN_SAMPLING_RATE_MS			80
 #endif
 #ifdef CONFIG_HZ_300
-#define MIN_SAMPLING_RATE_MS			66
+#define MIN_SAMPLING_RATE_MS			67
 #endif
 #ifdef CONFIG_HZ_1000
 #define MIN_SAMPLING_RATE_MS			20
