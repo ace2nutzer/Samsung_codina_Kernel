@@ -994,7 +994,7 @@ static ssize_t ws2401_sysfs_store_mcde_chnl(struct device *dev,
 				       const char *buf, size_t len)
 {
 	struct ws2401_dpi *lcd = dev_get_drvdata(dev);
-	static int ret, tmp = 0;
+	int ret, tmp = 0;
 	u32 hbp;	/* horizontal back porch: left margin (excl. hsync) */
 	u32 hfp;	/* horizontal front porch: right margin (excl. hsync) */
 	u32 hsw;	/* horizontal sync width */

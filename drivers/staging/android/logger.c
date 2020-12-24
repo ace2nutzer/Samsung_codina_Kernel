@@ -30,8 +30,8 @@
 #include <asm/ioctls.h>
 #include <mach/sec_debug.h>
 
-static unsigned int enabled = 1;
-module_param(enabled, int, S_IWUSR | S_IRUGO);
+static bool enabled = true;
+module_param(enabled, bool, S_IWUSR | S_IRUGO);
 
 /*
  * struct logger_log - represents a specific log, such as 'main' or 'radio'

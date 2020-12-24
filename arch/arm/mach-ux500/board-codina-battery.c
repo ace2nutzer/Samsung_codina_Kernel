@@ -239,7 +239,7 @@ static int sec_bat_check_cable_callback(void)
  */
 static bool sec_bat_check_callback(void)
 {
-return true;
+	return true;
 }
 
 static bool sec_bat_check_cable_result_callback(

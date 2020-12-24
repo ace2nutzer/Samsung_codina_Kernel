@@ -377,7 +377,7 @@ static void update_mcde_opp(struct device *dev,
 					struct mcde_opp_requirements *reqs)
 {
 	static s32 requested_qos;
-	static s32 req_ape = PRCMU_QOS_DEFAULT_VALUE;
+	s32 req_ape = PRCMU_QOS_DEFAULT_VALUE;
 	static u8 prev_rot_channels;
 
 	/* If a rotation is detected, clock up CPU to max */

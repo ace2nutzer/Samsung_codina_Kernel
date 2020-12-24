@@ -427,7 +427,7 @@ struct ab8500_fg {
 };
 static LIST_HEAD(ab8500_fg_list);
 
-struct ab8500_fg *static_fg;
+static struct ab8500_fg *static_fg;
 
 /**
  * ab8500_fg_get() - returns a reference to the primary AB8500 fuel gauge
@@ -2244,13 +2244,6 @@ static int ab8500_fg_reenable_charging(struct ab8500_fg *di)
 			return ret;
 		}
 
-		ret = abx500_set_register_interruptible(di->dev, AB8500_CHARGER,
-			AB8500_USBCH_CTRL1_REG, MAIN_CH_ENA | overshoot);
-		if (ret) {
-			dev_err(di->dev, "%s write failed\n", __func__);
-			return ret;
-		}
-
 		if (di->reenable_charging > 2000)
 			di->reenable_charging = 1;
 		else
@@ -2790,8 +2783,8 @@ static int ab8500_fg_get_ext_psy_data(struct device *dev, void *data)
 				di->flags.fully_charged_1st = ret.intval;
 				queue_work(di->fg_wq, &di->fg_work);
 				break;
-		default:
-			break;
+			default:
+				break;
 			}
 			break;
 
@@ -2801,8 +2794,8 @@ static int ab8500_fg_get_ext_psy_data(struct device *dev, void *data)
 			case POWER_SUPPLY_TYPE_BATTERY:
 				di->flags.chg_timed_out = ret.intval;
 				break;
-		default:
-			break;
+			default:
+				break;
 			}
 			break;
 
@@ -2833,10 +2826,13 @@ static int ab8500_fg_get_ext_psy_data(struct device *dev, void *data)
 					di->flags.fully_charged = false;
 					queue_work(di->fg_wq, &di->fg_work);
 					break;
-				};
+				default:
+					break;
+				}
+				break;
 			default:
 				break;
-			};
+			}
 			break;
 
 		case POWER_SUPPLY_PROP_TECHNOLOGY:
@@ -2851,6 +2847,7 @@ static int ab8500_fg_get_ext_psy_data(struct device *dev, void *data)
 				break;
 			}
 			break;
+
 		default:
 			break;
 		}

@@ -1309,7 +1309,7 @@ static struct lcdclk_prop lcdclk_s6d_prop[] = {
 
 static void lcdclk_thread(struct work_struct *lcdclk_work)
 {
-	static int ret = 0;
+	int ret = 0;
 
 	if (is_s6d()) {
 		ret = LCDCLK_SET(lcdclk_s6d_prop[1].clk);
