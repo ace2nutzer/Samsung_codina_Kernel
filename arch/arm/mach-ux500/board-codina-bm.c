@@ -525,7 +525,7 @@ struct ab8500_bm_data ab8500_bm_data = {
 	.temp_interval_nochg	= 120,
 #if defined( CONFIG_USB_SWITCHER ) || defined( CONFIG_INPUT_AB8505_MICRO_USB_DETECT )
 	.ta_chg_current		= 1500,
-	.ta_chg_current_input	= 800,
+	.ta_chg_current_input	= 1000,
 	.ta_chg_voltage		= 4350,
 
 	.usb_chg_current	= 1500,
@@ -542,7 +542,7 @@ struct ab8500_bm_data ab8500_bm_data = {
 #else
 	.adc_therm		= ADC_THERM_BATTEMP,
 #endif
-	.chg_unknown_bat	= true,
+	.chg_unknown_bat	= false,
 	.enable_overshoot	= false,
 	/* Please find the real setting for fg_res
 	   in the ab8500_fg.c probe function  */

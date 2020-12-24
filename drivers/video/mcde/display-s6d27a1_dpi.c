@@ -910,7 +910,7 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 				       const char *buf, size_t len)
 {
 	struct s6d27a1_dpi *lcd = dev_get_drvdata(dev);
-	static int ret, tmp = 0;
+	int ret, tmp = 0;
 	u32 hbp;	/* horizontal back porch: left margin (excl. hsync) */
 	u32 hfp;	/* horizontal front porch: right margin (excl. hsync) */
 	u32 hsw;	/* horizontal sync width */
@@ -1228,7 +1228,7 @@ static void est_test_timer_func(unsigned long data)
 #endif
 #endif
 
-static bool s6d = 0;
+static bool s6d = false;
 bool is_s6d(void)
 {
 	return s6d;
@@ -1241,7 +1241,7 @@ static int __devinit s6d27a1_dpi_spi_probe(struct spi_device *spi)
 	struct s6d27a1_dpi *lcd = container_of(spi->dev.driver,
 					 struct s6d27a1_dpi, spi_drv.driver);
 
-	s6d = 1;
+	s6d = true;
 
 	dev_dbg(&spi->dev, "panel s6d27a1_dpi spi being probed\n");
 

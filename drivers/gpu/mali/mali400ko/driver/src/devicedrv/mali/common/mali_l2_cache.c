@@ -19,7 +19,7 @@
  */
 #define MALI400_L2_CACHE_REGISTERS_SIZE 0x30
 
-#define MALI_MAX_NUMBER_OF_L2_CACHE_CORES  4
+#define MALI_MAX_NUMBER_OF_L2_CACHE_CORES  3
 
 /**
  * Mali L2 cache register numbers

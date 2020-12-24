@@ -66,7 +66,7 @@ struct ab8500_ponkey_info {
 	u8			pcut_ctrl;
 };
 
-struct ab8500_ponkey_info *p_info;
+static struct ab8500_ponkey_info *p_info;
 
 #ifndef CONFIG_SAMSUNG_PRODUCT_SHIP
 extern bool gpio_keys_getstate(int keycode);

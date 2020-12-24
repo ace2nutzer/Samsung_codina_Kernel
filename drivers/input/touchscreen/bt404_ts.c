@@ -614,11 +614,11 @@ static struct miscdevice touch_misc_device = {
 #define TOUCH_IOCTL_SEND_SAVE_STATUS		_IOW(TOUCH_IOCTL_BASE, 18, int)
 #define TOUCH_IOCTL_DONOT_TOUCH_EVENT		_IOW(TOUCH_IOCTL_BASE, 19, int)
 
-struct bt404_ts_data *misc_data;
+static struct bt404_ts_data *misc_data;
 
 #endif /*USE_TEST_RAW_TH_DATA_MODE */
 
-struct bt404_ts_data *data_;
+static struct bt404_ts_data *data_;
 
 #if	USE_TEST_RAW_TH_DATA_MODE
 static bool ts_get_raw_data(struct bt404_ts_data *data)
