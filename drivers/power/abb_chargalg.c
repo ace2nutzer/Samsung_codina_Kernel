@@ -2172,11 +2172,11 @@ static int convert_state_to_usr_health(struct ab8500_chargalg *di )
 		ret = POWER_SUPPLY_HEALTH_GOOD;
 
 	}
-
+/*
 	// In case of unknown battery, update unspec failure health.
 	if(di->bat->batt_id == BATTERY_UNKNOWN)
 		ret = POWER_SUPPLY_HEALTH_UNSPEC_FAILURE;
-
+*/
 	return ret ;
 } ;
 

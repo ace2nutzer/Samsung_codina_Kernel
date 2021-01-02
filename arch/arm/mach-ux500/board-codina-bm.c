@@ -302,21 +302,21 @@ static const struct battery_type bat_type[] = {
 		.battery_resistance_for_charging = 200,
 #endif
 		.charge_full_design = 1700,
-		.nominal_voltage = 3700,
+		.nominal_voltage = 3720,
 		.termination_vol = 4200,
 #ifdef CONFIG_SAMSUNG_CHARGER_SPEC
 		.termination_curr_1st = 175,
 		.termination_curr_2nd = 170,
-		.recharge_vol = 4131,
+		.recharge_vol = 4100,
 #else
 		.termination_curr = 170,
 #endif
 		.normal_cur_lvl = 1500,
 		.normal_vol_lvl = 4200,
-		.maint_a_cur_lvl = 700,
+		.maint_a_cur_lvl = 1000,
 		.maint_a_vol_lvl = 4200,
 		.maint_a_chg_timer_h = 60,
-		.maint_b_cur_lvl = 600,
+		.maint_b_cur_lvl = 800,
 		.maint_b_vol_lvl = 4200,
 		.maint_b_chg_timer_h = 200,
 		.low_high_cur_lvl = 500,
@@ -371,21 +371,21 @@ static const struct battery_type bat_type[] = {
 		.battery_resistance_for_charging = 200,
 #endif
 		.charge_full_design = 1500,
-		.nominal_voltage = 3800,
+		.nominal_voltage = 3820,
 		.termination_vol =  4350,
 #ifdef CONFIG_SAMSUNG_CHARGER_SPEC
 		.termination_curr_1st = 155,
 		.termination_curr_2nd = 150,
-		.recharge_vol = 4281,
+		.recharge_vol = 4250,
 #else
 		.termination_curr = 150,
 #endif
 		.normal_cur_lvl = 1500,
 		.normal_vol_lvl = 4350,
-		.maint_a_cur_lvl = 700,
+		.maint_a_cur_lvl = 1000,
 		.maint_a_vol_lvl = 4350,
 		.maint_a_chg_timer_h = 60,
-		.maint_b_cur_lvl = 600,
+		.maint_b_cur_lvl = 800,
 		.maint_b_vol_lvl = 4350,
 		.maint_b_chg_timer_h = 200,
 		.low_high_cur_lvl = 500,
@@ -482,8 +482,8 @@ static const struct ab8500_fg_parameters fg = {
 	.accu_high_curr = 20,
 	.high_curr_threshold = 50,
 	.lowbat_threshold = 3300,
-	.battok_falling_th_sel0 = 2860,
 	.battok_raising_th_sel1 = 2860,
+	.battok_falling_th_sel0 = 2710,
 	.user_cap_limit = 15,
 	.maint_thres = 97,
 };
@@ -526,11 +526,11 @@ struct ab8500_bm_data ab8500_bm_data = {
 #if defined( CONFIG_USB_SWITCHER ) || defined( CONFIG_INPUT_AB8505_MICRO_USB_DETECT )
 	.ta_chg_current		= 1500,
 	.ta_chg_current_input	= 1000,
-	.ta_chg_voltage		= 4350,
+	.ta_chg_voltage		= 4200,
 
 	.usb_chg_current	= 1500,
 	.usb_chg_current_input	= 500,
-	.usb_chg_voltage	= 4350,
+	.usb_chg_voltage	= 4200,
 #endif
 	.main_safety_tmr_h	= 4,
 	.usb_safety_tmr_h	= 4,
@@ -542,7 +542,7 @@ struct ab8500_bm_data ab8500_bm_data = {
 #else
 	.adc_therm		= ADC_THERM_BATTEMP,
 #endif
-	.chg_unknown_bat	= false,
+	.chg_unknown_bat	= true,
 	.enable_overshoot	= false,
 	/* Please find the real setting for fg_res
 	   in the ab8500_fg.c probe function  */

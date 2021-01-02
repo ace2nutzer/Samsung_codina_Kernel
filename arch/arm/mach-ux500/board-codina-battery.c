@@ -487,7 +487,7 @@ static const struct fg_parameters fg = {
 	.high_curr_threshold = 50,
 	.lowbat_threshold = 3300,
 	.battok_raising_th_sel0 = 2860,
-	.battok_falling_th_sel1 = 2860,
+	.battok_falling_th_sel1 = 2710,
 	.user_cap_limit = 15,
 	.maint_thres = 97,
 #ifdef CONFIG_AB8505_SMPL
@@ -504,19 +504,12 @@ static const struct chg_parameters chg = {
 };
 
 static const struct battery_info battery_info = {
-	if (di->bat->batt_id == BATTERY_UNKNOWN) {
-		.charge_full_design = 1700,
-		.nominal_voltage = 3700,
-		.n_v_cap_tbl_elements = ARRAY_SIZE(cap_tbl),
-		.v_to_cap_tbl = cap_tbl,
-		.resis_high = 0,
-	} else {
-		.charge_full_design = 1500,
-		.nominal_voltage = 3800,
-		.n_v_cap_tbl_elements = ARRAY_SIZE(cap_tbl_5ma),
-		.v_to_cap_tbl = cap_tbl_5ma,
-		.resis_high = 7990,
-	}
+	.charge_full_design = 1500,
+	.nominal_voltage = 3820,
+	.n_v_cap_tbl_elements = ARRAY_SIZE(cap_tbl_5ma),
+	.v_to_cap_tbl = cap_tbl_5ma,
+
+	.resis_high = 7990,
 	.resis_low = 0,
 	.battery_resistance = 100,
 	.line_impedance = 36,
@@ -659,16 +652,16 @@ sec_battery_platform_data_t sec_battery_pdata = {
 
 	.temp_check_type = SEC_BATTERY_TEMP_CHECK_TEMP,
 	.temp_check_count = 2,
-	.temp_high_threshold_event = 640,
-	.temp_high_recovery_event = 430,
+	.temp_high_threshold_event = 470,
+	.temp_high_recovery_event = 460,
 	.temp_low_threshold_event = -30,
 	.temp_low_recovery_event = 0,
-	.temp_high_threshold_normal = 490,
-	.temp_high_recovery_normal = 430,
+	.temp_high_threshold_normal = 460,
+	.temp_high_recovery_normal = 450,
 	.temp_low_threshold_normal = -50,
 	.temp_low_recovery_normal = 0,
-	.temp_high_threshold_lpm = 490,
-	.temp_high_recovery_lpm = 430,
+	.temp_high_threshold_lpm = 460,
+	.temp_high_recovery_lpm = 450,
 	.temp_low_threshold_lpm = -50,
 	.temp_low_recovery_lpm = 0,
 
@@ -682,23 +675,12 @@ sec_battery_platform_data_t sec_battery_pdata = {
 		SEC_BATTERY_FULL_CONDITION_SOC |
 		SEC_BATTERY_FULL_CONDITION_VCELL |
 		SEC_BATTERY_FULL_CONDITION_NOTIMEFULL,
-	if (di->bat->batt_id == BATTERY_UNKNOWN) {
-		.full_condition_soc = 96,
-		.full_condition_vcell = 4100,
-	} else {
 		.full_condition_soc = 95,
-		.full_condition_vcell = 4241,
-	}
 
 	.recharge_condition_type =
 		SEC_BATTERY_RECHARGE_CONDITION_VCELL,
-	if (di->bat->batt_id == BATTERY_UNKNOWN) {
-		.recharge_condition_soc = 99,
-		.recharge_condition_vcell = 4131,
-	} else {
 		.recharge_condition_soc = 98,
-		.recharge_condition_vcell = 4281,
-	}
+
 	.recharge_check_count = 4,
 
 	.charging_total_time = 5 * 60 * 60,
@@ -725,11 +707,6 @@ sec_battery_platform_data_t sec_battery_pdata = {
 	.chg_polarity_status = 0,
 	.chg_irq = 0,
 	.chg_irq_attr = 0,
-	if (di->bat->batt_id == BATTERY_UNKNOWN) {
-		.chg_float_voltage = 4200,
-	} else {
-		.chg_float_voltage = 4350,
-	}
 };
 
 static struct platform_device sec_device_battery = {

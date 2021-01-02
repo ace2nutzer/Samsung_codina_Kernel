@@ -649,6 +649,7 @@ static int ab8500_btemp_id(struct ab8500_btemp *di)
 	/* for history */
 	di->curr_source = BTEMP_BATCTRL_CURR_SRC_7UA;
 	di->batt_id = BATTERY_UNKNOWN;
+	di->bat->batt_id = BATTERY_UNKNOWN;
 
 	res =  ab8500_btemp_get_batctrl_res(di);
 	if (res < 0) {
@@ -662,8 +663,7 @@ static int ab8500_btemp_id(struct ab8500_btemp *di)
 	if (ab8500_vbus_is_detected(di))
 		chg_res_tolerance = 7000;
 
-	/* BATTERY_UNKNOWN is defined on position 0, skip it! */
-	for (i = BATTERY_UNKNOWN + 1; i < di->bat->n_btypes; i++) {
+	for (i = BATTERY_UNKNOWN; i < di->bat->n_btypes; i++) {
 		if ((res <= di->bat->bat_type[i].resis_high
 		     + chg_res_tolerance)
 		    && (res >= di->bat->bat_type[i].resis_low)) {
@@ -679,14 +679,13 @@ static int ab8500_btemp_id(struct ab8500_btemp *di)
 					 + chg_res_tolerance, i);
 			}
 			di->batt_id = i;
-			break;
+			di->bat->batt_id = i;
 		}
 	}
 
-	if (di->batt_id == BATTERY_UNKNOWN) {
+	if (di->batt_id == BATTERY_UNKNOWN)
 		dev_info(di->dev, "Battery identified as unknown"
 			", resistance %d Ohm\n", res);
-	}
 
 	/*
 	 * We only have to change current source if the
@@ -703,11 +702,10 @@ static int ab8500_btemp_id(struct ab8500_btemp *di)
 	/* if (di->bat->adc_therm == ADC_THERM_BATTEMP &&
 	   di->batt_id != BATTERY_UNKNOWN) */
 
-	if (di->bat->adc_therm == ADC_THERM_BATTEMP) {
+	if (di->bat->adc_therm == ADC_THERM_BATTEMP)
 		abx500_set_register_interruptible(di->dev,
 			AB8500_CHARGER, AB8500_BAT_CTRL_CURRENT_SOURCE,
 			AB8500_BAT_CTRL_CURRENT_SOURCE_DEFAULT);
-	}
 
 	return di->batt_id;
 }
@@ -722,12 +720,9 @@ static int ab8500_btemp_id(struct ab8500_btemp *di)
 static void ab8500_btemp_periodic_work(struct work_struct *work)
 {
 	int vbat;
-	int batt_id;
 
 	struct ab8500_btemp *di = container_of(work,
 		struct ab8500_btemp, btemp_periodic_work.work);
-
-	batt_id = ab8500_btemp_id(di);
 
 	if (di->initial_vf_check) {
 		di->vf_error_cnt = 2;
@@ -735,7 +730,7 @@ static void ab8500_btemp_periodic_work(struct work_struct *work)
 		di->initial_vf_check = false;
 	}
 /*
-	if (batt_id < 0) {
+	if (di->batt_id == BATTERY_UNKNOWN) {
 		// If battery is identified as UNKNOWN
 		if (!di->events.batt_rem) {
 			di->vf_ok_cnt = 0;
@@ -1307,16 +1302,17 @@ static int __devinit ab8500_btemp_probe(struct platform_device *pdev)
 	di->chip_id = ret;
 	dev_dbg(di->dev, "AB8500 CID is: 0x%02x\n",
 		di->chip_id);
-
-	/* We will only use batt type 1 */
+/*
+	// We will only use batt type 1
 	di->bat->batt_id = 1;
+*/
 	di->initial_vf_check = true;
 
 	/* Identify the battery */
-	if (ab8500_btemp_id(di) < 0) {
-		/* If battery is identified as UNKNOWN */
-		dev_warn(di->dev, "failed to identify the battery\n");
-	}
+	if (!ab8500_btemp_id(di))
+		dev_warn(di->dev, "unknown battery detected\n");
+	else
+		dev_warn(di->dev, "original battery detected\n");
 
 	/* Set BTEMP thermal limits. Low and Med are fixed */
 	di->btemp_ranges.btemp_low_limit = BTEMP_THERMAL_LOW_LIMIT;

@@ -1424,11 +1424,6 @@ static int ab8500_charger_ac_en(struct ux500_charger *charger,
 	charger_status = ab8500_charger_detect_chargers(di);
 	vbus_status = ab8500_vbus_is_detected(di);
 
-	if (di->bat->batt_id == BATTERY_UNKNOWN) {
-		di->bat->ta_chg_voltage = 4200;
-		di->bat->usb_chg_voltage = 4200;
-	}
-
 	ab8500_charger_init_vdrop_state(di);
 
 	if (enable && (charger_status == NO_PW_CONN) && !vbus_status) {
@@ -1440,6 +1435,12 @@ static int ab8500_charger_ac_en(struct ux500_charger *charger,
 		power_supply_changed(&di->ac_chg.psy);
 		power_supply_changed(&di->usb_chg.psy);
 		return ret;
+	}
+
+	/* batt_id = 1 is original samsung batt and uses 4.35 V */
+	if (di->bat->batt_id == 1) {
+		di->bat->ta_chg_voltage = 4350;
+		di->bat->usb_chg_voltage = 4350;
 	}
 
 	if (enable) {
@@ -3189,7 +3190,7 @@ static ssize_t abb_charger_data_show(struct kobject *kobj, struct kobj_attribute
 	sprintf(buf, "%s[usb_chg_current_input]\t%d\n", buf, di->bat->usb_chg_current_input);
 	sprintf(buf, "%s[usb_chg_current]\t%d\n\n", buf, di->bat->usb_chg_current);
 
-	sprintf(buf, "%s[Original Battery]\t[%s]\n", buf, (int) di->bat->batt_id == 1 ? "Y" : "N");
+	sprintf(buf, "%s[Original Battery ?]\t[%s]\n", buf, (int) di->bat->batt_id == 1 ? "Yes" : "No");
 
 	return strlen(buf);
 }
@@ -3626,7 +3627,6 @@ static int __devinit ab8500_charger_probe(struct platform_device *pdev)
 	}
 
 #ifdef CONFIG_USB_SWITCHER
-
 	di->pdev = pdev ;
 	platform_set_drvdata(pdev, di);
 	di->parent->charger = di;
