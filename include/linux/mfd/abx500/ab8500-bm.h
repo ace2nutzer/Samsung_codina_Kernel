@@ -235,7 +235,7 @@
 #define BAT_CTRL_PULL_UP_ENA		0x10
 
 /* Battery type */
-#define BATTERY_UNKNOWN			00
+#define BATTERY_UNKNOWN			0
 
 /* Registers for pcut feature in ab8505 and ab9540 */
 #define AB8505_RTC_PCUT_CTL_STATUS_REG	0x12

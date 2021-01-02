@@ -90,7 +90,6 @@
 #define MAIN_CH_NO_OVERSHOOT_ENA_N	0x02
 #define MAIN_CH_ENA			0x01
 
-
 #define MILLI_TO_MICRO			1000
 #define FG_LSB_IN_MA			1627
 #define QLSB_NANO_AMP_HOURS_X10		1129
@@ -2614,13 +2613,16 @@ static int ab8500_fg_get_property(struct power_supply *psy,
 
 	di = to_ab8500_fg_device_info(psy);
 
+	di->bat_cap.max_mah_design = MILLI_TO_MICRO *
+		di->bat->bat_type[di->bat->batt_id].charge_full_design;
+	di->bat_cap.max_mah = di->bat_cap.max_mah_design;
+
 	/*
 	 * If battery is identified as unknown and charging of unknown
 	 * batteries is disabled, we always report 100% capacity and
 	 * capacity level UNKNOWN, since we can't calculate
 	 * remaining capacity
 	 */
-
 	switch (psp) {
 	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
 		val->intval = di->vbat * 1000;
@@ -2689,7 +2691,7 @@ static int ab8500_fg_get_property(struct power_supply *psy,
 #if defined(CONFIG_MACH_JANICE) || 	defined(CONFIG_MACH_CODINA) || 	defined(CONFIG_MACH_GAVINI)
 	case POWER_SUPPLY_PROP_CAPACITY_RAW:
 
-		val->intval = (di->bat_cap.mah  * 1000) / di->bat_cap.max_mah ;
+		val->intval = (di->bat_cap.mah  * 1000) / di->bat_cap.max_mah;
 //		printk("raw soc = %d",val->intval);
 		break;
 
@@ -3467,13 +3469,9 @@ static int __devinit ab8500_fg_probe(struct platform_device *pdev)
 	di->fg_psy.num_supplicants = di->pdata->num_supplicants;
 	di->fg_psy.external_power_changed = ab8500_fg_external_power_changed;
 
-	di->bat_cap.max_mah_design = MILLI_TO_MICRO *
-		di->bat->bat_type[di->bat->batt_id].charge_full_design;
-
-	di->bat_cap.max_mah = di->bat_cap.max_mah_design;
-
 	di->vbat_cal_offset = 0;
 	di->vbat_nom = di->bat->bat_type[di->bat->batt_id].nominal_voltage;
+
 	di->gpadc_vbat_gain = (int)di->gpadc->cal_data[ADC_INPUT_VBAT].gain;
 	di->gpadc_vbat_offset = (int)di->gpadc->cal_data[ADC_INPUT_VBAT].offset;
 
