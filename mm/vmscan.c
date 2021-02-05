@@ -2350,7 +2350,11 @@ unsigned long try_to_free_pages(struct zonelist *zonelist, int order,
 		.may_writepage = !laptop_mode,
 		.nr_to_reclaim = SWAP_CLUSTER_MAX,
 		.may_unmap = 1,
+#ifdef CONFIG_DIRECT_RECLAIM_FILE_PAGES_ONLY
+		.may_swap = 0,
+#else
 		.may_swap = 1,
+#endif
 		.swappiness = vm_swappiness,
 		.order = order,
 		.mem_cgroup = NULL,
@@ -2483,7 +2487,11 @@ static bool pgdat_balanced(pg_data_t *pgdat, unsigned long balanced_pages,
 		present_pages += pgdat->node_zones[i].present_pages;
 
 	/* A special case here: if zone has no page, we think it's balanced */
+#ifdef CONFIG_TIGHT_PGDAT_BALANCE
+	return balanced_pages >= (present_pages >> 1);
+#else
 	return balanced_pages >= (present_pages >> 2);
+#endif
 }
 
 /* is kswapd sleeping prematurely? */
