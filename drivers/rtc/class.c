@@ -71,11 +71,11 @@ static int rtc_suspend(struct device *dev, pm_message_t mesg)
 	read_persistent_clock(&aprtc_ts);
 	rtc_time_to_tm(aprtc_ts.tv_sec, &aprtc_tm);
 	rtc_time_to_tm(ts.tv_sec, &sys_tm);
-
+/*
 	pr_info("[%s] AP RTC TIME: %04d.%02d.%02d - %02d:%02d:%02d called\n",
 		__func__, aprtc_tm.tm_year+1900, aprtc_tm.tm_mon+1, aprtc_tm.tm_mday,
 		aprtc_tm.tm_hour, aprtc_tm.tm_min, aprtc_tm.tm_sec);
-
+*/
 	pr_info("[%s] PMIC RTC TIME: %04d.%02d.%02d - %02d:%02d:%02d called\n",
 		__func__, tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday,
 		tm.tm_hour, tm.tm_min, tm.tm_sec);
@@ -139,11 +139,12 @@ static int rtc_resume(struct device *dev)
 #ifdef CONFIG_MACH_SAMSUNG_U8500
 	rtc_time_to_tm(time.tv_sec, &sys_tm);
 	rtc_time_to_tm(aprtc_ts.tv_sec, &aprtc_tm);
+/*
 	pr_info("[%s] AP RTC TIME: %04d.%02d.%02d - %02d:%02d:%02d called\n",
 		__func__,
 		aprtc_tm.tm_year+1900, aprtc_tm.tm_mon+1, aprtc_tm.tm_mday,
 		aprtc_tm.tm_hour, aprtc_tm.tm_min, aprtc_tm.tm_sec);
-
+*/
 	pr_info("[%s] PMIC RTC TIME: %04d.%02d.%02d - %02d:%02d:%02d called\n",
 		__func__, tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday,
 		tm.tm_hour, tm.tm_min, tm.tm_sec);
