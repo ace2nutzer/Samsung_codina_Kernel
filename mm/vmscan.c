@@ -2940,6 +2940,7 @@ static int kswapd(void *p)
 	 */
 	tsk->flags |= PF_MEMALLOC | PF_SWAPWRITE | PF_KSWAPD;
 	set_freezable();
+	set_user_nice(current, MIN_NICE);
 
 	order = new_order = 0;
 	balanced_order = 0;

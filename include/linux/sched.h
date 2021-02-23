@@ -2870,4 +2870,8 @@ static struct GAForensicINFO{
 	.GAFINFOCheckSum=0
 };
 #endif /* CONFIG_SAMSUNG_ADD_GAFORENSICINFO */
+
+#define MAX_NICE	19
+#define MIN_NICE	-20
+
 #endif
