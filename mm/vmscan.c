@@ -43,6 +43,7 @@
 #include <linux/sysctl.h>
 #include <linux/oom.h>
 #include <linux/prefetch.h>
+#include <linux/kconfig.h>
 
 #include <asm/tlbflush.h>
 #include <asm/div64.h>
@@ -146,9 +147,15 @@ struct scan_control {
 #endif
 
 /*
- * From 0 .. 100.  Higher means more swappy.
+ * From 0 .. 200.  Higher means more swappy.
  */
+#if IS_ENABLED(CONFIG_ZRAM) && IS_ENABLED(CONFIG_INCREASE_MAXIMUM_SWAPPINESS)
+int vm_swappiness = 150;
+#elif IS_ENABLED(CONFIG_ZRAM)
 int vm_swappiness = 100;
+#else
+int vm_swappiness = 50;
+#endif
 long vm_total_pages;	/* The total number of pages which the VM controls */
 
 static LIST_HEAD(shrinker_list);
