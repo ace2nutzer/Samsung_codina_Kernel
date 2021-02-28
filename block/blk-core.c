@@ -1524,6 +1524,11 @@ static inline void __generic_make_request(struct bio *bio)
 		if (blk_throtl_bio(q, &bio))
 			goto end_io;
 
+		if (bio->bi_rw & REQ_WRITE_SAME && !bdev_write_same(bio->bi_bdev)) {
+			err = -EOPNOTSUPP;
+			goto end_io;
+		}
+
 		/*
 		 * If bio = NULL, bio has been throttled and will be submitted
 		 * later.
@@ -1603,8 +1608,6 @@ EXPORT_SYMBOL(generic_make_request);
  */
 void submit_bio(int rw, struct bio *bio)
 {
-	int count = bio_sectors(bio);
-
 	bio->bi_rw |= rw;
 
 	/*
@@ -1612,6 +1615,13 @@ void submit_bio(int rw, struct bio *bio)
 	 * go through the normal accounting stuff before submission.
 	 */
 	if (bio_has_data(bio) && !(rw & REQ_DISCARD)) {
+		unsigned int count;
+
+		if (unlikely(rw & REQ_WRITE_SAME))
+			count = bdev_logical_block_size(bio->bi_bdev) >> 9;
+		else
+			count = bio_sectors(bio);
+
 		if (rw & WRITE) {
 			count_vm_events(PGPGOUT, count);
 		} else {
