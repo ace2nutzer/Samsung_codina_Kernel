@@ -466,7 +466,7 @@ static ssize_t min_freq_store(struct kobject *kobj, struct kobj_attribute *attr,
 
 		min_freq = val;
 
-		return count;
+		goto out;
 	}
 
 	if (sscanf(buf, "%u", &val)) {
@@ -477,10 +477,17 @@ static ssize_t min_freq_store(struct kobject *kobj, struct kobj_attribute *attr,
 			}
 		}
 
-		return count;
+		goto out;
 	}
 
 	return -EINVAL;
+
+out:
+	pr_info("[Mali] new min and max freqs are %u - %u kHz\n", 
+			mali_dvfs[min_freq].freq, 
+			mali_dvfs[max_freq].freq);
+
+	return count;
 }
 ATTR_RW(min_freq);
 
@@ -504,7 +511,7 @@ static ssize_t max_freq_store(struct kobject *kobj, struct kobj_attribute *attr,
 
 		max_freq = val;
 
-		return count;
+		goto out;
 	}
 
 	if (sscanf(buf, "%u", &val)) {
@@ -515,10 +522,18 @@ static ssize_t max_freq_store(struct kobject *kobj, struct kobj_attribute *attr,
 			}
 		}
 
-		return count;
+		goto out;
 	}
 
 	return -EINVAL;
+
+out:
+	pr_info("[Mali] new min and max freqs are %u - %u kHz\n", 
+			mali_dvfs[min_freq].freq, 
+			mali_dvfs[max_freq].freq);
+
+	return count;
+
 }
 ATTR_RW(max_freq);
 
