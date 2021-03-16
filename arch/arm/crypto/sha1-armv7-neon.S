@@ -9,7 +9,7 @@
  */
 
 #include <linux/linkage.h>
-#include <asm/assembler.h>
+
 
 .syntax unified
 .code   32

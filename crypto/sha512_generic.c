@@ -163,8 +163,7 @@ sha384_init(struct shash_desc *desc)
 	return 0;
 }
 
-static int
-sha512_update(struct shash_desc *desc, const u8 *data, unsigned int len)
+int sha512_update(struct shash_desc *desc, const u8 *data, unsigned int len)
 {
 	struct sha512_state *sctx = shash_desc_ctx(desc);
 
@@ -237,7 +236,7 @@ static int sha384_final(struct shash_desc *desc, u8 *hash)
 	sha512_final(desc, D);
 
 	memcpy(hash, D, 48);
-	memset(D, 0, 64);
+	memzero_explicit(D, 64);
 
 	return 0;
 }
