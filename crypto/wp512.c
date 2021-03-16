@@ -1097,7 +1097,7 @@ static int wp384_final(struct shash_desc *desc, u8 *out)
 
 	wp512_final(desc, D);
 	memcpy (out, D, WP384_DIGEST_SIZE);
-	memset (D, 0, WP512_DIGEST_SIZE);
+	memzero_explicit(D, WP512_DIGEST_SIZE);
 
 	return 0;
 }
@@ -1108,7 +1108,7 @@ static int wp256_final(struct shash_desc *desc, u8 *out)
 
 	wp512_final(desc, D);
 	memcpy (out, D, WP256_DIGEST_SIZE);
-	memset (D, 0, WP512_DIGEST_SIZE);
+	memzero_explicit(D, WP512_DIGEST_SIZE);
 
 	return 0;
 }
