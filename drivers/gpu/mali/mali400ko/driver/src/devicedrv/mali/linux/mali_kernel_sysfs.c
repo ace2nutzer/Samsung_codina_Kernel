@@ -963,7 +963,7 @@ static ssize_t memory_used_read(struct file *filp, char __user *ubuf, size_t cnt
 	size_t r;
 	u32 mem = _mali_ukk_report_memory_usage();
 
-	r = snprintf(buf, 64, "%u\n", mem);
+	r = snprintf(buf, 64, "%u MB\n", (mem / 1024 / 1024));
 	return simple_read_from_buffer(ubuf, cnt, ppos, buf, r);
 }
 
