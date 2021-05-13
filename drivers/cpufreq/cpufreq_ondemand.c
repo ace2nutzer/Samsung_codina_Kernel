@@ -22,20 +22,30 @@
 #include <linux/tick.h>
 #include <linux/ktime.h>
 #include <linux/sched.h>
+#include <linux/kconfig.h>
+
+#ifdef CONFIG_CPU_FREQ_SUSPEND
+#include <linux/earlysuspend.h>
+#endif
+
+#if IS_ENABLED(CONFIG_A2N)
+#include <linux/a2n.h>
+#endif
 
 /*
  * dbs is used in this file as a shortform for demandbased switching
  * It helps to keep variable names smaller, simpler
  */
 
-#define DEF_FREQUENCY_UP_THRESHOLD		(75)
+#define DEF_FREQUENCY_UP_THRESHOLD		(95)
 #define DOWN_THRESHOLD_MARGIN			(25)
-#define DEF_SAMPLING_DOWN_FACTOR		(25)
+#define DEF_SAMPLING_DOWN_FACTOR		(1)
 #define MAX_SAMPLING_DOWN_FACTOR		(100000)
-#define MICRO_FREQUENCY_UP_THRESHOLD		(75)
+#define MICRO_FREQUENCY_UP_THRESHOLD		(95)
 #define MIN_FREQUENCY_UP_THRESHOLD		(60)
 #define MAX_FREQUENCY_UP_THRESHOLD		(100)
 #define DEF_BOOST				(1)
+#define IO_IS_BUSY				(0)
 
 #define DEF_FREQUENCY_STEP_0		(200000)
 #define DEF_FREQUENCY_STEP_1		(400000)
@@ -62,6 +72,17 @@
 
 static unsigned int min_sampling_rate = 0;
 static unsigned int down_threshold = 0;
+
+#ifdef CONFIG_CPU_FREQ_SUSPEND
+static unsigned int up_threshold_resume = DEF_FREQUENCY_UP_THRESHOLD;
+static unsigned int up_threshold_suspend = 95;
+static bool boost_resume = DEF_BOOST;
+static bool boost_suspend = false;
+static struct early_suspend early_suspend;
+
+extern bool enable_suspend_freqs;
+static bool update_gov_tunables = false;
+#endif
 
 #define LATENCY_MULTIPLIER			(1000)
 #define MIN_LATENCY_MULTIPLIER			(100)
@@ -260,11 +281,16 @@ static ssize_t store_sampling_rate(struct kobject *a, struct attribute *b,
 {
 	unsigned int input;
 	int ret;
+
 	ret = sscanf(buf, "%u", &input);
 	if (ret != 1)
-		return -EINVAL;
+		goto err;
 	update_sampling_rate(input);
 	return count;
+
+err:
+	pr_err("[%s] invalid cmd\n",__func__);
+	return -EINVAL;
 }
 
 static ssize_t store_io_is_busy(struct kobject *a, struct attribute *b,
@@ -285,18 +311,45 @@ static ssize_t store_up_threshold(struct kobject *a, struct attribute *b,
 {
 	unsigned int input;
 	int ret;
-	ret = sscanf(buf, "%u", &input);
 
+#if IS_ENABLED(CONFIG_A2N)
+	if (!a2n_allow) {
+		sscanf(buf, "%u", &input);
+		if (input == a2n) {
+			a2n_allow = true;
+			return count;
+		} else {
+			pr_err("[%s] a2n: unprivileged access !\n",__func__);
+			goto err;
+		}
+	}
+#endif
+
+	ret = sscanf(buf, "%u", &input);
 	if (ret != 1 || input > MAX_FREQUENCY_UP_THRESHOLD ||
 			input < MIN_FREQUENCY_UP_THRESHOLD) {
-		return -EINVAL;
+		goto err;
 	}
 	dbs_tuners_ins.up_threshold = input;
 
+#ifdef CONFIG_CPU_FREQ_SUSPEND
+	up_threshold_resume = input;
+#endif
 	/* update down_threshold */
 	update_down_threshold();
 
+out:
+#if IS_ENABLED(CONFIG_A2N)
+	a2n_allow = false;
+#endif
 	return count;
+
+err:
+	pr_err("[%s] invalid cmd\n",__func__);
+#if IS_ENABLED(CONFIG_A2N)
+	a2n_allow = false;
+#endif
+	return -EINVAL;
 }
 
 static ssize_t store_sampling_down_factor(struct kobject *a,
@@ -357,13 +410,45 @@ static ssize_t store_boost(struct kobject *a, struct attribute *b,
 {
 	unsigned int input;
 	int ret;
-	ret = sscanf(buf, "%u", &input);
 
-	if (ret != 1 || input < 0 || input > 1)
+#if IS_ENABLED(CONFIG_A2N)
+	if (!a2n) {
+		pr_err("[%s] a2n: a2n module is not loaded.\n",__func__);
 		return -EINVAL;
+	}
+	if (!a2n_allow) {
+		sscanf(buf, "%u", &input);
+		if (input == a2n) {
+			a2n_allow = true;
+			return count;
+		} else {
+			pr_err("[%s] a2n: unprivileged access !\n",__func__);
+			return -EINVAL;
+		}
+	}
+#endif
 
+	ret = sscanf(buf, "%u", &input);
+	if (ret != 1 || input < 0 || input > 1)
+		goto err;
 	dbs_tuners_ins.boost = input;
+
+#ifdef CONFIG_CPU_FREQ_SUSPEND
+	boost_resume = input;
+#endif
+
+out:
+#if IS_ENABLED(CONFIG_A2N)
+	a2n_allow = false;
+#endif
 	return count;
+
+err:
+	pr_err("[%s] invalid cmd\n",__func__);
+#if IS_ENABLED(CONFIG_A2N)
+	a2n_allow = false;
+#endif
+	return -EINVAL;
 }
 
 define_one_global_rw(sampling_rate);
@@ -647,7 +732,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 			dbs_tuners_ins.sampling_rate =
 				max(min_sampling_rate,
 				    latency * LATENCY_MULTIPLIER);
-			dbs_tuners_ins.io_is_busy = 0;
+			dbs_tuners_ins.io_is_busy = IO_IS_BUSY;
 		}
 		mutex_unlock(&dbs_mutex);
 
@@ -682,6 +767,27 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 	return 0;
 }
 
+#ifdef CONFIG_CPU_FREQ_SUSPEND
+static void cpufreq_od_early_suspend(struct early_suspend *h)
+{
+	if (!enable_suspend_freqs)
+		return;
+
+	dbs_tuners_ins.up_threshold = up_threshold_suspend;
+	dbs_tuners_ins.boost = boost_suspend;
+	update_gov_tunables = true;
+}
+
+static void cpufreq_od_late_resume(struct early_suspend *h)
+{
+	if (update_gov_tunables) {
+		dbs_tuners_ins.up_threshold = up_threshold_resume;
+		dbs_tuners_ins.boost = boost_resume;
+		update_gov_tunables = false;
+	}
+}
+#endif
+
 static int __init cpufreq_gov_dbs_init(void)
 {
 	u64 idle_time;
@@ -692,17 +798,29 @@ static int __init cpufreq_gov_dbs_init(void)
 	if (idle_time != -1ULL) {
 		/* Idle micro accounting is supported. Use finer thresholds */
 		dbs_tuners_ins.up_threshold = MICRO_FREQUENCY_UP_THRESHOLD;
+
+#ifdef CONFIG_CPU_FREQ_SUSPEND
+		up_threshold_resume = MICRO_FREQUENCY_UP_THRESHOLD;
+#endif
 		/*
 		 * In nohz/micro accounting case we set the minimum frequency
 		 * not depending on HZ, but fixed (very low). The deferred
 		 * timer might skip some samples if idle/sleeping as needed.
 		*/
-		min_sampling_rate = jiffies_to_usecs(1);
+		min_sampling_rate = jiffies_to_usecs(10);
 	} else {
 		/* For correct statistics, we need 10 ticks for each measure */
 		min_sampling_rate =
 			MIN_SAMPLING_RATE_RATIO * jiffies_to_usecs(10);
 	}
+
+#ifdef CONFIG_CPU_FREQ_SUSPEND
+	early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
+	early_suspend.suspend = cpufreq_od_early_suspend;
+	early_suspend.resume = cpufreq_od_late_resume;
+
+	register_early_suspend(&early_suspend);
+#endif
 
 	update_down_threshold();
 

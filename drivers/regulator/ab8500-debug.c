@@ -20,11 +20,16 @@
 
 #include <linux/sysfs.h>
 #include <linux/kobject.h>
+#include <linux/kconfig.h>
 
 #include <mach/db8500-regs.h> /* U8500_BACKUPRAM1_BASE */
 #include <mach/hardware.h>
 
 #include "ab8500-debug.h"
+
+#if IS_ENABLED(CONFIG_A2N)
+#include <linux/a2n.h>
+#endif
 
 /* board profile address - to determine if suspend-force is default */
 #define BOOT_INFO_BACKUPRAM1 (U8500_BACKUPRAM1_BASE + 0xf7c)
@@ -2153,14 +2158,24 @@ static ssize_t abb_regu_votg_store(struct kobject *kobj, struct kobj_attribute *
 	int ret;
 	unsigned int val;
 
-	ret = sscanf(buf, "%d", &val);
-
-	if (ret < 0 || val < 0 || val > 1) {
-		pr_info("abb-regu: invalid inputs \n");
-		return -EINVAL;
+#if IS_ENABLED(CONFIG_A2N)
+	if (!a2n_allow) {
+		sscanf(buf, "%u", &val);
+		if (val == a2n) {
+			a2n_allow = true;
+			return count;
+		} else {
+			pr_err("[%s] a2n: unprivileged access !\n",__func__);
+			goto err;
+		}
 	}
+#endif
 
-	pr_info("abb-regu: %s VOTG\n", val ? "enable" : "disable");
+	if (sysfs_streq(buf, "true") || sysfs_streq(buf, "1"))
+		val = true;
+
+	if (sysfs_streq(buf, "false") || sysfs_streq(buf, "0"))
+		val = false;
 
 	if (!val) {
 		ret = abx500_set_register_interruptible(
@@ -2168,24 +2183,27 @@ static ssize_t abb_regu_votg_store(struct kobject *kobj, struct kobj_attribute *
 				 AB8500_REGU_CTRL1,
 				 REG_ABB_REGU_VOTG,
 				 DIS_ABB_REGU_VOTG);
-		if (ret < 0) {
-			pr_err("abb-regu: failed to set VOTG or no changed\n");
-			return 0;
-		}
-
+		goto out;
 	} else if (val) {
 		ret = abx500_set_register_interruptible(
 				 &pdev->dev,
 				 AB8500_REGU_CTRL1,
 				 REG_ABB_REGU_VOTG,
 				 ENA_ABB_REGU_VOTG);
-		if (ret < 0) {
-			pr_err("abb-regu: failed to set VOTG or no changed\n");
-			return 0;
-		}
-
+		goto out;
 	}
 
+err:
+	pr_err("[%s] invalid cmd\n",__func__);
+#if IS_ENABLED(CONFIG_A2N)
+	a2n_allow = false;
+#endif
+	return -EINVAL;
+
+out:
+#if IS_ENABLED(CONFIG_A2N)
+	a2n_allow = false;
+#endif
 	return count;
 }
 

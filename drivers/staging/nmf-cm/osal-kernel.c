@@ -31,19 +31,6 @@
 #include "cm_debug.h"
 #include "cm_dma.h"
 
-#ifdef CONFIG_HZ_100
-#define MIN_SAMPLING_RATE_MS			200
-#endif
-#ifdef CONFIG_HZ_250
-#define MIN_SAMPLING_RATE_MS			80
-#endif
-#ifdef CONFIG_HZ_300
-#define MIN_SAMPLING_RATE_MS			67
-#endif
-#ifdef CONFIG_HZ_1000
-#define MIN_SAMPLING_RATE_MS			20
-#endif
-
 __iomem void *prcmu_base = NULL;
 __iomem void *prcmu_tcdm_base = NULL;
 
@@ -57,13 +44,13 @@ static bool forced_late_resume_bt404_ts = false;
 #define FULL_OPP 100
 #define HALF_OPP 50
 static unsigned long running_dsp = 0;
-static unsigned int dspLoadMonitorPeriod = MIN_SAMPLING_RATE_MS;
+static unsigned int dspLoadMonitorPeriod = 1000;
 module_param(dspLoadMonitorPeriod, uint, S_IWUSR|S_IRUGO);
 MODULE_PARM_DESC(dspLoadMonitorPeriod, "Period of the DSP-Load monitoring in ms");
-static unsigned int dspLoadHighThreshold = 75;
+static unsigned int dspLoadHighThreshold = 95;
 module_param(dspLoadHighThreshold, uint, S_IWUSR|S_IRUGO);
 MODULE_PARM_DESC(dspLoadHighThreshold, "Threshold above which 100 APE OPP is requested");
-static unsigned int dspLoadLowThreshold = 12;
+static unsigned int dspLoadLowThreshold = 22;
 module_param(dspLoadLowThreshold, uint, S_IWUSR|S_IRUGO);
 MODULE_PARM_DESC(dspLoadLowThreshold, "Threshold below which 100 APE OPP request is removed");
 static bool cm_use_ftrace;
