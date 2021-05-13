@@ -29,6 +29,7 @@
 #include <linux/mfd/abx500/ab8500-bm.h>
 #include <linux/mfd/abx500/ab8500-gpadc.h>
 #include <linux/input/sweep2wake.h>
+#include <linux/kconfig.h>
 
 /* Watchdog kick interval */
 #define CHG_WD_INTERVAL			(60 * HZ)
@@ -52,9 +53,13 @@
 
 #include <linux/bln.h>
 
+#if IS_ENABLED(CONFIG_A2N)
+#include <linux/a2n.h>
+#endif
+
 bool is_charger_present = false;
 
-static bool eoc_bln = 0;
+static bool eoc_bln = false;
 
 extern bool is_lpm;
 extern bool is_recovery;
@@ -2433,22 +2438,54 @@ static struct kobj_attribute abb_chargalg_eoc_real_interface = __ATTR(eoc_real, 
 
 static ssize_t abb_chargalg_eoc_bln_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	sprintf(buf, "%d\n", eoc_bln);
+	sprintf(buf, "%s[enable]\t[%s]\n", buf, eoc_bln ? "*" : " ");
 
 	return strlen(buf);
 }
 
 static ssize_t abb_chargalg_eoc_bln_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
-	int ret, val;
+	unsigned int tmp;
 
-	ret = sscanf(buf, "%d", &val);
+#if IS_ENABLED(CONFIG_A2N)
+	if (!a2n_allow) {
+		sscanf(buf, "%u", &tmp);
+		if (tmp == a2n) {
+			a2n_allow = true;
+			return count;
+		}
+	}
+#endif
 
-	if (!ret)
-		return -EINVAL;
+	if (sysfs_streq(buf, "true") || sysfs_streq(buf, "1")) {
+		if ((!a2n_allow) && (!is_lpm && !is_recovery)) {
+			pr_err("[%s] a2n: unprivileged access !\n",__func__);
+			goto err;
+		}
+		eoc_bln = true;
+		goto out;
+	}
 
-	eoc_bln = val;
+	if (sysfs_streq(buf, "false") || sysfs_streq(buf, "0")) {
+		if ((!a2n_allow) && (!is_lpm && !is_recovery)) {
+			pr_err("[%s] a2n: unprivileged access !\n",__func__);
+			goto err;
+		}
+		eoc_bln = false;
+		goto out;
+	}
 
+err:
+	pr_err("[%s] invalid cmd\n",__func__);
+#if IS_ENABLED(CONFIG_A2N)
+	a2n_allow = false;
+#endif
+	return -EINVAL;
+
+out:
+#if IS_ENABLED(CONFIG_A2N)
+	a2n_allow = false;
+#endif
 	return count;
 }
 

@@ -35,9 +35,14 @@
 #include <linux/mfd/abx500/ab8500-gpadc.h>
 #include <linux/mfd/abx500/ux500_chargalg.h>
 #include <linux/timer.h>
+#include <linux/kconfig.h>
 
 #ifdef CONFIG_USB_SWITCHER
 #include <linux/usb_switcher.h>
+#endif
+
+#if IS_ENABLED(CONFIG_A2N)
+#include <linux/a2n.h>
 #endif
 
 /* Charger Control */
@@ -3138,41 +3143,63 @@ static ssize_t abb_current_max_show(struct kobject *kobj, struct kobj_attribute 
 static ssize_t abb_current_max_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
 	struct ab8500_charger *di = static_di;
-	unsigned int ac, usb;
+	unsigned int tmp;
 
-	if (sscanf(buf, "ac=%u", &ac)) {
-		if (ac < 100 || ac > 1500) {
-			pr_err("[ABB-Charger] Out of valid range 100 - 1500 mA.\n");
-			return -EINVAL;
+#if IS_ENABLED(CONFIG_A2N)
+	if (!a2n_allow) {
+		sscanf(buf, "%u", &tmp);
+		if (tmp == a2n) {
+			a2n_allow = true;
+			return count;
+		} else {
+			pr_err("[%s] a2n: unprivileged access !\n",__func__);
+			goto err;
 		}
-		ac_curr_max = ac;
+	}
+#endif
+
+	if (sscanf(buf, "ac=%u", &tmp)) {
+		if (tmp < 100 || tmp > 1500) {
+			pr_err("[ABB-Charger] Out of valid range 100 - 1500 mA.\n");
+			goto err;
+		}
+		ac_curr_max = tmp;
 
 		di->bat->ta_chg_current_input = ac_curr_max;
 
 		if (di->cable_type == POWER_SUPPLY_TYPE_MAINS)
 			ab8500_charger_set_main_in_curr(di, di->bat->ta_chg_current_input);
 
-		return count;
+		goto out;
 	}
 
-	if (sscanf(buf, "usb=%u", &usb)) {
-		if (usb < 100 || usb > 1500) {
+	if (sscanf(buf, "usb=%u", &tmp)) {
+		if (tmp < 100 || tmp > 1500) {
 			pr_err("[ABB-Charger] Out of valid range 100 - 1500 mA.\n");
-			return -EINVAL;
+			goto err;
 		}
-		usb_curr_max = usb;
+		usb_curr_max = tmp;
 
 		di->bat->usb_chg_current_input = usb_curr_max;
 
 		if (di->cable_type == POWER_SUPPLY_TYPE_USB)
 			ab8500_charger_set_main_in_curr(di, di->bat->usb_chg_current_input);
 
-		return count;
+		goto out;
 	}
 
-	pr_err("[ABB-Charger] invalid cmd, use ac=xxx or usb=xxx .\n");
-
+err:
+	pr_err("[%s] invalid cmd\n",__func__);
+#if IS_ENABLED(CONFIG_A2N)
+	a2n_allow = false;
+#endif
 	return -EINVAL;
+
+out:
+#if IS_ENABLED(CONFIG_A2N)
+	a2n_allow = false;
+#endif
+	return count;
 }
 static struct kobj_attribute abb_current_max_interface = __ATTR(curr_max, 0666, abb_current_max_show, abb_current_max_store);
 
@@ -3229,21 +3256,40 @@ static ssize_t abb_batt_max_temp_store(struct kobject *kobj, struct kobj_attribu
 {
 	unsigned int tmp;
 
-	if (sscanf(buf, "%u", &tmp)) {
+#if IS_ENABLED(CONFIG_A2N)
+	if (!a2n_allow) {
+		sscanf(buf, "%u", &tmp);
+		if (tmp == a2n) {
+			a2n_allow = true;
+			return count;
+		} else {
+			pr_err("[%s] a2n: unprivileged access !\n",__func__);
+			goto err;
+		}
+	}
+#endif
 
+	if (sscanf(buf, "%u", &tmp)) {
 		if (tmp < 35 || tmp > 45) {
 			pr_err("[ABB-Charger] Invaild cmd\n");
-			return -EINVAL;
+			goto err;
 		}
-
 		batt_max_temp = tmp;
-
-		return count;
+		goto out;
 	}
 
-	pr_err("[ABB-Charger] invalid cmd\n");
-
+err:
+	pr_err("[%s] invalid cmd\n",__func__);
+#if IS_ENABLED(CONFIG_A2N)
+	a2n_allow = false;
+#endif
 	return -EINVAL;
+
+out:
+#if IS_ENABLED(CONFIG_A2N)
+	a2n_allow = false;
+#endif
+	return count;
 }
 static struct kobj_attribute abb_batt_max_temp_interface = __ATTR(batt_max_temp, 0666, abb_batt_max_temp_show, abb_batt_max_temp_store);
 

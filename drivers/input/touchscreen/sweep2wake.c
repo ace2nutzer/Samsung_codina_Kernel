@@ -28,8 +28,14 @@
 #include <linux/input/sweep2wake.h>
 #include <linux/earlysuspend.h>
 #include <linux/bln.h>
+#include <linux/kconfig.h>
+
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE_WAKELOCK
 #include <linux/wakelock.h>
+#endif
+
+#if IS_ENABLED(CONFIG_A2N)
+#include <linux/a2n.h>
 #endif
 
 /* Tuneables */
@@ -47,6 +53,7 @@ bool is_suspend = false;
 static bool exec_count = true;
 static bool barrier[2] = {false, false};
 extern bool is_lpm;
+extern bool is_recovery;
 extern bool sxa_engine_running;
 extern bool is_charger_present;
 
@@ -163,10 +170,22 @@ void detect_sweep2wake(int x, int y, bool st)
  * INIT / EXIT stuff below here
  */
 
-static int set_enable(const char *val, struct kernel_param *kp)
+static int set_enable(const char *buf, struct kernel_param *kp)
 {
-	int max_tries = 10; 
+	int max_tries = 10;
 	int tries = 0;
+	unsigned int tmp;
+
+#if IS_ENABLED(CONFIG_A2N)
+	if (!a2n_allow) {
+		sscanf(buf, "%u", &tmp);
+		if (tmp == a2n) {
+			a2n_allow = true;
+			return 0;
+		}
+	}
+#endif
+
 	if (is_suspend) {
 		/*
 		 * Meticulus:
@@ -184,34 +203,51 @@ static int set_enable(const char *val, struct kernel_param *kp)
 			tries = tries + 1;
 		}
 	}
-	if (strcmp(val, "1") >= 0 || strcmp(val, "true") >= 0) {
+	if (strcmp(buf, "1") >= 0 || strcmp(buf, "true") >= 0) {
+		if ((!a2n_allow) && (!is_lpm && !is_recovery)) {
+			pr_err("[%s] a2n: unprivileged access !\n",__func__);
+			goto err;
+		}
 		s2w_switch = 1;
-		if(DEBUG)
+		if (DEBUG)
 			printk("s2w: enabled\n");
 
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE_WAKELOCK
-		if(s2w_use_wakelock && !wake_lock_active(&s2w_wake_lock)){
+		if (s2w_use_wakelock && !wake_lock_active(&s2w_wake_lock)) {
 			wake_lock(&s2w_wake_lock);
-			if(DEBUG)
+			if (DEBUG)
 				printk("s2w: wake lock enabled\n");
 		}
 #endif
 	}
-	else if (strcmp(val, "0") >= 0 || strcmp(val, "false") >= 0) {
+	else if (strcmp(buf, "0") >= 0 || strcmp(buf, "false") >= 0) {
+		if ((!a2n_allow) && (!is_lpm && !is_recovery)) {
+			pr_err("[%s] a2n: unprivileged access !\n",__func__);
+			goto err;
+		}
 		s2w_switch = 0;
-		if(DEBUG)
+		if (DEBUG)
 			printk("s2w: disabled\n");
 #ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE_WAKELOCK
 		if (wake_lock_active(&s2w_wake_lock)) {
 			wake_unlock(&s2w_wake_lock);
 		}
 #endif
-
 	} else {
-		printk("s2w: invalid input '%s' for 'enable'; use 1 or 0\n", val);
+		goto err;
 	}
 
+#if IS_ENABLED(CONFIG_A2N)
+	a2n_allow = false;
+#endif
 	return 0;
+
+err:
+	printk("s2w: invalid input '%s' for 'enable'; use 1 or 0\n", buf);
+#if IS_ENABLED(CONFIG_A2N)
+	a2n_allow = false;
+#endif
+	return -EINVAL;
 }
 module_param_call(enable, set_enable, param_get_int, &s2w_switch, 0664);
 

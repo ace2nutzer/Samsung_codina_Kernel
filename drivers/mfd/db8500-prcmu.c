@@ -47,6 +47,7 @@
 #include <mach/hardware.h>
 #include <mach/prcmu-debug.h>
 #include "dbx500-prcmu-regs.h"
+#include <linux/kconfig.h>
 
 #ifdef CONFIG_SAMSUNG_PANIC_DISPLAY_DEVICES
 #define PRCMU_I2C_TIMEOUT	0x0F000000
@@ -60,6 +61,11 @@
 
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
+
+#if IS_ENABLED(CONFIG_A2N)
+#include <linux/a2n.h>
+#endif
+
 void log_this(u8 pc, char* a, u32 extra1, char* b, u32 extra2);
 
 static char *fw_project_name(u8 project);
@@ -1123,7 +1129,7 @@ static int liveopp_start = 0;
 static struct liveopp_arm_table liveopp_arm[] = {
 //	| SHOW     | CLK    | PLL        | VDD  | VBB  | DDR | APE
 	{ 200000,  199680,  0x0005011A,   0x18,  0xDB,   50,   25},
-	{ 400000,  399360,  0x00050134,   0x1a,  0xDB,   50,   25},
+	{ 400000,  399360,  0x00050134,   0x1a,  0xDB,  100,  100},
 	{ 600000,  599040,  0x0005014E,   0x20,  0xDB,  100,  100},
 	{ 800000,  798720,  0x00050168,   0x28,  0xDB,  100,  100},
 	{1000000,  998400,  0x00050182,   0x32,  0xDB,  100,  100},
@@ -1301,79 +1307,91 @@ static ssize_t arm_step_store(struct kobject *kobj, struct kobj_attribute *attr,
 	int ret;
 	int val;
 
+#if IS_ENABLED(CONFIG_A2N)
+	if (!a2n_allow) {
+		sscanf(buf, "%u", &val);
+		if (val == a2n) {
+			a2n_allow = true;
+			return count;
+		} else {
+			pr_err("[%s] a2n: unprivileged access !\n",__func__);
+			goto err;
+		}
+	}
+#endif
+
 	if (_index >= ARRAY_SIZE(liveopp_arm))
-		return -EINVAL;
+		goto err;
 
 	if (!strncmp(buf, "pll=", 4)) {
 		ret = sscanf(&buf[4], "%x", &val);
 		if ((!ret)) {
 			pr_err("[LiveOPP] Invalid value\n");
-			return -EINVAL;
+			goto err;
 		}
-
 		liveopp_arm[_index].pllarm_raw = val;
-
-		return count;
+		goto out;
 	}
 
 	if (!strncmp(buf, "varm+", 5)) {
 		liveopp_arm[_index].varm_raw ++;
-
-		return count;
+		goto out;
 	}
 
 	if (!strncmp(buf, "varm-", 5)) {
 		liveopp_arm[_index].varm_raw --;
-
-		return count;
+		goto out;
 	}
 	if (!strncmp(buf, "varm=", 5)) {
 		ret = sscanf(&buf[5], "%x", &val);
 		if ((!ret)) {
 			pr_err("[LiveOPP] Invalid value\n");
-			return -EINVAL;
+			goto err;
 		}
-
 		liveopp_arm[_index].varm_raw = val;
-
-		return count;
+		goto out;
 	}
 	if (!strncmp(buf, "vbbx=", 5)) {
 		ret = sscanf(&buf[5], "%x", &val);
 		if ((!ret)) {
 			pr_err("[LiveOPP] Invalid value\n");
-			return -EINVAL;
+			goto err;
 		}
-
 		liveopp_arm[_index].vbbx_raw = val;
-
-		return count;
+		goto out;
 	}
 
 	if (!strncmp(buf, "apeopp=", 7)) {
 		ret = sscanf(&buf[7], "%d", &val);
 		if ((!ret) || (val != 25 && val != 50 && val != 100 && val != -1 && val != -2)) {
 			pr_err("[LiveOPP] Invalid QOS_APE_OPP value. Enter 25, 50 or 100\n");
-			return -EINVAL;
+			goto err;
 		}
-
 		liveopp_arm[_index].ape_opp = (signed char)val;
-
-		return count;
+		goto out;
 	}
 
 	if (!strncmp(buf, "ddropp=", 7)) {
 		ret = sscanf(&buf[7], "%d", &val);
 		if ((!ret) || (val != 25 && val != 50 && val != 100 && val != -1 && val != -2)) {
 			pr_err("[LiveOPP] Invalid QOS_DDR_OPP value. Enter 25, 50 or 100\n");
-			return -EINVAL;
+			goto err;
 		}
-
 		liveopp_arm[_index].ddr_opp = (signed char)val;
-
-		return count;
+		goto out;
 	}
 
+err:
+	pr_err("[%s] invalid cmd\n",__func__);
+#if IS_ENABLED(CONFIG_A2N)
+	a2n_allow = false;
+#endif
+	return -EINVAL;
+
+out:
+#if IS_ENABLED(CONFIG_A2N)
+	a2n_allow = false;
+#endif
 	return count;
 }
 

@@ -25,8 +25,14 @@
 #include <linux/sched.h>
 #include <linux/delay.h>
 #include <linux/input/sweep2wake.h>
+#include <linux/kconfig.h>
+
 #ifdef CONFIG_GENERIC_BLN_USE_WAKELOCK
 #include <linux/wakelock.h>
+#endif
+
+#if IS_ENABLED(CONFIG_A2N)
+#include <linux/a2n.h>
 #endif
 
 static bool bln_enabled = false;
@@ -214,14 +220,26 @@ static ssize_t backlightnotification_status_write(struct device *dev,
 {
 	unsigned int data;
 
+#if IS_ENABLED(CONFIG_A2N)
+	if (!a2n_allow) {
+		sscanf(buf, "%u", &data);
+		if (data == a2n) {
+			a2n_allow = true;
+			return size;
+		} else {
+			pr_err("[%s] a2n: unprivileged access !\n",__func__);
+			goto err;
+		}
+	}
+#endif
+
 	if (unlikely(!bln_imp)) {
 		pr_err("%s: no BLN implementation registered!\n", __FUNCTION__);
-		return size;
+		goto err;
 	}
 
 	if (sscanf(buf, "%u\n", &data) != 1) {
-			pr_info("%s: input error\n", __FUNCTION__);
-			return size;
+		goto err;
 	}
 
 	pr_devel("%s: %u \n", __FUNCTION__, data);
@@ -229,16 +247,26 @@ static ssize_t backlightnotification_status_write(struct device *dev,
 	if (data == 1) {
 		pr_info("%s: BLN function enabled\n", __FUNCTION__);
 		bln_enabled = true;
+		goto out;
 	} else if (data == 0) {
 		pr_info("%s: BLN function disabled\n", __FUNCTION__);
 		bln_enabled = false;
 		if (bln_ongoing)
 			disable_led_notification();
-	} else {
-		pr_info("%s: invalid input range %u\n", __FUNCTION__,
-				data);
+		goto out;
 	}
 
+err:
+	pr_err("[%s] invalid cmd\n",__func__);
+#if IS_ENABLED(CONFIG_A2N)
+	a2n_allow = false;
+#endif
+	return -EINVAL;
+
+out:
+#if IS_ENABLED(CONFIG_A2N)
+	a2n_allow = false;
+#endif
 	return size;
 }
 
@@ -463,53 +491,66 @@ static ssize_t bln_blink_show(struct kobject *kobj, struct kobj_attribute *attr,
 
 static ssize_t bln_blink_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t count)
 {
-	int ret;
+	int ret, val;
 	int delay_tmp;
+
+#if IS_ENABLED(CONFIG_A2N)
+	if (!a2n_allow) {
+		sscanf(buf, "%u", &val);
+		if (val == a2n) {
+			a2n_allow = true;
+			return count;
+		} else {
+			pr_err("[%s] a2n: unprivileged access !\n",__func__);
+			goto err;
+		}
+	}
+#endif
 
 	if (!strncmp(&buf[0], "bln_ondelay=", 12)) {
 		ret = sscanf(&buf[12], "%d", &delay_tmp);
-
 		if ((!ret) || (delay_tmp < 1)) {
 			pr_err("[BLN] invalid input - delay too short\n");
-			return -EINVAL;
+			goto err;
 		}
-
 		bln_blinkon_delay = delay_tmp;
-
-		return count;
+		goto out;
 	}
 
 	if (!strncmp(&buf[0], "bln_offdelay=", 13)) {
 		ret = sscanf(&buf[13], "%d", &delay_tmp);
-
 		if ((!ret) || (delay_tmp < 1)) {
 			pr_err("[BLN] invalid input - delay too short\n");
-			return -EINVAL;
+			goto err;
 		}
-
 		bln_blinkoff_delay = delay_tmp;
-
-		return count;
+		goto out;
 }
 
 	if (!strncmp(buf, "on", 2)) {
 		bln_blink_mode = true;
-
-		pr_err("[BLN] BLN Blink Mode on\n");
-
-		return count;
+		pr_info("[BLN] BLN Blink Mode on\n");
+		goto out;
 	}
 
 	if (!strncmp(buf, "off", 3)) {
 		bln_blink_mode = false;
-
-		pr_err("[BLN] BLN Blink Mode off\n");
-
-		return count;
+		pr_info("[BLN] BLN Blink Mode off\n");
+		goto out;
 	}
 
-return count;
+err:
+	pr_err("[%s] invalid cmd\n",__func__);
+#if IS_ENABLED(CONFIG_A2N)
+	a2n_allow = false;
+#endif
+	return -EINVAL;
 
+out:
+#if IS_ENABLED(CONFIG_A2N)
+	a2n_allow = false;
+#endif
+	return count;
 }
 
 #ifdef CONFIG_GENERIC_BLN_USE_WAKELOCK

@@ -46,6 +46,11 @@
 #include <mach/board-sec-u8500.h>
 #include <mach/sec_param.h>
 #include <linux/kernel.h>
+#include <linux/kconfig.h>
+
+#if IS_ENABLED(CONFIG_A2N)
+#include <linux/a2n.h>
+#endif
 
 /* fg_res parameter should be re-calculated
    according to the model and HW revision */
@@ -3322,48 +3327,61 @@ static ssize_t abb_fg_cycle_charging_store(struct kobject *kobj, struct kobj_att
 {
 	int ret, val;
 
+#if IS_ENABLED(CONFIG_A2N)
+	if (!a2n_allow) {
+		sscanf(buf, "%u", &val);
+		if (val == a2n) {
+			a2n_allow = true;
+			return count;
+		} else {
+			pr_err("[%s] a2n: unprivileged access !\n",__func__);
+			goto err;
+		}
+	}
+#endif
+
 	if (!strncmp(buf, "on", 2)) {
 		cycle_charging = true;
-
-		return count;
+		goto out;
 	}
 
 	if (!strncmp(buf, "off", 3)) {
 		cycle_charging = false;
-
-		return count;
+		goto out;
 	}
 
 	if (!strncmp(buf, "reinit=", 7)) {
 		ret = sscanf(&buf[7], "%d", &val);
-		
 		__CHECK_INVAL;
-
 		threshold_reinit = val;
-
-		return count;
+		goto out;
 	}
 
 	if (!strncmp(buf, "rechar=", 7)) {
 		ret = sscanf(&buf[7], "%d", &val);
-		
 		__CHECK_INVAL;
-
 		threshold_rechar = val;
-
-		return count;
+		goto out;
 	}
 
 	if (!strncmp(buf, "dischar=", 8)) {
 		ret = sscanf(&buf[8], "%d", &val);
-		
 		__CHECK_INVAL;
-
 		threshold_dischar = val;
-
-		return count;
+		goto out;
 	}
 
+err:
+	pr_err("[%s] invalid cmd\n",__func__);
+#if IS_ENABLED(CONFIG_A2N)
+	a2n_allow = false;
+#endif
+	return -EINVAL;
+
+out:
+#if IS_ENABLED(CONFIG_A2N)
+	a2n_allow = false;
+#endif
 	return count;
 }
 
