@@ -39,7 +39,7 @@
 
 #define DEF_FREQUENCY_UP_THRESHOLD		(95)
 #define DOWN_THRESHOLD_MARGIN			(25)
-#define DEF_SAMPLING_DOWN_FACTOR		(1)
+#define DEF_SAMPLING_DOWN_FACTOR		(3)
 #define MAX_SAMPLING_DOWN_FACTOR		(100000)
 #define MICRO_FREQUENCY_UP_THRESHOLD		(95)
 #define MIN_FREQUENCY_UP_THRESHOLD		(60)
@@ -412,10 +412,6 @@ static ssize_t store_boost(struct kobject *a, struct attribute *b,
 	int ret;
 
 #if IS_ENABLED(CONFIG_A2N)
-	if (!a2n) {
-		pr_err("[%s] a2n: a2n module is not loaded.\n",__func__);
-		return -EINVAL;
-	}
 	if (!a2n_allow) {
 		sscanf(buf, "%u", &input);
 		if (input == a2n) {
@@ -579,11 +575,9 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 			else if (policy->cur == DEF_FREQUENCY_STEP_8)
 				requested_freq = DEF_FREQUENCY_STEP_9;
 			else
-				return;
-
+				requested_freq = policy->max;
 			if (requested_freq > policy->max)
 				requested_freq = policy->max;
-
 		} else {
 			/* Boost */
 			requested_freq = policy->max;
@@ -596,8 +590,12 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 
 		__cpufreq_driver_target(policy, requested_freq,
 			CPUFREQ_RELATION_H);
+
 		return;
 	}
+
+	/* No longer fully busy, reset rate_mult */
+	this_dbs_info->rate_mult = 1;
 
 	/*
 	 * if we cannot reduce the frequency anymore, break out early
@@ -605,12 +603,9 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	if (policy->cur == policy->min)
 		return;
 
-	/* No longer fully busy, reset rate_mult */
-	this_dbs_info->rate_mult = 1;
-
 	/* Check for frequency decrease */
-	if (load <= down_threshold) {
-		if (policy->cur == DEF_FREQUENCY_STEP_9)
+	if (load < down_threshold) {
+		if (policy->cur >= DEF_FREQUENCY_STEP_9)
 			requested_freq = DEF_FREQUENCY_STEP_8;
 		else if (policy->cur == DEF_FREQUENCY_STEP_8)
 			requested_freq = DEF_FREQUENCY_STEP_7;
@@ -629,7 +624,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 		else if (policy->cur == DEF_FREQUENCY_STEP_1)
 			requested_freq = DEF_FREQUENCY_STEP_0;
 		else
-			return;
+			requested_freq = policy->min;
 
 		if (requested_freq < policy->min)
 			requested_freq = policy->min;
@@ -730,7 +725,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 			min_sampling_rate = max(min_sampling_rate,
 					MIN_LATENCY_MULTIPLIER * latency);
 			dbs_tuners_ins.sampling_rate =
-				max(min_sampling_rate,
+				max(5 * min_sampling_rate,
 				    latency * LATENCY_MULTIPLIER);
 			dbs_tuners_ins.io_is_busy = IO_IS_BUSY;
 		}
@@ -807,11 +802,10 @@ static int __init cpufreq_gov_dbs_init(void)
 		 * not depending on HZ, but fixed (very low). The deferred
 		 * timer might skip some samples if idle/sleeping as needed.
 		*/
-		min_sampling_rate = jiffies_to_usecs(10);
+		min_sampling_rate = jiffies_to_usecs(MIN_SAMPLING_RATE_RATIO);
 	} else {
 		/* For correct statistics, we need 10 ticks for each measure */
-		min_sampling_rate =
-			MIN_SAMPLING_RATE_RATIO * jiffies_to_usecs(10);
+		min_sampling_rate = jiffies_to_usecs(10);
 	}
 
 #ifdef CONFIG_CPU_FREQ_SUSPEND
