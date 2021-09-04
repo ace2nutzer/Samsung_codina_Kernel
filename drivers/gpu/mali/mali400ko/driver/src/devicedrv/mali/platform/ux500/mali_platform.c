@@ -65,8 +65,8 @@
 
 #define MALI_UX500_VERSION		"2.2"
 
-#define MIN_SAMPLING_RATE_MS			jiffies_to_msecs(10) /* 10 ticks */
-#define SAMPLING_RATE_RATIO			1 /* like sampling_down_factor */
+#define MIN_SAMPLING_RATE_MS			jiffies_to_msecs(2) /* 2 ticks */
+#define SAMPLING_RATE_RATIO			3 /* like sampling_down_factor */
 #define MAX_SAMPLING_RATE_MS			500
 
 #define MALI_MAX_UTILIZATION		256
@@ -301,8 +301,7 @@ void mali_utilization_function(struct work_struct *ptr)
 				else if (last_freq == DEF_FREQUENCY_STEP_750000)
 					new_freq = DEF_FREQUENCY_STEP_800000;
 				else
-					return;
-
+					new_freq = max_freq;
 				if (new_freq > max_freq)
 					new_freq = max_freq;
 			} else {
@@ -315,19 +314,20 @@ void mali_utilization_function(struct work_struct *ptr)
 				mali_sampling_rate_ratio = SAMPLING_RATE_RATIO;
 
 			mali_max_freq_apply(new_freq);
+
 			return;
 		}
 	}
+
+	/* No longer fully busy, reset sampling_rate_ratio */
+	mali_sampling_rate_ratio = 1;
 
 	/* if we cannot reduce the frequency anymore, break out early */
 	if (last_freq == min_freq)
 		return;
 
-	/* No longer fully busy, reset sampling_rate_ratio */
-	mali_sampling_rate_ratio = 1;
-
 	/* Check for frequency decrease */
-	if (mali_last_utilization <= down_threshold) {
+	if (mali_last_utilization < down_threshold) {
 
 		if (last_freq == DEF_FREQUENCY_STEP_800000)
 			new_freq = DEF_FREQUENCY_STEP_750000;
@@ -350,7 +350,7 @@ void mali_utilization_function(struct work_struct *ptr)
 		else if (last_freq == DEF_FREQUENCY_STEP_350000)
 			new_freq = DEF_FREQUENCY_STEP_300000;
 		else
-			return;
+			new_freq = min_freq;
 
 		if (new_freq < min_freq)
 			new_freq = min_freq;
@@ -796,7 +796,7 @@ _mali_osk_errcode_t mali_platform_init()
 	int ret;
 
 	is_running = false;
-	mali_utilization_sampling_rate = MIN_SAMPLING_RATE_MS;
+	mali_utilization_sampling_rate = (5 * MIN_SAMPLING_RATE_MS);
 
 	if (!is_initialized) {
 		update_down_threshold();
