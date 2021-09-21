@@ -50,7 +50,7 @@ static unsigned int ac_curr_max = 1000;
 static unsigned int usb_curr_max = 500;
 static int charging_curr = 0;
 static bool overheat_protection_ongoing = false;
-static unsigned int batt_max_temp = 40; /* °C */
+static unsigned int batt_max_temp = 35; /* °C */
 extern int get_bat_temp(void);
 static int bat_temp = 0;
 extern int get_bat_volt(void);
@@ -1798,7 +1798,7 @@ static int ab8500_charger_update_charger_input_current(
 	/* Reduce input_current to HIGH_TEMP_CURRENT if batt temp is > batt_max_temp */
 	if (bat_temp > batt_max_temp) {
 		if (!overheat_protection_ongoing) {
-			pr_err("[ABB-Charger] %s Battery Temp is over %u °C ! - reducing input_current to %d mA ...\n", __func__ , batt_max_temp , (int)HIGH_TEMP_CURRENT);
+			pr_err("[ABB-Charger] %s Battery Temp is over %u C ! - reducing input_current to %d mA ...\n", __func__ , batt_max_temp , (int)HIGH_TEMP_CURRENT);
 			input_current = HIGH_TEMP_CURRENT;
 			di->bat->ta_chg_current_input = input_current;
 			di->bat->usb_chg_current_input = input_current;
@@ -1806,7 +1806,7 @@ static int ab8500_charger_update_charger_input_current(
 		}
 	} else {
 		if (overheat_protection_ongoing) {
-			pr_warn("[ABB-Charger] %s Battery Temp is no longer over %u °C - restore custom input_curent ...\n", __func__ , batt_max_temp);
+			pr_warn("[ABB-Charger] %s Battery Temp is no longer over %u C - restore custom input_curent ...\n", __func__ , batt_max_temp);
 
 			if (charger->psy.type == POWER_SUPPLY_TYPE_MAINS) {
 				di->bat->ta_chg_current_input = ac_curr_max;
@@ -3270,7 +3270,7 @@ static ssize_t abb_batt_max_temp_store(struct kobject *kobj, struct kobj_attribu
 #endif
 
 	if (sscanf(buf, "%u", &tmp)) {
-		if (tmp < 35 || tmp > 45) {
+		if (tmp < 30 || tmp > 45) {
 			pr_err("[ABB-Charger] Invaild cmd\n");
 			goto err;
 		}
