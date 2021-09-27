@@ -467,14 +467,8 @@ static ssize_t min_freq_store(struct kobject *kobj, struct kobj_attribute *attr,
 
 #if IS_ENABLED(CONFIG_A2N)
 	if (!a2n_allow) {
-		sscanf(buf, "%u", &val);
-		if (val == a2n) {
-			a2n_allow = true;
-			return count;
-		} else {
-			pr_err("[%s] a2n: unprivileged access !\n",__func__);
-			goto err;
-		}
+		pr_err("[%s] a2n: unprivileged access !\n",__func__);
+		goto err;
 	}
 #endif
 
@@ -500,17 +494,12 @@ static ssize_t min_freq_store(struct kobject *kobj, struct kobj_attribute *attr,
 
 err:
 	pr_err("[%s] invalid cmd\n",__func__);
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return -EINVAL;
 
 out:
 	pr_info("[Mali] new min freqs is %u kHz\n", 
 			mali_dvfs[min_freq].freq);
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
+
 	return count;
 }
 ATTR_RW(min_freq);
@@ -531,14 +520,8 @@ static ssize_t max_freq_store(struct kobject *kobj, struct kobj_attribute *attr,
 
 #if IS_ENABLED(CONFIG_A2N)
 	if (!a2n_allow) {
-		sscanf(buf, "%u", &val);
-		if (val == a2n) {
-			a2n_allow = true;
-			return count;
-		} else {
-			pr_err("[%s] a2n: unprivileged access !\n",__func__);
-			goto err;
-		}
+		pr_err("[%s] a2n: unprivileged access !\n",__func__);
+		goto err;
 	}
 #endif
 
@@ -561,17 +544,12 @@ static ssize_t max_freq_store(struct kobject *kobj, struct kobj_attribute *attr,
 
 err:
 	pr_err("[%s] invalid cmd\n",__func__);
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return -EINVAL;
 
 out:
 	pr_info("[Mali] new max freqs is %u kHz\n", 
 			mali_dvfs[max_freq].freq);
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
+
 	return count;
 }
 ATTR_RW(max_freq);
@@ -587,14 +565,8 @@ static ssize_t up_threshold_store(struct kobject *kobj, struct kobj_attribute *a
 
 #if IS_ENABLED(CONFIG_A2N)
 	if (!a2n_allow) {
-		sscanf(buf, "%u", &val);
-		if (val == a2n) {
-			a2n_allow = true;
-			return count;
-		} else {
-			pr_err("[%s] a2n: unprivileged access !\n",__func__);
-			goto err;
-		}
+		pr_err("[%s] a2n: unprivileged access !\n",__func__);
+		goto err;
 	}
 #endif
 
@@ -609,15 +581,9 @@ static ssize_t up_threshold_store(struct kobject *kobj, struct kobj_attribute *a
 
 err:
 	pr_err("[%s] invalid cmd\n",__func__);
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return -EINVAL;
 
 out:
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return count;
 }
 ATTR_RW(up_threshold);
@@ -675,14 +641,8 @@ static ssize_t dvfs_config_store(struct kobject *kobj, struct kobj_attribute *at
 
 #if IS_ENABLED(CONFIG_A2N)
 	if (!a2n_allow) {
-		sscanf(buf, "%u", &val);
-		if (val == a2n) {
-			a2n_allow = true;
-			return count;
-		} else {
-			pr_err("[%s] a2n: unprivileged access !\n",__func__);
-			goto err;
-		}
+		pr_err("[%s] a2n: unprivileged access !\n",__func__);
+		goto err;
 	}
 #endif
 
@@ -698,15 +658,9 @@ static ssize_t dvfs_config_store(struct kobject *kobj, struct kobj_attribute *at
 
 err:
 	pr_err("[%s] invalid cmd\n",__func__);
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return -EINVAL;
 
 out:
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return count;;
 }
 ATTR_RW(dvfs_config);
@@ -734,14 +688,8 @@ static ssize_t boost_store(struct kobject *kobj, struct kobj_attribute *attr, co
 
 #if IS_ENABLED(CONFIG_A2N)
 	if (!a2n_allow) {
-		sscanf(buf, "%u", &val);
-		if (val == a2n) {
-			a2n_allow = true;
-			return count;
-		} else {
-			pr_err("[%s] a2n: unprivileged access !\n",__func__);
-			goto err;
-		}
+		pr_err("[%s] a2n: unprivileged access !\n",__func__);
+		goto err;
 	}
 #endif
 
@@ -754,15 +702,9 @@ static ssize_t boost_store(struct kobject *kobj, struct kobj_attribute *attr, co
 
 err:
 	pr_err("[%s] invalid cmd\n",__func__);
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return -EINVAL;
 
 out:
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return count;
 }
 ATTR_RW(boost);

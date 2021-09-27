@@ -314,14 +314,8 @@ static ssize_t store_up_threshold(struct kobject *a, struct attribute *b,
 
 #if IS_ENABLED(CONFIG_A2N)
 	if (!a2n_allow) {
-		sscanf(buf, "%u", &input);
-		if (input == a2n) {
-			a2n_allow = true;
-			return count;
-		} else {
-			pr_err("[%s] a2n: unprivileged access !\n",__func__);
-			goto err;
-		}
+		pr_err("[%s] a2n: unprivileged access !\n",__func__);
+		goto err;
 	}
 #endif
 
@@ -339,16 +333,10 @@ static ssize_t store_up_threshold(struct kobject *a, struct attribute *b,
 	update_down_threshold();
 
 out:
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return count;
 
 err:
 	pr_err("[%s] invalid cmd\n",__func__);
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return -EINVAL;
 }
 
@@ -413,14 +401,8 @@ static ssize_t store_boost(struct kobject *a, struct attribute *b,
 
 #if IS_ENABLED(CONFIG_A2N)
 	if (!a2n_allow) {
-		sscanf(buf, "%u", &input);
-		if (input == a2n) {
-			a2n_allow = true;
-			return count;
-		} else {
-			pr_err("[%s] a2n: unprivileged access !\n",__func__);
-			return -EINVAL;
-		}
+		pr_err("[%s] a2n: unprivileged access !\n",__func__);
+		goto err;
 	}
 #endif
 
@@ -434,16 +416,10 @@ static ssize_t store_boost(struct kobject *a, struct attribute *b,
 #endif
 
 out:
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return count;
 
 err:
 	pr_err("[%s] invalid cmd\n",__func__);
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return -EINVAL;
 }
 

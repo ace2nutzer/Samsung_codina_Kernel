@@ -178,10 +178,9 @@ static int set_enable(const char *buf, struct kernel_param *kp)
 
 #if IS_ENABLED(CONFIG_A2N)
 	if (!a2n_allow) {
-		sscanf(buf, "%u", &tmp);
-		if (tmp == a2n) {
-			a2n_allow = true;
-			return 0;
+		if (!is_lpm && !is_recovery) {
+			pr_err("[%s] a2n: unprivileged access !\n",__func__);
+			goto err;
 		}
 	}
 #endif
@@ -204,10 +203,6 @@ static int set_enable(const char *buf, struct kernel_param *kp)
 		}
 	}
 	if (strcmp(buf, "1") >= 0 || strcmp(buf, "true") >= 0) {
-		if ((!a2n_allow) && (!is_lpm && !is_recovery)) {
-			pr_err("[%s] a2n: unprivileged access !\n",__func__);
-			goto err;
-		}
 		s2w_switch = 1;
 		if (DEBUG)
 			printk("s2w: enabled\n");
@@ -221,10 +216,6 @@ static int set_enable(const char *buf, struct kernel_param *kp)
 #endif
 	}
 	else if (strcmp(buf, "0") >= 0 || strcmp(buf, "false") >= 0) {
-		if ((!a2n_allow) && (!is_lpm && !is_recovery)) {
-			pr_err("[%s] a2n: unprivileged access !\n",__func__);
-			goto err;
-		}
 		s2w_switch = 0;
 		if (DEBUG)
 			printk("s2w: disabled\n");
@@ -237,16 +228,10 @@ static int set_enable(const char *buf, struct kernel_param *kp)
 		goto err;
 	}
 
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return 0;
 
 err:
 	printk("s2w: invalid input '%s' for 'enable'; use 1 or 0\n", buf);
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return -EINVAL;
 }
 module_param_call(enable, set_enable, param_get_int, &s2w_switch, 0664);

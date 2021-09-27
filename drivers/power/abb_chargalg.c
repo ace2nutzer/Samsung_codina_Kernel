@@ -2455,43 +2455,28 @@ static ssize_t abb_chargalg_eoc_bln_store(struct kobject *kobj, struct kobj_attr
 
 #if IS_ENABLED(CONFIG_A2N)
 	if (!a2n_allow) {
-		sscanf(buf, "%u", &tmp);
-		if (tmp == a2n) {
-			a2n_allow = true;
-			return count;
+		if (!is_lpm && !is_recovery) {
+			pr_err("[%s] a2n: unprivileged access !\n",__func__);
+			goto err;
 		}
 	}
 #endif
 
 	if (sysfs_streq(buf, "true") || sysfs_streq(buf, "1")) {
-		if ((!a2n_allow) && (!is_lpm && !is_recovery)) {
-			pr_err("[%s] a2n: unprivileged access !\n",__func__);
-			goto err;
-		}
 		eoc_bln = true;
 		goto out;
 	}
 
 	if (sysfs_streq(buf, "false") || sysfs_streq(buf, "0")) {
-		if ((!a2n_allow) && (!is_lpm && !is_recovery)) {
-			pr_err("[%s] a2n: unprivileged access !\n",__func__);
-			goto err;
-		}
 		eoc_bln = false;
 		goto out;
 	}
 
 err:
 	pr_err("[%s] invalid cmd\n",__func__);
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return -EINVAL;
 
 out:
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return count;
 }
 
