@@ -97,10 +97,6 @@ static int set_suspend_max_freq(const char *buf, struct kernel_param *kp)
 #if IS_ENABLED(CONFIG_A2N)
 	if (!a2n_allow) {
 		sscanf(buf, "%u", &tmp);
-		if (tmp == a2n) {
-			a2n_allow = true;
-			return 0;
-		}
 		if ((tmp != 0) && (tmp != 800000)) {
 			pr_err("[%s] a2n: unprivileged access !\n",__func__);
 			goto err;
@@ -118,15 +114,9 @@ static int set_suspend_max_freq(const char *buf, struct kernel_param *kp)
 
 err:
 	pr_err("[%s] invalid cmd\n",__func__);
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return -EINVAL;
 
 out:
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return 0;
 }
 module_param_call(suspend_max_freq, set_suspend_max_freq, param_get_int, &suspend_max_freq, 0664);
@@ -492,10 +482,6 @@ static ssize_t store_user_scaling_min_freq
 #if IS_ENABLED(CONFIG_A2N)
 	if (!a2n_allow) {
 		sscanf(buf, "%u", &val);
-		if (val == a2n) {
-			a2n_allow = true;
-			return count;
-		}
 		if (val > 400000) {
 			pr_err("[%s] a2n: unprivileged access !\n",__func__);
 			goto err;
@@ -515,16 +501,10 @@ static ssize_t store_user_scaling_min_freq
 	policy->user_policy.min = policy->min;
 	min_freq = policy->min;
 
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return ret ? ret : count;
 
 err:
 	pr_err("[%s] invalid cmd\n",__func__);
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return -EINVAL;
 }
 
@@ -538,10 +518,6 @@ static ssize_t store_user_scaling_max_freq
 #if IS_ENABLED(CONFIG_A2N)
 	if (!a2n_allow) {
 		sscanf(buf, "%u", &val);
-		if (val == a2n) {
-			a2n_allow = true;
-			return count;
-		}
 		if (val != 800000) {
 			pr_err("[%s] a2n: unprivileged access !\n",__func__);
 			goto err;
@@ -561,16 +537,10 @@ static ssize_t store_user_scaling_max_freq
 	policy->user_policy.max = policy->max;
 	max_freq = policy->max;
 
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return ret ? ret : count;
 
 err:
 	pr_err("[%s] invalid cmd\n",__func__);
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return -EINVAL;
 }
 

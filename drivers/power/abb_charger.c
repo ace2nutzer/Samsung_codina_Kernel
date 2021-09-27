@@ -3147,14 +3147,8 @@ static ssize_t abb_current_max_store(struct kobject *kobj, struct kobj_attribute
 
 #if IS_ENABLED(CONFIG_A2N)
 	if (!a2n_allow) {
-		sscanf(buf, "%u", &tmp);
-		if (tmp == a2n) {
-			a2n_allow = true;
-			return count;
-		} else {
-			pr_err("[%s] a2n: unprivileged access !\n",__func__);
-			goto err;
-		}
+		pr_err("[%s] a2n: unprivileged access !\n",__func__);
+		goto err;
 	}
 #endif
 
@@ -3190,15 +3184,9 @@ static ssize_t abb_current_max_store(struct kobject *kobj, struct kobj_attribute
 
 err:
 	pr_err("[%s] invalid cmd\n",__func__);
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return -EINVAL;
 
 out:
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return count;
 }
 static struct kobj_attribute abb_current_max_interface = __ATTR(curr_max, 0666, abb_current_max_show, abb_current_max_store);
@@ -3258,14 +3246,8 @@ static ssize_t abb_batt_max_temp_store(struct kobject *kobj, struct kobj_attribu
 
 #if IS_ENABLED(CONFIG_A2N)
 	if (!a2n_allow) {
-		sscanf(buf, "%u", &tmp);
-		if (tmp == a2n) {
-			a2n_allow = true;
-			return count;
-		} else {
-			pr_err("[%s] a2n: unprivileged access !\n",__func__);
-			goto err;
-		}
+		pr_err("[%s] a2n: unprivileged access !\n",__func__);
+		goto err;
 	}
 #endif
 
@@ -3280,15 +3262,9 @@ static ssize_t abb_batt_max_temp_store(struct kobject *kobj, struct kobj_attribu
 
 err:
 	pr_err("[%s] invalid cmd\n",__func__);
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return -EINVAL;
 
 out:
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return count;
 }
 static struct kobj_attribute abb_batt_max_temp_interface = __ATTR(batt_max_temp, 0666, abb_batt_max_temp_show, abb_batt_max_temp_store);

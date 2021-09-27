@@ -1309,14 +1309,8 @@ static ssize_t arm_step_store(struct kobject *kobj, struct kobj_attribute *attr,
 
 #if IS_ENABLED(CONFIG_A2N)
 	if (!a2n_allow) {
-		sscanf(buf, "%u", &val);
-		if (val == a2n) {
-			a2n_allow = true;
-			return count;
-		} else {
-			pr_err("[%s] a2n: unprivileged access !\n",__func__);
-			goto err;
-		}
+		pr_err("[%s] a2n: unprivileged access !\n",__func__);
+		goto err;
 	}
 #endif
 
@@ -1383,15 +1377,9 @@ static ssize_t arm_step_store(struct kobject *kobj, struct kobj_attribute *attr,
 
 err:
 	pr_err("[%s] invalid cmd\n",__func__);
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return -EINVAL;
 
 out:
-#if IS_ENABLED(CONFIG_A2N)
-	a2n_allow = false;
-#endif
 	return count;
 }
 
