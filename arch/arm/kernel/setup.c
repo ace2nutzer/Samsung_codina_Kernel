@@ -51,7 +51,6 @@
 #include <asm/unwind.h>
 
 bool is_lpm = false;
-module_param_named(is_lpm, is_lpm, bool, 0444);
 
 bool is_recovery = false;
 module_param_named(is_recovery, is_recovery, bool, 0444);

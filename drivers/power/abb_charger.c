@@ -46,7 +46,7 @@
 #endif
 
 /* Charger Control */
-static unsigned int ac_curr_max = 1000;
+static unsigned int ac_curr_max = 800;
 static unsigned int usb_curr_max = 500;
 static int charging_curr = 0;
 static bool overheat_protection_ongoing = false;
@@ -54,6 +54,7 @@ static unsigned int batt_max_temp = 35; /* °C */
 extern int get_bat_temp(void);
 static int bat_temp = 0;
 extern int get_bat_volt(void);
+extern bool is_lpm;
 
 #define HIGH_TEMP_CURRENT		500	/* mA */
 
@@ -3147,8 +3148,12 @@ static ssize_t abb_current_max_store(struct kobject *kobj, struct kobj_attribute
 
 #if IS_ENABLED(CONFIG_A2N)
 	if (!a2n_allow) {
-		pr_err("[%s] a2n: unprivileged access !\n",__func__);
-		goto err;
+		if (is_lpm) {
+			pr_info("[%s] a2n: charger control in LPM mode\n",__func__);
+		} else {
+			pr_err("[%s] a2n: unprivileged access !\n",__func__);
+			goto err;
+		}
 	}
 #endif
 
@@ -3246,8 +3251,12 @@ static ssize_t abb_batt_max_temp_store(struct kobject *kobj, struct kobj_attribu
 
 #if IS_ENABLED(CONFIG_A2N)
 	if (!a2n_allow) {
-		pr_err("[%s] a2n: unprivileged access !\n",__func__);
-		goto err;
+		if (is_lpm) {
+			pr_info("[%s] a2n: charger control in LPM mode\n",__func__);
+		} else {
+			pr_err("[%s] a2n: unprivileged access !\n",__func__);
+			goto err;
+		}
 	}
 #endif
 
