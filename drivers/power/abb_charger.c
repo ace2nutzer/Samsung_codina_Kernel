@@ -55,6 +55,7 @@ extern int get_bat_temp(void);
 static int bat_temp = 0;
 extern int get_bat_volt(void);
 extern bool is_lpm;
+static bool is_charger = false;
 
 #define HIGH_TEMP_CURRENT		500	/* mA */
 
@@ -741,7 +742,6 @@ static int ab8500_charger_detect_chargers(struct ab8500_charger *di)
 		di->cable_type = POWER_SUPPLY_TYPE_BATTERY;
 		di->vbus_detect_charging = false;
 		result = NO_PW_CONN ;
-		charging_curr = 0;
 		break ;
 	}
 #else
@@ -789,7 +789,18 @@ static int ab8500_charger_detect_chargers(struct ab8500_charger *di)
 		regulator_enable(di->regu);
 		di->vddadc_en = true;
 	}
-	
+
+	/* reset routine */
+	if (result == NO_PW_CONN) {
+		di->bat->ta_chg_current_input = ac_curr_max;
+		di->bat->usb_chg_current_input = usb_curr_max;
+		overheat_protection_ongoing = false;
+		charging_curr = 0;
+		is_charger = false;
+	} else {
+		is_charger = true;
+	}
+
 	return result;
 #ifndef CONFIG_USB_SWITCHER
 
@@ -3163,12 +3174,6 @@ static ssize_t abb_current_max_store(struct kobject *kobj, struct kobj_attribute
 			goto err;
 		}
 		ac_curr_max = tmp;
-
-		di->bat->ta_chg_current_input = ac_curr_max;
-
-		if (di->cable_type == POWER_SUPPLY_TYPE_MAINS)
-			ab8500_charger_set_main_in_curr(di, di->bat->ta_chg_current_input);
-
 		goto out;
 	}
 
@@ -3178,12 +3183,6 @@ static ssize_t abb_current_max_store(struct kobject *kobj, struct kobj_attribute
 			goto err;
 		}
 		usb_curr_max = tmp;
-
-		di->bat->usb_chg_current_input = usb_curr_max;
-
-		if (di->cable_type == POWER_SUPPLY_TYPE_USB)
-			ab8500_charger_set_main_in_curr(di, di->bat->usb_chg_current_input);
-
 		goto out;
 	}
 
@@ -3192,6 +3191,16 @@ err:
 	return -EINVAL;
 
 out:
+	if (is_charger) {
+		if (di->cable_type == POWER_SUPPLY_TYPE_MAINS) {
+			di->bat->ta_chg_current_input = ac_curr_max;
+			ab8500_charger_set_main_in_curr(di, ac_curr_max);
+		} else {
+			di->bat->usb_chg_current_input = usb_curr_max;
+			ab8500_charger_set_main_in_curr(di, usb_curr_max);
+		}
+	}
+	overheat_protection_ongoing = false;
 	return count;
 }
 static struct kobj_attribute abb_current_max_interface = __ATTR(curr_max, 0666, abb_current_max_show, abb_current_max_store);
