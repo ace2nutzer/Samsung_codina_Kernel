@@ -26,7 +26,7 @@ void ux500_ci_dbg_remove(void);
 void ux500_ci_dbg_log(int ctarget,
 		      ktime_t enter_time);
 
-void ux500_ci_dbg_log_post_mortem(int ctarget,
+void ux500_ci_dbg_log_post_mortem(int target,
 				  ktime_t enter_time, ktime_t est_wake_common,
 				  ktime_t est_wake, int sleep, bool is_last);
 

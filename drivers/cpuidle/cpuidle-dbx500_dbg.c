@@ -491,8 +491,8 @@ void ux500_ci_dbg_wake_time(ktime_t time_wake)
 {
 }
 void ux500_ci_dbg_log_post_mortem(int ctarget,
-				ktime_t enter_time, ktime_t est_wake_common,
-				ktime_t est_wake, int sleep, bool is_last)
+				  ktime_t enter_time, ktime_t est_wake_common,
+				  ktime_t est_wake, int sleep, bool is_last)
 {
 }
 #endif
@@ -1286,10 +1286,10 @@ void __init ux500_ci_dbg_init(void)
 
 	cstates = ux500_ci_get_cstates(&cstates_len);
 
-	 #if !defined(CONFIG_MACH_CODINA) 
-        if(jig_smd)
-                deepest_allowed_state = CONFIG_DBX500_CPUIDLE_DEEPEST_STATE - 1;
-	#endif
+#if !defined(CONFIG_MACH_CODINA)
+	if(jig_smd)
+		deepest_allowed_state = CONFIG_DBX500_CPUIDLE_DEEPEST_STATE - 1;
+#endif
 
 	if (deepest_allowed_state > cstates_len)
 		deepest_allowed_state = cstates_len;
