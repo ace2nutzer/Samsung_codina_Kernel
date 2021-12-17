@@ -612,9 +612,11 @@ musb_rx_reinit(struct musb *musb, struct musb_qh *qh, struct musb_hw_ep *ep)
 	/* Set RXMAXP with the FIFO size of the endpoint
 	 * to disable double buffer mode.
 	 */
+#ifdef CONFIG_BLACKFIN
 	if (musb->double_buffer_not_ok)
 		musb_writew(ep->regs, MUSB_RXMAXP, ep->max_packet_sz_rx);
 	else
+#endif
 		musb_writew(ep->regs, MUSB_RXMAXP,
 				qh->maxpacket | ((qh->hb_mult - 1) << 11));
 
@@ -804,10 +806,12 @@ static void musb_ep_program(struct musb *musb, u8 epnum,
 			if (can_bulk_split(musb, qh->type))
 				qh->hb_mult = hw_ep->max_packet_sz_tx
 						/ packet_sz;
+#ifdef CONFIG_BLACKFIN
 			if (musb->double_buffer_not_ok)
 				musb_writew(epio, MUSB_TXMAXP,
 						hw_ep->max_packet_sz_tx);
 			else
+#endif
 				musb_writew(epio, MUSB_TXMAXP,
 						qh->maxpacket |
 						((qh->hb_mult - 1) << 11));
