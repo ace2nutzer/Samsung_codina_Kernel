@@ -22,6 +22,10 @@
 #include <linux/semaphore.h>
 #include "j4fs.h"
 
+#ifndef __KERNEL__
+#include <asm/util.h>
+#endif
+
 #if defined(J4FS_USE_XSR)
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28))
@@ -682,9 +686,14 @@ int j4fs_readdir (struct file * filp, void * dirent, filldir_t filldir)
 	struct j4fs_inode_info *ei = J4FS_I(inode);
 	struct j4fs_inode *raw_inode;
 	int i,j, nErr;
-	BYTE *buf;
-	DWORD valid_offset[128][2];
+	u16 valid_offset[128][2];
 	int count=0;
+
+#ifdef __KERNEL__
+	BYTE *buf;
+#else
+	BYTE buf[J4FS_BASIC_UNIT_SIZE];
+#endif
 
 	if(j4fs_panic==1) {
 		J4FS_T(J4FS_TRACE_ALWAYS,("%s %d: j4fs panic\n",__FUNCTION__,__LINE__));
@@ -693,7 +702,9 @@ int j4fs_readdir (struct file * filp, void * dirent, filldir_t filldir)
 
 	J4FS_T(J4FS_TRACE_FS,("%s %d\n",__FUNCTION__,__LINE__));
 
+#ifdef __KERNEL__
 	buf=kmalloc(J4FS_BASIC_UNIT_SIZE,GFP_NOFS);
+#endif
 
 	j4fs_GrossLock();
 
@@ -726,7 +737,6 @@ int j4fs_readdir (struct file * filp, void * dirent, filldir_t filldir)
 	{
 		// check the partition range
 		j4fs_check_partition_range(cur_link);
-
 		nErr = FlashDevRead(&device_info, cur_link, J4FS_BASIC_UNIT_SIZE, buf);
 		if (nErr != 0) {
 			J4FS_T(J4FS_TRACE_ALWAYS,("%s %d: error(nErr=0x%x)\n",__FUNCTION__,__LINE__,nErr));
@@ -800,7 +810,9 @@ int j4fs_readdir (struct file * filp, void * dirent, filldir_t filldir)
 	}
 
 error1:
+	#ifdef __KERNEL__
 	kfree(buf);
+	#endif
 	j4fs_GrossUnlock();
 	return 0;
 }
@@ -1403,16 +1415,32 @@ ssize_t lfs_read(struct file *file, const char __user * buffer, size_t count, lo
 
 ssize_t lfs_write(struct file *file, const char __user * buffer, size_t count, loff_t *ppos)
 {
+	#ifdef __KERNEL__
+	char *kbuf;
+	kbuf=kmalloc(1024,GFP_NOFS);
+	#else
 	char kbuf[1024];
+	#endif
 
 	if (copy_from_user(&kbuf, buffer, count))
-		return -EFAULT;
+		goto efault;
 
 	if (sscanf(kbuf, "%x %d", &j4fs_PORMask, &j4fs_PORCount) != 2)
-		return -EINVAL;
+		goto einval;
 
 	printk("%s %d: (j4fs_PORMask,j4fs_PORCount)=(%x,%d)\n",__FUNCTION__,__LINE__,j4fs_PORMask, j4fs_PORCount);
+
+einval:
+	#ifdef __KERNEL__
+	kfree(kbuf);
+	#endif
 	return -EINVAL;
+
+efault:
+	#ifdef __KERNEL__
+	kfree(kbuf);
+	#endif
+	return -EFAULT;
 }
 
 int j4fs_fsync(struct file *file, int datasync)

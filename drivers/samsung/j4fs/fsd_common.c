@@ -1638,7 +1638,7 @@ int fsd_mark_invalid()
 {
 	DWORD offset;
 	j4fs_header *header;
-	DWORD valid_offset[128][2];
+	u16 valid_offset[128][2];
 	int index=0;
 	int i,j;
 	j4fs_mst *mst;
@@ -1758,7 +1758,6 @@ int fsd_mark_invalid()
 
 				// this file will be deleted
 				header->flags=0x1;
-
 				ret = FlashDevWrite(&device_info, valid_offset[i][1], J4FS_BASIC_UNIT_SIZE, buf);
 				if (error(ret)) {
 					J4FS_T(J4FS_TRACE_ALWAYS,("%s %d: Error(nErr=0x%08x)\n",__FUNCTION__,__LINE__,ret));
@@ -1772,7 +1771,6 @@ int fsd_mark_invalid()
 #ifdef __KERNEL__
 	kfree(buf);
 #endif
-
 	return J4FS_SUCCESS;
 
 error1:

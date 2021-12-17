@@ -27,6 +27,10 @@
 #include <mach/hardware.h>
 #include <mach/sec_param.h>
 
+#ifndef __KERNEL__
+#include <asm/util.h>
+#endif
+
 #define PAGE_LEN	(4 * 1024)  /* 4KB */
 #define UNIT_LEN	(256 * 1024)  /* 256KB OneNand unit size */
 #define IMAGE_LEN	(192 * 1024)	/* 192KB, size of image area in PARAM block */
@@ -178,7 +182,12 @@ static void param_set_default(void)
 static void param_show_info(void)
 {
 	signed int value = 0;
+	#ifdef __KERNEL__
+	signed char *str_val;
+	str_val=kmalloc(PARAM_STRING_SIZE,GFP_KERNEL);
+	#else
 	signed char str_val[PARAM_STRING_SIZE];
+	#endif
 
 	klogi("-----------------------------------------------------");
 	klogi("	Information of Parameters");
@@ -231,6 +240,10 @@ static void param_show_info(void)
 	get_param_value(__PARAM_STR_4, &str_val);
 	klogi("  - 21. PARAM_STR_4(STR)  : %s", str_val);
 	klogi("-----------------------------------------------------");
+
+	#ifdef __KERNEL__
+	kfree(str_val);
+	#endif
 }
 
 /* test codes for debugging */
