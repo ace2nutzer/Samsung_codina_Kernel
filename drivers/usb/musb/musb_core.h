@@ -503,6 +503,7 @@ struct musb {
 	struct usb_gadget_driver *gadget_driver;	/* its driver */
 #endif
 
+#ifdef CONFIG_BLACKFIN
 	/*
 	 * FIXME: Remove this flag.
 	 *
@@ -515,6 +516,7 @@ struct musb {
 	 * buffering until we get it working.
 	 */
 	unsigned                double_buffer_not_ok:1 __deprecated;
+#endif
 
 	struct musb_hdrc_config	*config;
 
