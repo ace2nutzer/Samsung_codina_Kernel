@@ -42,6 +42,8 @@
 
 #include <linux/mfd/dbx500-prcmu.h>
 
+extern void lcdclk_set(void);
+
 #define ESD_PORT_NUM 93
 #define SPI_COMMAND		0
 #define SPI_DATA		1
@@ -98,9 +100,6 @@
 #define ESD_TEST
 */
 
-static unsigned int ape_opp = PRCMU_QOS_HALF_VALUE;
-static unsigned int ddr_opp = PRCMU_QOS_HALF_VALUE;
-
 static struct ws2401_dpi *lcd_data;
 
 struct ws2401_dpi {
@@ -113,7 +112,6 @@ struct ws2401_dpi {
 	unsigned int				bl;
 	unsigned int				ldi_state;
 	unsigned char				panel_id;
-	bool 					opp_is_requested;
 	enum mcde_display_rotation		rotation;
 	struct mcde_display_device		*mdd;
 	struct lcd_device			*ld;
@@ -474,61 +472,6 @@ error:
 	return res;
 }
 
-static void ws2401_request_opp(struct ws2401_dpi *lcd)
-{
-	if (!lcd->opp_is_requested) {
-
-		if (prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
-						LCD_DRIVER_NAME_WS2401,
-						ape_opp)) {
-			dev_err(lcd->dev, "add APE OPP %d failed\n",
-						ape_opp);
-		}
-
-		if (prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
-						LCD_DRIVER_NAME_WS2401,
-						ddr_opp)) {
-			dev_err(lcd->dev, "add DDR OPP %d failed\n",
-						ddr_opp);
-		}
-
-		dev_dbg(lcd->dev, "APE OPP requested at %d%%\n",ape_opp);
-		dev_dbg(lcd->dev, "DDR OPP requested at %d%%\n",ddr_opp);
-		lcd->opp_is_requested = true;
-	}
-}
-
-static void ws2401_update_opp(struct ws2401_dpi *lcd)
-{
-	if (prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
-				LCD_DRIVER_NAME_WS2401,
-				ape_opp)) {
-		dev_err(lcd->dev, "update user APE OPP %d failed\n",
-						ape_opp);
-	}
-
-	if (prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
-				LCD_DRIVER_NAME_WS2401,
-				ddr_opp)) {
-		dev_err(lcd->dev, "update user DDR OPP %d failed\n",
-						ddr_opp);
-	}
-
-		dev_warn(lcd->dev, "APE OPP requested by user at %d%%\n",ape_opp);
-		dev_warn(lcd->dev, "DDR OPP requested by user at %d%%\n",ddr_opp);
-}
-
-static void ws2401_release_opp(struct ws2401_dpi *lcd)
-{
-	if (lcd->opp_is_requested) {
-		prcmu_qos_remove_requirement(PRCMU_QOS_DDR_OPP, LCD_DRIVER_NAME_WS2401);
-		prcmu_qos_remove_requirement(PRCMU_QOS_APE_OPP, LCD_DRIVER_NAME_WS2401);
-		lcd->opp_is_requested = false;
-		dev_dbg(lcd->dev, "DDR OPP removed\n");
-		dev_dbg(lcd->dev, "APE OPP removed\n");
-	}
-}
-
 static int ws2401_set_rotation(struct mcde_display_device *ddev,
 	enum mcde_display_rotation rotation)
 {
@@ -766,7 +709,11 @@ static int ws2401_dpi_power_on(struct ws2401_dpi *lcd)
 	int ret = 0;
 	struct ssg_dpi_display_platform_data *dpd = NULL;
 
-	ws2401_request_opp(lcd);
+	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
+			"mcde", PRCMU_QOS_MAX_VALUE);
+
+	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
+			"mcde", PRCMU_QOS_MAX_VALUE);
 
 	dpd = lcd->pd;
 	if (!dpd) {
@@ -804,6 +751,8 @@ static int ws2401_dpi_power_on(struct ws2401_dpi *lcd)
 
 	ws2401_update_brightness(lcd);
 
+	lcdclk_set();
+
 	return 0;
 }
 
@@ -838,7 +787,11 @@ static int ws2401_dpi_power_off(struct ws2401_dpi *lcd)
 	} else
 		dpd->power_on(dpd, LCD_POWER_DOWN);
 
-	ws2401_release_opp(lcd);
+	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
+			"mcde", PRCMU_QOS_DEFAULT_VALUE);
+
+	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
+			"mcde", PRCMU_QOS_DEFAULT_VALUE);
 
 	return 0;
 }
@@ -979,8 +932,6 @@ static ssize_t ws2401_sysfs_show_mcde_chnl(struct device *dev,
 	sprintf(buf, "%svbp: %d\n", buf, lcd->mdd->video_mode.vbp);
 	sprintf(buf, "%svfp: %d\n", buf, lcd->mdd->video_mode.vfp);
 	sprintf(buf, "%svsw: %d\n\n", buf, lcd->mdd->video_mode.vsw);
-	sprintf(buf, "%sape_opp: %d\n", buf, ape_opp);
-	sprintf(buf, "%sddr_opp: %d\n\n", buf, ddr_opp);
 	sprintf(buf, "%spower_on_delay: %d\n", buf, lcd->pd->power_on_delay);
 	sprintf(buf, "%sreset_delay: %d\n", buf, lcd->pd->reset_delay);
 	sprintf(buf, "%ssleep_in_delay: %d\n", buf, lcd->pd->sleep_in_delay);
@@ -1002,32 +953,6 @@ static ssize_t ws2401_sysfs_store_mcde_chnl(struct device *dev,
 	u32 vfp;	/* vertical front porch: lower margin (excl. vsync) */
 	u32 vsw;	/* vertical sync width */
 	u32 enable;
-
-	if (sscanf(buf, "apeopp=%d", &tmp)) {
-
-		if (tmp < 25 || tmp > 100) {
-			pr_warning("[ws2401] Invaild input\n");
-			return -EINVAL;
-		}
-
-		ape_opp = tmp;
-		ws2401_update_opp(lcd);
-
-		return len;
-	}
-
-	if (sscanf(buf, "ddropp=%d", &tmp)) {
-
-		if (tmp < 25 || tmp > 100) {
-			pr_warning("[ws2401] Invaild input\n");
-			return -EINVAL;
-		}
-
-		ddr_opp = tmp;
-		ws2401_update_opp(lcd);
-
-		return len;
-	}
 
 	if (!strncmp(buf, "set_vmode", 8))
 	{
@@ -1434,9 +1359,6 @@ static int __devinit ws2401_dpi_mcde_probe(
 	lcd->mdd = ddev;
 	lcd->dev = &ddev->dev;
 	lcd->pd = pdata;
-
-	lcd->opp_is_requested = false;
-	ws2401_request_opp(lcd);
 
 #ifdef CONFIG_LCD_CLASS_DEVICE
 	lcd->ld = lcd_device_register("panel", &ddev->dev,

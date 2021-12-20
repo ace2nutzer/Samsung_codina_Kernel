@@ -1311,24 +1311,10 @@ static void lcdclk_thread(struct work_struct *lcdclk_work)
 {
 	int ret = 0;
 
-	if (is_s6d()) {
-		ret = LCDCLK_SET(lcdclk_s6d_prop[1].clk);
-		if (ret)
-			pr_err("[MCDE] Failed to set LCDCLK to start freq %d Hz\n",  lcdclk_s6d_prop[1].clk);
-		else
-			pr_info("[MCDE] Set LCDCLK to start freq %d Hz\n",  lcdclk_s6d_prop[1].clk);
-	} else {
-		ret = LCDCLK_SET(lcdclk_ws24_prop[1].clk);
-		if (ret)
-			pr_err("[MCDE] Failed to set LCDCLK to start freq %d Hz\n",  lcdclk_ws24_prop[1].clk);
-		else
-			pr_info("[MCDE] Set LCDCLK to start freq %d Hz\n",  lcdclk_ws24_prop[1].clk);
-	}
-
 	if ((is_recovery) || (is_lpm))
 		return;
 
-	msleep(500);
+	msleep(1000);
 
 	if (custom_lcdclk) {
 		ret = LCDCLK_SET(custom_lcdclk);
@@ -1590,12 +1576,18 @@ static int update_channel_static_registers(struct mcde_chnl_state *chnl)
 	}
 
 	if (port->type == MCDE_PORTTYPE_DPI) {
+		if (port->phy.dpi.lcd_freq != clk_round_rate(chnl->clk_dpi,
+				port->phy.dpi.lcd_freq))
+			dev_warn(&mcde_dev->dev, "Could not set lcd freq"
+					" to %d\n", port->phy.dpi.lcd_freq);
+		WARN_ON_ONCE(clk_set_rate(chnl->clk_dpi,
+				port->phy.dpi.lcd_freq));
+		WARN_ON_ONCE(clk_enable(chnl->clk_dpi));
+
 		if ((is_recovery) || (is_lpm)) {
 			lcdclk_s6d_v = 1;
 			lcdclk_ws24_v = 1;
 		}
-		lcdclk_set();
-		(clk_enable(chnl->clk_dpi));
 	}
 
 	mcde_wfld(MCDE_CR, MCDEEN, true);
