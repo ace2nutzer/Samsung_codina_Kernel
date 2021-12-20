@@ -499,7 +499,9 @@ static ssize_t store_user_scaling_min_freq
 
 	ret = __cpufreq_set_policy(policy, &new_policy);
 	policy->user_policy.min = policy->min;
+#ifdef CONFIG_CPU_FREQ_SUSPEND
 	min_freq = policy->min;
+#endif
 
 	return ret ? ret : count;
 
@@ -535,7 +537,9 @@ static ssize_t store_user_scaling_max_freq
 
 	ret = __cpufreq_set_policy(policy, &new_policy);
 	policy->user_policy.max = policy->max;
+#ifdef CONFIG_CPU_FREQ_SUSPEND
 	max_freq = policy->max;
+#endif
 
 	return ret ? ret : count;
 
