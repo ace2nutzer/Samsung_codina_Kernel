@@ -54,7 +54,6 @@ extern bool is_lpm;
 extern bool is_recovery;
 extern void lcdclk_set(void);
 extern bool is_s6d(void);
-static bool boost = false;
 bool landscape_mode = false;
 
 extern unsigned int system_rev;
@@ -266,24 +265,12 @@ static int lcd_gpio_cfg_earlysuspend(void)
 	ret = nmk_config_pins(codina_lcd_spi_pins_disable,
 		ARRAY_SIZE(codina_lcd_spi_pins_disable));
 
-	if (is_s6d()) {
-		if (boost)
-			prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
-				"mcde", PRCMU_QOS_DEFAULT_VALUE);
-	}
-
 	return ret;
 }
 
 static int lcd_gpio_cfg_lateresume(void)
 {
 	int ret = 0;
-
-	if (is_s6d()) {
-		if (boost)
-			prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
-				"mcde", PRCMU_QOS_MAX_VALUE);
-	}
 
 	ret = nmk_config_pins(codina_lcd_spi_pins_enable,
 		ARRAY_SIZE(codina_lcd_spi_pins_enable));
@@ -376,39 +363,18 @@ static struct notifier_block display_nb = {
 static void update_mcde_opp(struct device *dev,
 					struct mcde_opp_requirements *reqs)
 {
-	static s32 requested_qos;
-	s32 req_ape = PRCMU_QOS_DEFAULT_VALUE;
 	static u8 prev_rot_channels;
 
 	/* If a rotation is detected, clock up CPU to max */
-	if (reqs->num_rot_channels != prev_rot_channels)
+	if (reqs->num_rot_channels != prev_rot_channels) {
 		prev_rot_channels = reqs->num_rot_channels;
 
-	if (reqs->num_rot_channels) {
-		req_ape = PRCMU_QOS_MAX_VALUE;
-		boost = true;
-		landscape_mode = true;
-	} else {
-		req_ape = PRCMU_QOS_DEFAULT_VALUE;
-		boost = false;
-		landscape_mode = false;
-	}
-
-	if (req_ape != requested_qos) {
-		requested_qos = req_ape;
-
-		if (is_s6d()) {
-			prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
-				"mcde", req_ape);
-			pr_info("Requested APE QOS = %d\n", req_ape);
-		}
+		if (reqs->num_rot_channels && reqs->num_overlays > 1)
+			landscape_mode = true;
+		else
+			landscape_mode = false;
 
 		lcdclk_set();
-/*
-		codina_backlight_on_off(false);
-		msleep(1);
-		codina_backlight_on_off(true);
-*/
 	}
 }
 
@@ -492,6 +458,9 @@ int __init init_codina_display_devices(void)
 	}
 
 	prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
+				"mcde", PRCMU_QOS_DEFAULT_VALUE);
+
+	prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP,
 				"mcde", PRCMU_QOS_DEFAULT_VALUE);
 
 	ret = mcde_display_device_register(&generic_display0);
