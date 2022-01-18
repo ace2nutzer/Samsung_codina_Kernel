@@ -4576,7 +4576,7 @@ static int __devexit mcde_remove(struct platform_device *pdev)
 	return 0;
 }
 
-#if !defined(CONFIG_HAS_EARLYSUSPEND) && defined(CONFIG_PM)
+#ifdef CONFIG_HAS_EARLYSUSPEND
 static int mcde_resume(struct platform_device *pdev)
 {
 	dev_vdbg(&mcde_dev->dev, "%s\n", __func__);
@@ -4618,7 +4618,7 @@ static int mcde_suspend(struct platform_device *pdev, pm_message_t state)
 static struct platform_driver mcde_driver = {
 	.probe = mcde_probe,
 	.remove = mcde_remove,
-#if !defined(CONFIG_HAS_EARLYSUSPEND) && defined(CONFIG_PM)
+#ifdef CONFIG_HAS_EARLYSUSPEND
 	.suspend = mcde_suspend,
 	.resume = mcde_resume,
 #else

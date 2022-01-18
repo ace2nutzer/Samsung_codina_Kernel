@@ -146,8 +146,8 @@ struct ssg_dpi_display_platform_data codina_dpi_pri_display_info = {
 	.pwr_gpio		= LCD_PWR_EN_CODINA_R0_0,
 	.bl_ctrl		= false,
 
-	.power_on_delay = 10,
-	.reset_delay = 10,
+	.power_on_delay = 50,
+	.reset_delay = 50,
 
 	.video_mode.xres	= 480,
 	.video_mode.yres	= 800,
@@ -228,14 +228,15 @@ static int pri_display_reset(struct ssg_dpi_display_platform_data *pd)
 	/* Active Reset */
 	/* Release LCD from reset */
 	gpio_set_value(pd->reset_gpio, !pd->reset_high);
-	msleep(1);
+	mdelay(10);
 
 	/* Reset LCD */
 	gpio_set_value(pd->reset_gpio, pd->reset_high);
-	msleep(1);
+	mdelay(10);
 
 	/* Release LCD from reset */
 	gpio_set_value(pd->reset_gpio, !pd->reset_high);
+	mdelay(10);
 
 	return 0;
 }
@@ -438,8 +439,8 @@ int __init init_codina_display_devices(void)
 		codina_dpi_pri_display_info.video_mode.vbp = 8;
 		codina_dpi_pri_display_info.video_mode.vfp = 8;
 		codina_dpi_pri_display_info.video_mode.vsw = 8;
-		codina_dpi_pri_display_info.sleep_in_delay = 50;
-		codina_dpi_pri_display_info.sleep_out_delay = 50;
+		codina_dpi_pri_display_info.sleep_in_delay = 100;
+		codina_dpi_pri_display_info.sleep_out_delay = 100;
 	} else {
 		generic_display0.name = LCD_DRIVER_NAME_S6D27A1;
 		codina_dpi_pri_display_info.video_mode.hbp = 6;
@@ -448,13 +449,13 @@ int __init init_codina_display_devices(void)
 		codina_dpi_pri_display_info.video_mode.vbp = 6;
 		codina_dpi_pri_display_info.video_mode.vfp = 6;
 		codina_dpi_pri_display_info.video_mode.vsw = 6;
-		codina_dpi_pri_display_info.sleep_in_delay = 50;
-		codina_dpi_pri_display_info.sleep_out_delay = 50;
+		codina_dpi_pri_display_info.sleep_in_delay = 150;
+		codina_dpi_pri_display_info.sleep_out_delay = 150;
 	}
 
 	if (is_recovery || is_lpm) {
-		codina_dpi_pri_display_info.sleep_in_delay = 1;
-		codina_dpi_pri_display_info.sleep_out_delay = 1;
+		codina_dpi_pri_display_info.sleep_in_delay = 10;
+		codina_dpi_pri_display_info.sleep_out_delay = 10;
 	}
 
 	prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
