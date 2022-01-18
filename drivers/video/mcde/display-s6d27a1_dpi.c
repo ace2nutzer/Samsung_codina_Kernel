@@ -506,10 +506,10 @@ static int s6d27a1_dpi_ldi_init(struct s6d27a1_dpi *lcd)
 	ret = s6d27a1_write_dcs_sequence(lcd,
 				DCS_CMD_SEQ_S6D27A1_EXIT_SLEEP_MODE);
 
-	if (lcd->pd->sleep_out_delay)
-		msleep(lcd->pd->sleep_out_delay);
-
 	ret |= s6d27a1_write_dcs_sequence(lcd, DCS_CMD_SEQ_S6D27A1_INIT);
+
+	if (lcd->pd->sleep_out_delay)
+		mdelay(lcd->pd->sleep_out_delay);
 
 	if (lcd->pd->bl_ctrl)
 		ret |= s6d27a1_write_dcs_sequence(lcd,
@@ -527,13 +527,10 @@ static int s6d27a1_dpi_ldi_enable(struct s6d27a1_dpi *lcd)
 
 	dev_dbg(lcd->dev, "s6d27a1_dpi_ldi_enable\n");
 
-	if (lcd->pd->sleep_out_delay)
-		msleep(lcd->pd->sleep_out_delay);
-
 	ret |= s6d27a1_write_dcs_sequence(lcd, DCS_CMD_SEQ_S6D27A1_DISPLAY_ON);
 
 	if (lcd->pd->sleep_out_delay)
-		msleep(lcd->pd->sleep_out_delay);
+		mdelay(lcd->pd->sleep_out_delay);
 
 	if (!ret)
 		lcd->ldi_state = LDI_STATE_ON;
@@ -553,7 +550,7 @@ static int s6d27a1_dpi_ldi_disable(struct s6d27a1_dpi *lcd)
 			DCS_CMD_SEQ_S6D27A1_ENTER_SLEEP_MODE);
 
 	if (lcd->pd->sleep_in_delay)
-		msleep(lcd->pd->sleep_in_delay);
+		mdelay(lcd->pd->sleep_in_delay);
 
 	return ret;
 }
@@ -597,7 +594,7 @@ static int s6d27a1_dpi_power_on(struct s6d27a1_dpi *lcd)
 
 	dpd->power_on(dpd, LCD_POWER_UP);
 	if (dpd->power_on_delay)
-		msleep(dpd->power_on_delay);
+		mdelay(dpd->power_on_delay);
 
 	if (!dpd->gpio_cfg_lateresume) {
 		dev_err(lcd->dev, "gpio_cfg_lateresume is NULL.\n");
@@ -607,7 +604,7 @@ static int s6d27a1_dpi_power_on(struct s6d27a1_dpi *lcd)
 
 	dpd->reset(dpd);
 	if (dpd->reset_delay)
-		msleep(dpd->reset_delay);
+		mdelay(dpd->reset_delay);
 
 	ret = s6d27a1_dpi_ldi_init(lcd);
 	if (ret) {
@@ -1475,11 +1472,11 @@ static struct mcde_display_driver s6d27a1_dpi_mcde __refdata = {
 	.remove         = s6d27a1_dpi_mcde_remove,
 	.shutdown	= s6d27a1_dpi_mcde_shutdown,
 #ifdef CONFIG_HAS_EARLYSUSPEND
-	.suspend        = NULL,
-	.resume         = NULL,
-#else
 	.suspend        = s6d27a1_dpi_mcde_suspend,
 	.resume         = s6d27a1_dpi_mcde_resume,
+#else
+	.suspend        = NULL,
+	.resume         = NULL,
 #endif
 	.driver		= {
 		.name	= LCD_DRIVER_NAME_S6D27A1,
