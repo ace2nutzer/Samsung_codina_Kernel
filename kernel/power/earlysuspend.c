@@ -24,6 +24,7 @@
 #include "power.h"
 
 extern int deepest_allowed_state;
+static int pm_suspend_state = 0;
 
 enum {
 	DEBUG_USER_STATE = 1U << 0,
@@ -151,8 +152,6 @@ static void late_resume(struct work_struct *work)
 abort:
 	mutex_unlock(&early_suspend_lock);
 }
-
-int pm_suspend_state = 0;
 
 void request_suspend_state(suspend_state_t new_state)
 {
