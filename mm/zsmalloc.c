@@ -68,9 +68,7 @@
 #include <linux/types.h>
 #include <linux/debugfs.h>
 #include <linux/zsmalloc.h>
-#ifdef CONFIG_ZPOOL
 #include <linux/zpool.h>
-#endif
 
 /*
  * This must be power of 2 and greater than of equal to sizeof(link_free).
@@ -878,7 +876,7 @@ static void reset_page(struct page *page)
 	set_page_private(page, 0);
 	page->mapping = NULL;
 	page->freelist = NULL;
-	reset_page_mapcount(page);
+	page_mapcount_reset(page);
 }
 
 static void free_zspage(struct page *first_page)
@@ -1034,7 +1032,7 @@ static inline int __zs_cpu_up(struct mapping_area *area)
 	 */
 	if (area->vm)
 		return 0;
-	area->vm = alloc_vm_area(PAGE_SIZE * 2);
+	area->vm = alloc_vm_area(PAGE_SIZE * 2, NULL);
 	if (!area->vm)
 		return -ENOMEM;
 	return 0;
