@@ -53,6 +53,7 @@ static size_t lowmem_minfree[6] = {
 static int lowmem_minfree_size = 4;
 
 static struct task_struct *lowmem_deathpending;
+
 static unsigned long lowmem_deathpending_timeout;
 
 #define lowmem_print(level, x...)			\
@@ -75,7 +76,6 @@ task_notify_func(struct notifier_block *self, unsigned long val, void *data)
 
 	if (task == lowmem_deathpending)
 		lowmem_deathpending = NULL;
-
 	return NOTIFY_OK;
 }
 
@@ -83,6 +83,7 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 {
 	struct task_struct *p;
 	struct task_struct *selected = NULL;
+
 	int rem = 0;
 	int tasksize;
 	int i;
@@ -136,7 +137,6 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 		struct mm_struct *mm;
 		struct signal_struct *sig;
 		int oom_adj;
-
 		task_lock(p);
 		mm = p->mm;
 		sig = p->signal;
@@ -153,6 +153,7 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 		task_unlock(p);
 		if (tasksize <= 0)
 			continue;
+
 		if (selected) {
 			if (oom_adj < selected_oom_adj)
 				continue;
@@ -166,6 +167,7 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 		lowmem_print(2, "select %d (%s), adj %d, size %d, to kill\n",
 			     p->pid, p->comm, oom_adj, tasksize);
 	}
+
 	if (selected) {
 		lowmem_print(1, "send sigkill to %d (%s), adj %d, size %d\n",
 			     selected->pid, selected->comm,
@@ -190,6 +192,7 @@ static int __init lowmem_init(void)
 {
 	task_free_register(&task_nb);
 	register_shrinker(&lowmem_shrinker);
+
 	return 0;
 }
 
