@@ -36,7 +36,6 @@
  * dbs is used in this file as a shortform for demandbased switching
  * It helps to keep variable names smaller, simpler
  */
-
 #define DEF_FREQUENCY_UP_THRESHOLD		(95)
 #define DOWN_THRESHOLD_MARGIN			(25)
 #define DEF_SAMPLING_DOWN_FACTOR		(3)
@@ -68,7 +67,11 @@
  * this governor will not work.
  * All times here are in uS.
  */
-#define MIN_SAMPLING_RATE_RATIO		(2)
+#define MIN_SAMPLING_RATE_RATIO			(2)
+
+#define LATENCY_MULTIPLIER			(1000)
+#define MIN_LATENCY_MULTIPLIER			(100)
+#define TRANSITION_LATENCY_LIMIT		(10 * 1000 * 1000)
 
 static unsigned int min_sampling_rate = 0;
 static unsigned int down_threshold = 0;
@@ -84,11 +87,6 @@ extern bool enable_suspend_freqs;
 static bool update_gov_tunables = false;
 #endif
 
-#define LATENCY_MULTIPLIER			(1000)
-#define MIN_LATENCY_MULTIPLIER			(100)
-#define TRANSITION_LATENCY_LIMIT		(10 * 1000 * 1000)
-
-static void do_dbs_timer(struct work_struct *work);
 static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 				unsigned int event);
 
@@ -224,21 +222,11 @@ static ssize_t store_sampling_rate(struct kobject *a, struct attribute *b,
 {
 	unsigned int input;
 	int ret;
-
 	ret = sscanf(buf, "%u", &input);
 	if (ret != 1)
-<<<<<<< HEAD
-		goto err;
-	update_sampling_rate(input);
-=======
 		return -EINVAL;
 	dbs_tuners_ins.sampling_rate = max(input, min_sampling_rate);
->>>>>>> parent of c4d5edd5e... drivers/cpufreq: sync to AK 3.4.67
 	return count;
-
-err:
-	pr_err("[%s] invalid cmd\n",__func__);
-	return -EINVAL;
 }
 
 static ssize_t store_io_is_busy(struct kobject *a, struct attribute *b,
@@ -263,29 +251,23 @@ static ssize_t store_up_threshold(struct kobject *a, struct attribute *b,
 #if IS_ENABLED(CONFIG_A2N)
 	if (!a2n_allow) {
 		pr_err("[%s] a2n: unprivileged access !\n",__func__);
-		goto err;
+		return -EINVAL;
 	}
 #endif
 
 	ret = sscanf(buf, "%u", &input);
+
 	if (ret != 1 || input > MAX_FREQUENCY_UP_THRESHOLD ||
 			input < MIN_FREQUENCY_UP_THRESHOLD) {
-		goto err;
+		return -EINVAL;
 	}
 	dbs_tuners_ins.up_threshold = input;
-
 #ifdef CONFIG_CPU_FREQ_SUSPEND
 	up_threshold_resume = input;
 #endif
 	/* update down_threshold */
 	update_down_threshold();
-
-out:
 	return count;
-
-err:
-	pr_err("[%s] invalid cmd\n",__func__);
-	return -EINVAL;
 }
 
 static ssize_t store_sampling_down_factor(struct kobject *a,
@@ -363,7 +345,6 @@ static ssize_t store_boost(struct kobject *a, struct attribute *b,
 	boost_resume = input;
 #endif
 
-out:
 	return count;
 
 err:
@@ -396,10 +377,6 @@ static struct attribute_group dbs_attr_group = {
 
 /************************** sysfs end ************************/
 
-<<<<<<< HEAD
-static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
-{
-=======
 static bool dbs_sw_coordinated_cpus(void)
 {
 	struct cpu_dbs_info_s *dbs_info;
@@ -420,21 +397,8 @@ static bool dbs_sw_coordinated_cpus(void)
 		return false;
 }
 
-static void dbs_freq_increase(struct cpufreq_policy *p, unsigned int freq)
-{
-	if (dbs_tuners_ins.powersave_bias)
-		freq = powersave_bias_target(p, freq, CPUFREQ_RELATION_H);
-	else if (p->cur == p->max)
-		return;
-
-	__cpufreq_driver_target(p, freq, dbs_tuners_ins.powersave_bias ?
-			CPUFREQ_RELATION_L : CPUFREQ_RELATION_H);
-}
-
 static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 {
-	unsigned int max_load_freq;
->>>>>>> parent of c4d5edd5e... drivers/cpufreq: sync to AK 3.4.67
 	struct cpufreq_policy *policy;
 	unsigned int j;
 	unsigned int load;
@@ -597,17 +561,6 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 
 static void do_dbs_timer(struct work_struct *work)
 {
-<<<<<<< HEAD
-	struct cpu_dbs_info_s *dbs_info =
-		container_of(work, struct cpu_dbs_info_s, work.work);
-	unsigned int cpu = dbs_info->cpu;
-
-	/* We want all CPUs to do sampling nearly on same jiffy */
-	int delay = usecs_to_jiffies(dbs_tuners_ins.sampling_rate);
-
-	if (num_online_cpus() > 1)
-		delay -= jiffies % delay;
-=======
 	struct cpu_dbs_info_s *dbs_info;
 	unsigned int cpu = smp_processor_id();
 	int sample_type;
@@ -635,44 +588,24 @@ static void do_dbs_timer(struct work_struct *work)
 		dbs_info = &per_cpu(od_cpu_dbs_info, cpu);
 		mutex_lock(&dbs_info->timer_mutex);
 	}
->>>>>>> parent of c4d5edd5e... drivers/cpufreq: sync to AK 3.4.67
 
 	sample_type = dbs_info->sample_type;
 
-<<<<<<< HEAD
-	dbs_check_cpu(dbs_info);
-
-	schedule_delayed_work_on(cpu, &dbs_info->work, delay);
-=======
 	/* Common NORMAL_SAMPLE setup */
 	dbs_info->sample_type = DBS_NORMAL_SAMPLE;
-	if (!dbs_tuners_ins.powersave_bias ||
-	    sample_type == DBS_NORMAL_SAMPLE) {
+	if (sample_type == DBS_NORMAL_SAMPLE) {
 		if (sample)
 			dbs_check_cpu(dbs_info);
-		if (dbs_info->freq_lo) {
-			/* Setup timer for SUB_SAMPLE */
-			dbs_info->sample_type = DBS_SUB_SAMPLE;
-			delay = dbs_info->freq_hi_jiffies;
-		} else {
-			/* We want all CPUs to do sampling nearly on
-			 * same jiffy
-			 */
-			delay = usecs_to_jiffies(dbs_tuners_ins.sampling_rate
+		/* We want all CPUs to do sampling nearly on
+		 * same jiffy
+		 */
+		delay = usecs_to_jiffies(dbs_tuners_ins.sampling_rate
 				* dbs_info->rate_mult);
 
-			if (num_online_cpus() > 1)
-				delay -= jiffies % delay;
-		}
-	} else {
-		if (sample)
-			__cpufreq_driver_target(dbs_info->cur_policy,
-						dbs_info->freq_lo,
-						CPUFREQ_RELATION_H);
-		delay = dbs_info->freq_lo_jiffies;
+		if (num_online_cpus() > 1)
+			delay -= jiffies % delay;
 	}
 	schedule_delayed_work_on(cpu, &per_cpu(ondemand_work, cpu), delay);
->>>>>>> parent of c4d5edd5e... drivers/cpufreq: sync to AK 3.4.67
 	mutex_unlock(&dbs_info->timer_mutex);
 }
 
@@ -697,31 +630,6 @@ static inline void dbs_timer_exit(int cpu)
 static void dbs_timer_exit_per_cpu(struct work_struct *dummy)
 {
 	dbs_timer_exit(smp_processor_id());
-}
-
-<<<<<<< HEAD
-=======
-/*
- * Not all CPUs want IO time to be accounted as busy; this dependson how
- * efficient idling at a higher frequency/voltage is.
- * Pavel Machek says this is not so for various generations of AMD and old
- * Intel systems.
- * Mike Chan (androidlcom) calis this is also not true for ARM.
- * Because of this, whitelist specific known (series) of CPUs by default, and
- * leave all others up to the user.
- */
-static int should_io_be_busy(void)
-{
-#if defined(CONFIG_X86)
-	/*
-	 * For Intel, Core 2 (model 15) andl later have an efficient idle.
-	 */
-	if (boot_cpu_data.x86_vendor == X86_VENDOR_INTEL &&
-	    boot_cpu_data.x86 == 6 &&
-	    boot_cpu_data.x86_model >= 15)
-		return 1;
-#endif
-	return 0;
 }
 
 static int __cpuinit cpu_callback(struct notifier_block *nfb,
@@ -760,7 +668,6 @@ static struct notifier_block __refdata ondemand_cpu_notifier = {
 	.notifier_call = cpu_callback,
 };
 
->>>>>>> parent of c4d5edd5e... drivers/cpufreq: sync to AK 3.4.67
 static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 				   unsigned int event)
 {
@@ -799,11 +706,6 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		}
 
 		this_dbs_info->cpu = cpu;
-<<<<<<< HEAD
-		this_dbs_info->rate_mult = 1;
-=======
-		ondemand_powersave_bias_init_cpu(cpu);
->>>>>>> parent of c4d5edd5e... drivers/cpufreq: sync to AK 3.4.67
 		/*
 		 * Start the timerschedule work, when this governor
 		 * is used for first time
@@ -924,6 +826,7 @@ static int __init cpufreq_gov_dbs_init(void)
 #ifdef CONFIG_CPU_FREQ_SUSPEND
 		up_threshold_resume = MICRO_FREQUENCY_UP_THRESHOLD;
 #endif
+
 		/*
 		 * In no_hz/micro accounting case we set the minimum frequency
 		 * not depending on HZ, but fixed (very low). The deferred

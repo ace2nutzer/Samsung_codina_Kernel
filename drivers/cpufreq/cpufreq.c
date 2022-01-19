@@ -75,22 +75,16 @@ static DEFINE_PER_CPU(struct rw_semaphore, cpu_policy_rwsem);
 
 static struct early_suspend early_suspend;
 
-<<<<<<< HEAD
 #ifdef CONFIG_CPU_FREQ_SUSPEND
 /* suspend min/max cpufreq tunable */
 bool enable_suspend_freqs = false;
 module_param(enable_suspend_freqs, bool, 0644);
 
-=======
-#ifdef CONFIG_CPU_FREQ_SUSPEND_LIMIT
-/* suspend min/max cpu freq tunable */
->>>>>>> parent of c4d5edd5e... drivers/cpufreq: sync to AK 3.4.67
 static unsigned int suspend_min_freq = 0;
 module_param(suspend_min_freq, uint, 0644);
 
 static unsigned int suspend_max_freq = 0;
 
-<<<<<<< HEAD
 static unsigned int min_freq = 0;
 static unsigned int max_freq = 0;
 
@@ -139,52 +133,20 @@ static void cpufreq_early_suspend(struct early_suspend *h)
 			cpufreq_update_freq(0, suspend_min_freq, suspend_max_freq);
 			update_freqs = true;
 		}
-=======
-static unsigned int tmp_min_freq = 0;
-static unsigned int tmp_max_freq = 0;
-static unsigned int set_suspend_min_freq = 0;
-static unsigned int set_suspend_max_freq = 0;
-
-static bool enable_suspend_freqs = false;
-module_param(enable_suspend_freqs, bool, 0644);
-
-static bool update_freqs = false;
-
-static void cpufreq_early_suspend(struct early_suspend *h)
-{
-	if (enable_suspend_freqs) {
-		struct cpufreq_policy *policy = cpufreq_cpu_get(0);
-
-		/* save current min/max cpu freq */
-		tmp_min_freq = policy->min;
-		tmp_max_freq = policy->max;
-
-		if (!suspend_min_freq)
-			set_suspend_min_freq = tmp_min_freq;
-		else
-			set_suspend_min_freq = suspend_min_freq;
-
-		if (!suspend_max_freq)
-			set_suspend_max_freq = tmp_max_freq;
-		else
-			set_suspend_max_freq = suspend_max_freq;
-
-		/* set min/max cpu freq for suspend */
-		cpufreq_update_freq(0, set_suspend_min_freq, set_suspend_max_freq);
-
-		update_freqs = true;
->>>>>>> parent of c4d5edd5e... drivers/cpufreq: sync to AK 3.4.67
 	}
+#endif
 }
 
 static void cpufreq_late_resume(struct early_suspend *h)
 {
+#ifdef CONFIG_CPU_FREQ_SUSPEND
 	if (update_freqs) {
-		/* restore previous min/max cpu freq */
-		cpufreq_update_freq(0, tmp_min_freq, tmp_max_freq);
+		/* restore previous min/max cpufreq */
+		cpufreq_update_freq(0, min_freq, max_freq);
+		update_freqs = false;
 	}
-}
 #endif
+}
 
 #define lock_policy_rwsem(mode, cpu)					\
 static int lock_policy_rwsem_##mode					\
@@ -482,9 +444,9 @@ show_one(cpuinfo_max_freq, cpuinfo.max_freq);
 show_one(cpuinfo_transition_latency, cpuinfo.transition_latency);
 show_one(scaling_min_freq, min);
 show_one(scaling_max_freq, max);
+show_one(scaling_cur_freq, cur);
 show_one(user_scaling_min_freq, min);
 show_one(user_scaling_max_freq, max);
-show_one(scaling_cur_freq, cur);
 
 static int __cpufreq_set_policy(struct cpufreq_policy *data,
 				struct cpufreq_policy *policy);
@@ -771,10 +733,10 @@ cpufreq_freq_attr_ro(related_cpus);
 cpufreq_freq_attr_ro(affected_cpus);
 cpufreq_freq_attr_ro(scaling_min_freq);
 cpufreq_freq_attr_ro(scaling_max_freq);
-cpufreq_freq_attr_rw(user_scaling_min_freq);
-cpufreq_freq_attr_rw(user_scaling_max_freq);
 cpufreq_freq_attr_rw(scaling_governor);
 cpufreq_freq_attr_rw(scaling_setspeed);
+cpufreq_freq_attr_rw(user_scaling_min_freq);
+cpufreq_freq_attr_rw(user_scaling_max_freq);
 
 static struct attribute *default_attrs[] = {
 	&cpuinfo_min_freq.attr,
@@ -782,14 +744,14 @@ static struct attribute *default_attrs[] = {
 	&cpuinfo_transition_latency.attr,
 	&scaling_min_freq.attr,
 	&scaling_max_freq.attr,
-	&user_scaling_min_freq.attr,
-	&user_scaling_max_freq.attr,
 	&affected_cpus.attr,
 	&related_cpus.attr,
 	&scaling_governor.attr,
 	&scaling_driver.attr,
 	&scaling_available_governors.attr,
 	&scaling_setspeed.attr,
+	&user_scaling_min_freq.attr,
+	&user_scaling_max_freq.attr,
 	NULL
 };
 
