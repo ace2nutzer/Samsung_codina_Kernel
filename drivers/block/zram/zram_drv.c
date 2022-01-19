@@ -969,7 +969,7 @@ out:
 /*
  * Handler function for all zram I/O requests.
  */
-static int zram_make_request(struct request_queue *queue, struct bio *bio)
+static void zram_make_request(struct request_queue *queue, struct bio *bio)
 {
 	struct zram *zram = queue->queuedata;
 
@@ -984,13 +984,11 @@ static int zram_make_request(struct request_queue *queue, struct bio *bio)
 
 	__zram_make_request(zram, bio);
 	zram_meta_put(zram);
-	return 0;
+	return;
 put_zram:
 	zram_meta_put(zram);
 error:
 	bio_io_error(bio);
-
-	return 0;
 }
 
 static void zram_slot_free_notify(struct block_device *bdev,
@@ -1152,6 +1150,7 @@ static int create_device(struct zram *zram, int device_id)
 	set_capacity(zram->disk, 0);
 	/* zram devices sort of resembles non-rotational disks */
 	queue_flag_set_unlocked(QUEUE_FLAG_NONROT, zram->disk->queue);
+	queue_flag_clear_unlocked(QUEUE_FLAG_ADD_RANDOM, zram->disk->queue);
 	/*
 	 * To ensure that we always get PAGE_SIZE aligned
 	 * and n*PAGE_SIZED sized I/O requests.
