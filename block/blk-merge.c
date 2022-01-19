@@ -20,16 +20,6 @@ static unsigned int __blk_recalc_rq_segments(struct request_queue *q,
 	if (!bio)
 		return 0;
 
-	/*
-	 * This should probably be returning 0, but blk_add_request_payload()
-	 * (Christoph!!!!)
-	 */
-	if (bio->bi_rw & REQ_DISCARD)
-		return 1;
-
-	if (bio->bi_rw & REQ_WRITE_SAME)
-		return 1;
-
 	fbio = bio;
 	cluster = blk_queue_cluster(q);
 	seg_size = 0;
@@ -238,14 +228,12 @@ no_merge:
 int ll_back_merge_fn(struct request_queue *q, struct request *req,
 		     struct bio *bio)
 {
-	unsigned int max_sectors;
+	unsigned short max_sectors;
 
 	if (unlikely(req->cmd_type == REQ_TYPE_BLOCK_PC))
 		max_sectors = queue_max_hw_sectors(q);
 	else
 		max_sectors = queue_max_sectors(q);
-
-	max_sectors = min(blk_rq_get_max_sectors(req), max_sectors);
 
 	if (blk_rq_sectors(req) + bio_sectors(bio) > max_sectors) {
 		req->cmd_flags |= REQ_NOMERGE;
@@ -264,14 +252,13 @@ int ll_back_merge_fn(struct request_queue *q, struct request *req,
 int ll_front_merge_fn(struct request_queue *q, struct request *req,
 		      struct bio *bio)
 {
-	unsigned int max_sectors;
+	unsigned short max_sectors;
 
 	if (unlikely(req->cmd_type == REQ_TYPE_BLOCK_PC))
 		max_sectors = queue_max_hw_sectors(q);
 	else
 		max_sectors = queue_max_sectors(q);
 
-	max_sectors = min(blk_rq_get_max_sectors(req), max_sectors);
 
 	if (blk_rq_sectors(req) + bio_sectors(bio) > max_sectors) {
 		req->cmd_flags |= REQ_NOMERGE;
@@ -293,7 +280,6 @@ static int ll_merge_requests_fn(struct request_queue *q, struct request *req,
 	int total_phys_segments;
 	unsigned int seg_size =
 		req->biotail->bi_seg_back_size + next->bio->bi_seg_front_size;
-	unsigned short max_sectors;
 
 	/*
 	 * First check if the either of the requests are re-queued
@@ -302,12 +288,10 @@ static int ll_merge_requests_fn(struct request_queue *q, struct request *req,
 	if (req->special || next->special)
 		return 0;
 
-	max_sectors = min(blk_rq_get_max_sectors(req), queue_max_sectors(q));
-
 	/*
 	 * Will it become too large?
 	 */
-	if ((blk_rq_sectors(req) + blk_rq_sectors(next)) > max_sectors)
+	if ((blk_rq_sectors(req) + blk_rq_sectors(next)) > queue_max_sectors(q))
 		return 0;
 
 	total_phys_segments = req->nr_phys_segments + next->nr_phys_segments;
@@ -386,9 +370,6 @@ static int attempt_merge(struct request_queue *q, struct request *req,
 	if (!rq_mergeable(req) || !rq_mergeable(next))
 		return 0;
 
-	if (!blk_check_merge_flags(req->cmd_flags, next->cmd_flags))
-		return 0;
-
 	/*
 	 * Don't merge file system requests and discard requests
 	 */
@@ -410,10 +391,6 @@ static int attempt_merge(struct request_queue *q, struct request *req,
 	if (rq_data_dir(req) != rq_data_dir(next)
 	    || req->rq_disk != next->rq_disk
 	    || next->special)
-		return 0;
-
-	if (req->cmd_flags & REQ_WRITE_SAME &&
-	    !blk_write_same_mergeable(req->bio, next->bio))
 		return 0;
 
 	/*

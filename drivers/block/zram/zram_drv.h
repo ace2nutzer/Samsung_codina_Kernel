@@ -122,4 +122,5 @@ struct zram {
 	u64 disksize;	/* bytes */
 	char compressor[10];
 };
+
 #endif

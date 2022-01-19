@@ -1,4 +1,13 @@
 /*
+<<<<<<< HEAD
+=======
+ * LZ4 Decompressor for Linux kernel
+ *
+ * Copyright (C) 2013 LG Electronics Co., Ltd. (http://www.lge.com/)
+ *
+ * Based on LZ4 implementation by Yann Collet.
+ *
+>>>>>>> parent of 2eeae0e18... zRam, zsmalloc and lz4: update from LK 3.10.103 to 3.18.140
  * LZ4 - Fast LZ compression algorithm
  * Copyright (C) 2011 - 2016, Yann Collet.
  * BSD 2 - Clause License (http://www.opensource.org/licenses/bsd - license.php)
@@ -289,6 +298,7 @@ static FORCE_INLINE int LZ4_decompress_generic(
 			match += 8;
 		}
 
+<<<<<<< HEAD
 		op += 8;
 
 		if (unlikely(cpy > oend - 12)) {
@@ -299,6 +309,13 @@ static FORCE_INLINE int LZ4_decompress_generic(
 				 * Error : last LASTLITERALS bytes
 				 * must be literals (uncompressed)
 				 */
+=======
+			/* Error: request to write beyond destination buffer */
+			if (cpy > oend)
+				goto _output_error;
+			if ((ref + COPYLENGTH) > oend ||
+					(op + COPYLENGTH) > oend)
+>>>>>>> parent of 2eeae0e18... zRam, zsmalloc and lz4: update from LK 3.10.103 to 3.18.140
 				goto _output_error;
 			}
 
@@ -416,6 +433,7 @@ int LZ4_decompress_safe_continue(LZ4_streamDecode_t *LZ4_streamDecode,
 	return result;
 }
 
+<<<<<<< HEAD
 int LZ4_decompress_fast_continue(LZ4_streamDecode_t *LZ4_streamDecode,
 	const char *source, char *dest, int originalSize)
 {
@@ -445,6 +463,47 @@ int LZ4_decompress_fast_continue(LZ4_streamDecode_t *LZ4_streamDecode,
 			return result;
 		lz4sd->prefixSize = originalSize;
 		lz4sd->prefixEnd	= (BYTE *)dest + originalSize;
+=======
+		/* copy repeated sequence */
+		if (unlikely((op - ref) < STEPSIZE)) {
+#if LZ4_ARCH64
+			int dec64 = dec64table[op - ref];
+#else
+			const int dec64 = 0;
+#endif
+				op[0] = ref[0];
+				op[1] = ref[1];
+				op[2] = ref[2];
+				op[3] = ref[3];
+				op += 4;
+				ref += 4;
+				ref -= dec32table[op - ref];
+				PUT4(ref, op);
+				op += STEPSIZE - 4;
+				ref -= dec64;
+		} else {
+			LZ4_COPYSTEP(ref, op);
+		}
+		cpy = op + length - (STEPSIZE-4);
+		if (cpy > oend - COPYLENGTH) {
+			if (cpy > oend)
+				goto _output_error; /* write outside of buf */
+
+			LZ4_SECURECOPY(ref, op, (oend - COPYLENGTH));
+			while (op < cpy)
+				*op++ = *ref++;
+			op = cpy;
+			/*
+			 * Check EOF (should never happen, since last 5 bytes
+			 * are supposed to be literals)
+			 */
+			if (op == oend)
+				goto _output_error;
+			continue;
+		}
+		LZ4_SECURECOPY(ref, op, cpy);
+		op = cpy; /* correction */
+>>>>>>> parent of 2eeae0e18... zRam, zsmalloc and lz4: update from LK 3.10.103 to 3.18.140
 	}
 
 	return result;
