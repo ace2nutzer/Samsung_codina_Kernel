@@ -29,20 +29,8 @@
  * It helps to keep variable names smaller, simpler
  */
 
-#define DEF_FREQUENCY_UP_THRESHOLD		(95) /* min 30, max 100 */
-#define DOWN_THRESHOLD_MARGIN			(10)
-#define DEF_BOOST				(0)
-
-#define DEF_FREQUENCY_STEP_0		(200000)
-#define DEF_FREQUENCY_STEP_1		(400000)
-#define DEF_FREQUENCY_STEP_2		(600000)
-#define DEF_FREQUENCY_STEP_3		(800000)
-#define DEF_FREQUENCY_STEP_4		(1000000)
-#define DEF_FREQUENCY_STEP_5		(1100000)
-#define DEF_FREQUENCY_STEP_6		(1150000)
-#define DEF_FREQUENCY_STEP_7		(1200000)
-#define DEF_FREQUENCY_STEP_8		(1250000)
-#define DEF_FREQUENCY_STEP_9		(1300000)
+#define DEF_FREQUENCY_UP_THRESHOLD		(80)
+#define DEF_FREQUENCY_DOWN_THRESHOLD		(20)
 
 /*
  * The polling frequency of this governor depends on the capability of
@@ -54,8 +42,9 @@
  * this governor will not work.
  * All times here are in uS.
  */
+#define MIN_SAMPLING_RATE_RATIO			(2)
+
 static unsigned int min_sampling_rate;
-static unsigned int down_threshold;
 
 #define LATENCY_MULTIPLIER			(1000)
 #define MIN_LATENCY_MULTIPLIER			(100)
@@ -95,13 +84,15 @@ static struct dbs_tuners {
 	unsigned int sampling_rate;
 	unsigned int sampling_down_factor;
 	unsigned int up_threshold;
+	unsigned int down_threshold;
 	unsigned int ignore_nice;
-	bool boost;
+	unsigned int freq_step;
 } dbs_tuners_ins = {
 	.up_threshold = DEF_FREQUENCY_UP_THRESHOLD,
+	.down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD,
 	.sampling_down_factor = DEF_SAMPLING_DOWN_FACTOR,
 	.ignore_nice = 0,
-	.boost = DEF_BOOST,
+	.freq_step = 5,
 };
 
 static inline cputime64_t get_cpu_idle_time_jiffy(unsigned int cpu,
@@ -169,11 +160,6 @@ static struct notifier_block dbs_cpufreq_notifier_block = {
 	.notifier_call = dbs_cpufreq_notifier
 };
 
-static void calc_down_threshold(void)
-{
-	down_threshold = ((dbs_tuners_ins.up_threshold * DEF_FREQUENCY_STEP_0 / DEF_FREQUENCY_STEP_1) - DOWN_THRESHOLD_MARGIN);
-}
-
 /************************** sysfs interface ************************/
 static ssize_t show_sampling_rate_min(struct kobject *kobj,
 				      struct attribute *attr, char *buf)
@@ -193,8 +179,9 @@ static ssize_t show_##file_name						\
 show_one(sampling_rate, sampling_rate);
 show_one(sampling_down_factor, sampling_down_factor);
 show_one(up_threshold, up_threshold);
+show_one(down_threshold, down_threshold);
 show_one(ignore_nice_load, ignore_nice);
-show_one(boost, boost);
+show_one(freq_step, freq_step);
 
 static ssize_t store_sampling_down_factor(struct kobject *a,
 					  struct attribute *b,
@@ -232,14 +219,27 @@ static ssize_t store_up_threshold(struct kobject *a, struct attribute *b,
 	int ret;
 	ret = sscanf(buf, "%u", &input);
 
-	if (ret != 1 || input > 100 || input < 30)
+	if (ret != 1 || input > 100 ||
+			input <= dbs_tuners_ins.down_threshold)
 		return -EINVAL;
 
 	dbs_tuners_ins.up_threshold = input;
+	return count;
+}
 
-	/* recalculate down_threshold */
-	calc_down_threshold();
+static ssize_t store_down_threshold(struct kobject *a, struct attribute *b,
+				    const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+	ret = sscanf(buf, "%u", &input);
 
+	/* cannot be lower than 11 otherwise freq will not fall */
+	if (ret != 1 || input < 11 || input > 100 ||
+			input >= dbs_tuners_ins.up_threshold)
+		return -EINVAL;
+
+	dbs_tuners_ins.down_threshold = input;
 	return count;
 }
 
@@ -275,37 +275,40 @@ static ssize_t store_ignore_nice_load(struct kobject *a, struct attribute *b,
 	return count;
 }
 
-static ssize_t store_boost(struct kobject *a, struct attribute *b,
+static ssize_t store_freq_step(struct kobject *a, struct attribute *b,
 			       const char *buf, size_t count)
 {
 	unsigned int input;
 	int ret;
-
 	ret = sscanf(buf, "%u", &input);
 
 	if (ret != 1)
 		return -EINVAL;
 
-	if (input > 1)
-		input = 1;
+	if (input > 100)
+		input = 100;
 
-	dbs_tuners_ins.boost = input;
+	/* no need to test here if freq_step is zero as the user might actually
+	 * want this, they would be crazy though :) */
+	dbs_tuners_ins.freq_step = input;
 	return count;
 }
 
 define_one_global_rw(sampling_rate);
 define_one_global_rw(sampling_down_factor);
 define_one_global_rw(up_threshold);
+define_one_global_rw(down_threshold);
 define_one_global_rw(ignore_nice_load);
-define_one_global_rw(boost);
+define_one_global_rw(freq_step);
 
 static struct attribute *dbs_attributes[] = {
 	&sampling_rate_min.attr,
 	&sampling_rate.attr,
 	&sampling_down_factor.attr,
 	&up_threshold.attr,
+	&down_threshold.attr,
 	&ignore_nice_load.attr,
-	&boost.attr,
+	&freq_step.attr,
 	NULL
 };
 
@@ -320,7 +323,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 {
 	unsigned int load = 0;
 	unsigned int max_load = 0;
-	unsigned int freq_step_khz;
+	unsigned int freq_target;
 
 	struct cpufreq_policy *policy;
 	unsigned int j;
@@ -382,61 +385,57 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 			max_load = load;
 	}
 
+	/*
+	 * break out if we 'cannot' reduce the speed as the user might
+	 * want freq_step to be zero
+	 */
+	if (dbs_tuners_ins.freq_step == 0)
+		return;
+
 	/* Check for frequency increase */
-	if (max_load >= dbs_tuners_ins.up_threshold) {
+	if (max_load > dbs_tuners_ins.up_threshold) {
 		this_dbs_info->down_skip = 0;
 
 		/* if we are already at full speed then break out early */
 		if (this_dbs_info->requested_freq == policy->max)
 			return;
 
-		if (!dbs_tuners_ins.boost) {
+		freq_target = (dbs_tuners_ins.freq_step * policy->max) / 100;
 
-			/* get proper freq_step_khz */
-			if (this_dbs_info->requested_freq < DEF_FREQUENCY_STEP_4)
-				freq_step_khz = 200000;
-			else if (this_dbs_info->requested_freq < DEF_FREQUENCY_STEP_5)
-				freq_step_khz = 100000;
-			else
-				freq_step_khz = 50000;
+		/* max freq cannot be less than 100. But who knows.... */
+		if (unlikely(freq_target == 0))
+			freq_target = 5;
 
-			this_dbs_info->requested_freq += freq_step_khz;
-
-			if (this_dbs_info->requested_freq > policy->max)
-				this_dbs_info->requested_freq = policy->max;
-
-		} else
+		this_dbs_info->requested_freq += freq_target;
+		if (this_dbs_info->requested_freq > policy->max)
 			this_dbs_info->requested_freq = policy->max;
 
 		__cpufreq_driver_target(policy, this_dbs_info->requested_freq,
-				CPUFREQ_RELATION_H);
+			CPUFREQ_RELATION_H);
 		return;
 	}
 
 	/*
-	 * if we cannot reduce the frequency anymore, break out early
+	 * The optimal frequency is the frequency that is the lowest that
+	 * can support the current CPU usage without triggering the up
+	 * policy. To be safe, we focus 10 points under the threshold.
 	 */
-	if (policy->cur == policy->min)
-		return;
+	if (max_load < (dbs_tuners_ins.down_threshold - 10)) {
+		freq_target = (dbs_tuners_ins.freq_step * policy->max) / 100;
 
-	/* Check for frequency decrease */
-	if (max_load < down_threshold) {
-
-		/* get proper freq_step_khz */
-		if (this_dbs_info->requested_freq > DEF_FREQUENCY_STEP_5)
-			freq_step_khz = 50000;
-		else if (this_dbs_info->requested_freq > DEF_FREQUENCY_STEP_4)
-			freq_step_khz = 100000;
-		else
-			freq_step_khz = 200000;
-
-		this_dbs_info->requested_freq -= freq_step_khz;
-
+		this_dbs_info->requested_freq -= freq_target;
 		if (this_dbs_info->requested_freq < policy->min)
 			this_dbs_info->requested_freq = policy->min;
 
+		/*
+		 * if we cannot reduce the frequency anymore, break out early
+		 */
+		if (policy->cur == policy->min)
+			return;
+
 		__cpufreq_driver_target(policy, this_dbs_info->requested_freq,
-				CPUFREQ_RELATION_L);
+				CPUFREQ_RELATION_H);
+		return;
 	}
 }
 
@@ -532,7 +531,8 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 			 * conservative does not implement micro like ondemand
 			 * governor, thus we are bound to jiffes/HZ
 			 */
-			min_sampling_rate = jiffies_to_usecs(10);
+			min_sampling_rate =
+				MIN_SAMPLING_RATE_RATIO * jiffies_to_usecs(10);
 			/* Bring kernel and HW constraints together */
 			min_sampling_rate = max(min_sampling_rate,
 					MIN_LATENCY_MULTIPLIER * latency);
@@ -602,8 +602,6 @@ struct cpufreq_governor cpufreq_gov_conservative = {
 
 static int __init cpufreq_gov_dbs_init(void)
 {
-	calc_down_threshold();
-
 	return cpufreq_register_governor(&cpufreq_gov_conservative);
 }
 
