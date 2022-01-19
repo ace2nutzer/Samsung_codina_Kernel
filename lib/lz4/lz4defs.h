@@ -35,6 +35,7 @@
  *	Sven Schmidt <4sschmid@informatik.uni-hamburg.de>
  */
 
+<<<<<<< HEAD
 #include <asm/unaligned.h>
 #include <linux/string.h>	 /* memset, memcpy */
 #include <linux/bitops.h>
@@ -57,13 +58,61 @@ typedef uintptr_t uptrval;
  *	Architecture specifics
  **************************************/
 #if defined(CONFIG_64BIT)
+=======
+/*
+ * Detects 64 bits mode
+ */
+#if (defined(__x86_64__) || defined(__x86_64) || defined(__amd64__) \
+	|| defined(__ppc64__) || defined(__LP64__))
+>>>>>>> parent of 2eeae0e18... zRam, zsmalloc and lz4: update from LK 3.10.103 to 3.18.140
 #define LZ4_ARCH64 1
 #else
 #define LZ4_ARCH64 0
 #endif
 
+<<<<<<< HEAD
 #ifndef __LITTLE_ENDIAN
 #define __LITTLE_ENDIAN 1234
+=======
+/*
+ * Architecture-specific macros
+ */
+#define BYTE	u8
+typedef struct _U16_S { u16 v; } U16_S;
+typedef struct _U32_S { u32 v; } U32_S;
+typedef struct _U64_S { u64 v; } U64_S;
+#if defined(CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS)		\
+	|| defined(CONFIG_ARM) && __LINUX_ARM_ARCH__ >= 6	\
+	&& defined(ARM_EFFICIENT_UNALIGNED_ACCESS)
+
+#define A16(x) (((U16_S *)(x))->v)
+#define A32(x) (((U32_S *)(x))->v)
+#define A64(x) (((U64_S *)(x))->v)
+
+#define PUT4(s, d) (A32(d) = A32(s))
+#define PUT8(s, d) (A64(d) = A64(s))
+#define LZ4_WRITE_LITTLEENDIAN_16(p, v)	\
+	do {	\
+		A16(p) = v; \
+		p += 2; \
+	} while (0)
+#else /* CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS */
+
+#define A64(x) get_unaligned((u64 *)&(((U16_S *)(x))->v))
+#define A32(x) get_unaligned((u32 *)&(((U16_S *)(x))->v))
+#define A16(x) get_unaligned((u16 *)&(((U16_S *)(x))->v))
+
+#define PUT4(s, d) \
+	put_unaligned(get_unaligned((const u32 *) s), (u32 *) d)
+#define PUT8(s, d) \
+	put_unaligned(get_unaligned((const u64 *) s), (u64 *) d)
+
+#define LZ4_WRITE_LITTLEENDIAN_16(p, v)	\
+	do {	\
+		put_unaligned(v, (u16 *)(p)); \
+		p += 2; \
+	} while (0)
+>>>>>>> parent of 2eeae0e18... zRam, zsmalloc and lz4: update from LK 3.10.103 to 3.18.140
 #endif
 
 #if defined(__LITTLE_ENDIAN)
@@ -208,6 +257,7 @@ static FORCE_INLINE unsigned int LZ4_count(
 	}
 #endif
 
+<<<<<<< HEAD
 	if ((pIn < (pInLimit - 1))
 		&& (LZ4_read16(pMatch) == LZ4_read16(pIn))) {
 		pIn += 2;
@@ -230,3 +280,19 @@ typedef enum { endOnOutputSize = 0, endOnInputSize = 1 } endCondition_directive;
 typedef enum { full = 0, partial = 1 } earlyEnd_directive;
 
 #endif
+=======
+#define LZ4_READ_LITTLEENDIAN_16(d, s, p) \
+	(d = s - get_unaligned_le16(p))
+
+#define LZ4_WILDCOPY(s, d, e)		\
+	do {				\
+		LZ4_COPYPACKET(s, d);	\
+	} while (d < e)
+
+#define LZ4_BLINDCOPY(s, d, l)	\
+	do {	\
+		u8 *e = (d) + l;	\
+		LZ4_WILDCOPY(s, d, e);	\
+		d = e;	\
+	} while (0)
+>>>>>>> parent of 2eeae0e18... zRam, zsmalloc and lz4: update from LK 3.10.103 to 3.18.140

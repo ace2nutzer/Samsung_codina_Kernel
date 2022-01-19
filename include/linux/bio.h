@@ -64,6 +64,7 @@
 #define bio_iovec(bio)		bio_iovec_idx((bio), (bio)->bi_idx)
 #define bio_page(bio)		bio_iovec((bio))->bv_page
 #define bio_offset(bio)		bio_iovec((bio))->bv_offset
+#define bio_segments(bio)	((bio)->bi_vcnt - (bio)->bi_idx)
 #define bio_sectors(bio)	((bio)->bi_size >> 9)
 
 static inline unsigned int bio_cur_bytes(struct bio *bio)
@@ -144,29 +145,6 @@ static inline int bio_has_allocated_vec(struct bio *bio)
 
 #define bio_for_each_segment(bvl, bio, i)				\
 	__bio_for_each_segment(bvl, bio, i, (bio)->bi_idx)
-
-static inline unsigned bio_segments(struct bio *bio)
-{
-	unsigned segs = 0;
-	struct bio_vec *bv;
-	int i;
-
-	/*
-	 * We special case discard/write same, because they interpret bi_size
-	 * differently:
-	 */
-
-	if (bio->bi_rw & REQ_DISCARD)
-		return 1;
-
-	if (bio->bi_rw & REQ_WRITE_SAME)
-		return 1;
-
-	bio_for_each_segment(bv, bio, i)
-		segs++;
-
-	return segs;
-}
 
 /*
  * get a reference to a bio, so it won't disappear. the intended use is
