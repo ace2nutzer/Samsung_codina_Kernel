@@ -42,12 +42,13 @@ config CPU_FREQ_STAT_DETAILS
 
 	  If in doubt, say N.
 
-config CPU_FREQ_SUSPEND
-	bool "CPU frequency for suspend"
+config CPU_FREQ_SUSPEND_LIMIT
+	bool "Limit suspend max frequency"
+	default y
 	help
-	  Adds a module interface to set CPU min/max frequency for suspend.
-
-	  If in doubt, say N.
+	  Adds a sysfs interface to limit CPU frequency on suspend.
+	  This also uses lower cpu min freq by default: 200 MHz on Suspend
+	   and 400 MHz with screen ON.
 
 choice
 	prompt "Default CPUFreq governor"
