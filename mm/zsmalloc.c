@@ -68,7 +68,9 @@
 #include <linux/types.h>
 #include <linux/debugfs.h>
 #include <linux/zsmalloc.h>
+#ifdef CONFIG_ZPOOL
 #include <linux/zpool.h>
+#endif
 
 /*
  * This must be power of 2 and greater than of equal to sizeof(link_free).
@@ -876,7 +878,7 @@ static void reset_page(struct page *page)
 	set_page_private(page, 0);
 	page->mapping = NULL;
 	page->freelist = NULL;
-	page_mapcount_reset(page);
+	reset_page_mapcount(page);
 }
 
 static void free_zspage(struct page *first_page)
@@ -1032,7 +1034,7 @@ static inline int __zs_cpu_up(struct mapping_area *area)
 	 */
 	if (area->vm)
 		return 0;
-	area->vm = alloc_vm_area(PAGE_SIZE * 2, NULL);
+	area->vm = alloc_vm_area(PAGE_SIZE * 2);
 	if (!area->vm)
 		return -ENOMEM;
 	return 0;
@@ -1178,16 +1180,13 @@ static int zs_register_cpu_notifier(void)
 {
 	int cpu, uninitialized_var(ret);
 
-	cpu_notifier_register_begin();
-
-	__register_cpu_notifier(&zs_cpu_nb);
+	register_cpu_notifier(&zs_cpu_nb);
 	for_each_online_cpu(cpu) {
 		ret = zs_cpu_notifier(NULL, CPU_UP_PREPARE, (void *)(long)cpu);
 		if (notifier_to_errno(ret))
 			break;
 	}
 
-	cpu_notifier_register_done();
 	return notifier_to_errno(ret);
 }
 
@@ -1195,13 +1194,9 @@ static void zs_unregister_cpu_notifier(void)
 {
 	int cpu;
 
-	cpu_notifier_register_begin();
-
 	for_each_online_cpu(cpu)
 		zs_cpu_notifier(NULL, CPU_DEAD, (void *)(long)cpu);
-	__unregister_cpu_notifier(&zs_cpu_nb);
-
-	cpu_notifier_register_done();
+	unregister_cpu_notifier(&zs_cpu_nb);
 }
 
 static void init_zs_size_classes(void)
