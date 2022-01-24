@@ -43,6 +43,7 @@ static int zcomp_lz4_decompress(const unsigned char *src, size_t src_len,
 		unsigned char *dst)
 {
 	size_t dst_len = PAGE_SIZE;
+
 	/* return  : Success if return 0 */
 	return lz4_decompress_unknownoutputsize(src, src_len, dst, &dst_len);
 }
