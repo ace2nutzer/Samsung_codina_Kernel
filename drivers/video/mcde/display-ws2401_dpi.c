@@ -630,12 +630,12 @@ static int ws2401_dpi_ldi_init(struct ws2401_dpi *lcd)
 	ret = ws2401_write_dcs_sequence(lcd,
 				DCS_CMD_SEQ_WS2401_EXIT_SLEEP_MODE);
 
+	if (lcd->pd->sleep_out_delay)
+		msleep(lcd->pd->sleep_out_delay);
+
 	ret |= ws2401_write_dcs_sequence(lcd, DCS_CMD_SEQ_WS2401_INIT);
 
 	//ret |= ws2401_write_dcs_sequence(lcd, DCS_CMD_SEQ_WS2401_GAMMA_SET);
-
-	if (lcd->pd->sleep_out_delay)
-		mdelay(lcd->pd->sleep_out_delay);
 
 	if (lcd->pd->bl_ctrl)
 		ret |= ws2401_write_dcs_sequence(lcd,
@@ -653,10 +653,13 @@ static int ws2401_dpi_ldi_enable(struct ws2401_dpi *lcd)
 
 	dev_dbg(lcd->dev, "ws2401_dpi_ldi_enable\n");
 
+	if (lcd->pd->sleep_out_delay)
+		msleep(lcd->pd->sleep_out_delay);
+
 	ret |= ws2401_write_dcs_sequence(lcd, DCS_CMD_SEQ_WS2401_DISPLAY_ON);
 
 	if (lcd->pd->sleep_out_delay)
-		mdelay(lcd->pd->sleep_out_delay);
+		msleep(lcd->pd->sleep_out_delay);
 
 	if (!ret)
 		lcd->ldi_state = LDI_STATE_ON;
@@ -672,11 +675,18 @@ static int ws2401_dpi_ldi_disable(struct ws2401_dpi *lcd)
 
 	ret = ws2401_write_dcs_sequence(lcd,
 			DCS_CMD_SEQ_WS2401_DISPLAY_OFF);
+
+	if (lcd->pd->display_off_delay)
+		msleep(lcd->pd->display_off_delay);
+
 	ret |= ws2401_write_dcs_sequence(lcd,
 			DCS_CMD_SEQ_WS2401_ENTER_SLEEP_MODE);
 
 	if (lcd->pd->sleep_in_delay)
-		mdelay(lcd->pd->sleep_in_delay);
+		msleep(lcd->pd->sleep_in_delay);
+
+	if (!ret)
+		lcd->ldi_state = LDI_STATE_OFF;
 
 	return ret;
 }
@@ -706,12 +716,6 @@ static int ws2401_dpi_power_on(struct ws2401_dpi *lcd)
 	int ret = 0;
 	struct ssg_dpi_display_platform_data *dpd = NULL;
 
-	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
-			"mcde", PRCMU_QOS_MAX_VALUE);
-
-	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
-			"mcde", PRCMU_QOS_MAX_VALUE);
-
 	dpd = lcd->pd;
 	if (!dpd) {
 		dev_err(lcd->dev, "ws2401_dpi platform data is NULL.\n");
@@ -719,18 +723,15 @@ static int ws2401_dpi_power_on(struct ws2401_dpi *lcd)
 	}
 
 	dpd->power_on(dpd, LCD_POWER_UP);
-	if (dpd->power_on_delay)
-		mdelay(dpd->power_on_delay);
 
 	if (!dpd->gpio_cfg_lateresume) {
 		dev_err(lcd->dev, "gpio_cfg_lateresume is NULL.\n");
 		return -EFAULT;
-	} else
+	} else {
 		dpd->gpio_cfg_lateresume();
+	}
 
 	dpd->reset(dpd);
-	if (dpd->reset_delay)
-		mdelay(dpd->reset_delay);
 
 	ret = ws2401_dpi_ldi_init(lcd);
 	if (ret) {
@@ -783,12 +784,6 @@ static int ws2401_dpi_power_off(struct ws2401_dpi *lcd)
 		return -EFAULT;
 	} else
 		dpd->power_on(dpd, LCD_POWER_DOWN);
-
-	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
-			"mcde", PRCMU_QOS_DEFAULT_VALUE);
-
-	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
-			"mcde", PRCMU_QOS_DEFAULT_VALUE);
 
 	return 0;
 }
@@ -1239,6 +1234,8 @@ static int __devinit ws2401_dpi_spi_probe(struct spi_device *spi)
 	struct ws2401_dpi *lcd = container_of(spi->dev.driver,
 					 struct ws2401_dpi, spi_drv.driver);
 
+	pm_message_t dummy;
+
 	dev_dbg(&spi->dev, "panel ws2401_dpi spi being probed\n");
 
 	dev_set_drvdata(&spi->dev, lcd);
@@ -1490,6 +1487,12 @@ static int ws2401_dpi_mcde_resume(struct mcde_display_device *ddev)
 	struct ws2401_dpi *lcd = dev_get_drvdata(&ddev->dev);
 	DPI_DISP_TRACE;
 
+	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
+			"mcde", PRCMU_QOS_MAX_VALUE);
+
+	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
+			"mcde", PRCMU_QOS_MAX_VALUE);
+
 	/* set_power_mode will handle call platform_enable */
 	ret = ddev->set_power_mode(ddev, MCDE_DISPLAY_PM_STANDBY);
 	if (ret < 0)
@@ -1521,6 +1524,12 @@ static int ws2401_dpi_mcde_suspend(
 	if (ret < 0)
 		dev_warn(&ddev->dev, "%s:Failed to suspend display\n"
 			, __func__);
+
+	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
+			"mcde", PRCMU_QOS_DEFAULT_VALUE);
+
+	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
+			"mcde", PRCMU_QOS_DEFAULT_VALUE);
 
 	return ret;
 }
@@ -1585,7 +1594,7 @@ static struct mcde_display_driver ws2401_dpi_mcde __refdata = {
 	.probe          = ws2401_dpi_mcde_probe,
 	.remove         = ws2401_dpi_mcde_remove,
 	.shutdown	= ws2401_dpi_mcde_shutdown,
-#ifdef CONFIG_HAS_EARLYSUSPEND
+#ifndef CONFIG_HAS_EARLYSUSPEND
 	.suspend        = ws2401_dpi_mcde_suspend,
 	.resume         = ws2401_dpi_mcde_resume,
 #else

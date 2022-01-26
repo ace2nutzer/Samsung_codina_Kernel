@@ -109,11 +109,18 @@ static struct mcde_port port0 = {
 
 static int dpi_display_platform_enable(struct mcde_display_device *ddev)
 {
+	struct ssg_dpi_display_platform_data *pdata = ddev->dev.platform_data;
 	int res = 0;
+
 	dev_info(&ddev->dev, "%s\n", __func__);
 	res = ux500_pins_enable(dpi_pins);
-	if (res)
+	if (res) {
 		dev_warn(&ddev->dev, "Failure during %s\n", __func__);
+	} else {
+		if (pdata->power_on_delay)
+			msleep(pdata->power_on_delay);
+	}
+
 	return res;
 }
 
@@ -146,8 +153,11 @@ struct ssg_dpi_display_platform_data codina_dpi_pri_display_info = {
 	.pwr_gpio		= LCD_PWR_EN_CODINA_R0_0,
 	.bl_ctrl		= false,
 
-	.power_on_delay = 50,
-	.reset_delay = 50,
+	.power_on_delay = 10,
+	.reset_delay = 10,
+	.display_off_delay = 25,
+	.sleep_in_delay = 200,
+	.sleep_out_delay = 200,
 
 	.video_mode.xres	= 480,
 	.video_mode.yres	= 800,
@@ -205,20 +215,17 @@ static int pri_display_power_on(struct ssg_dpi_display_platform_data *pd,
 			return res;
 		}
 
-		if (enable)
+		if (enable) {
 			regulator_enable(vreg_lcd_1v8_regulator);
-		else
+			msleep(1);
+		} else {
 			regulator_disable(vreg_lcd_1v8_regulator);
-		
-		gpio_set_value(pd->pwr_gpio, enable);
-
-	} else {
-		/*
-		* In case of widechip's LDI, 
-		* lcd power off  caused wakeup issue when phone is sleep state
-		*/
-		gpio_set_value(pd->pwr_gpio, 1);
+		}
 	}
+
+	gpio_set_value(pd->pwr_gpio, enable);
+	if (enable && pd->power_on_delay)
+		msleep(pd->power_on_delay);
 
 	return res;
 }
@@ -228,15 +235,18 @@ static int pri_display_reset(struct ssg_dpi_display_platform_data *pd)
 	/* Active Reset */
 	/* Release LCD from reset */
 	gpio_set_value(pd->reset_gpio, !pd->reset_high);
-	mdelay(10);
+	if (pd->reset_delay)
+		msleep(pd->reset_delay);
 
 	/* Reset LCD */
 	gpio_set_value(pd->reset_gpio, pd->reset_high);
-	mdelay(10);
+	if (pd->reset_delay)
+		msleep(pd->reset_delay);
 
 	/* Release LCD from reset */
 	gpio_set_value(pd->reset_gpio, !pd->reset_high);
-	mdelay(10);
+	if (pd->reset_delay)
+		msleep(pd->reset_delay);
 
 	return 0;
 }
@@ -264,7 +274,7 @@ static int lcd_gpio_cfg_earlysuspend(void)
 	int ret = 0;
 
 	ret = nmk_config_pins(codina_lcd_spi_pins_disable,
-		ARRAY_SIZE(codina_lcd_spi_pins_disable));
+			ARRAY_SIZE(codina_lcd_spi_pins_disable));
 
 	return ret;
 }
@@ -274,7 +284,10 @@ static int lcd_gpio_cfg_lateresume(void)
 	int ret = 0;
 
 	ret = nmk_config_pins(codina_lcd_spi_pins_enable,
-		ARRAY_SIZE(codina_lcd_spi_pins_enable));
+			ARRAY_SIZE(codina_lcd_spi_pins_enable));
+
+	if (codina_dpi_pri_display_info.power_on_delay)
+		msleep(codina_dpi_pri_display_info.power_on_delay);
 
 	return ret;
 }
@@ -439,8 +452,6 @@ int __init init_codina_display_devices(void)
 		codina_dpi_pri_display_info.video_mode.vbp = 8;
 		codina_dpi_pri_display_info.video_mode.vfp = 8;
 		codina_dpi_pri_display_info.video_mode.vsw = 8;
-		codina_dpi_pri_display_info.sleep_in_delay = 100;
-		codina_dpi_pri_display_info.sleep_out_delay = 100;
 	} else {
 		generic_display0.name = LCD_DRIVER_NAME_S6D27A1;
 		codina_dpi_pri_display_info.video_mode.hbp = 6;
@@ -449,13 +460,13 @@ int __init init_codina_display_devices(void)
 		codina_dpi_pri_display_info.video_mode.vbp = 6;
 		codina_dpi_pri_display_info.video_mode.vfp = 6;
 		codina_dpi_pri_display_info.video_mode.vsw = 6;
-		codina_dpi_pri_display_info.sleep_in_delay = 150;
-		codina_dpi_pri_display_info.sleep_out_delay = 150;
 	}
 
 	if (is_recovery || is_lpm) {
-		codina_dpi_pri_display_info.sleep_in_delay = 10;
-		codina_dpi_pri_display_info.sleep_out_delay = 10;
+		codina_dpi_pri_display_info.power_on_delay = 10;
+		codina_dpi_pri_display_info.reset_delay = 10;
+		codina_dpi_pri_display_info.sleep_in_delay = 1;
+		codina_dpi_pri_display_info.sleep_out_delay = 1;
 	}
 
 	prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,

@@ -506,10 +506,10 @@ static int s6d27a1_dpi_ldi_init(struct s6d27a1_dpi *lcd)
 	ret = s6d27a1_write_dcs_sequence(lcd,
 				DCS_CMD_SEQ_S6D27A1_EXIT_SLEEP_MODE);
 
-	ret |= s6d27a1_write_dcs_sequence(lcd, DCS_CMD_SEQ_S6D27A1_INIT);
-
 	if (lcd->pd->sleep_out_delay)
-		mdelay(lcd->pd->sleep_out_delay);
+		msleep(lcd->pd->sleep_out_delay);
+
+	ret |= s6d27a1_write_dcs_sequence(lcd, DCS_CMD_SEQ_S6D27A1_INIT);
 
 	if (lcd->pd->bl_ctrl)
 		ret |= s6d27a1_write_dcs_sequence(lcd,
@@ -527,10 +527,13 @@ static int s6d27a1_dpi_ldi_enable(struct s6d27a1_dpi *lcd)
 
 	dev_dbg(lcd->dev, "s6d27a1_dpi_ldi_enable\n");
 
+	if (lcd->pd->sleep_out_delay)
+		msleep(lcd->pd->sleep_out_delay);
+
 	ret |= s6d27a1_write_dcs_sequence(lcd, DCS_CMD_SEQ_S6D27A1_DISPLAY_ON);
 
 	if (lcd->pd->sleep_out_delay)
-		mdelay(lcd->pd->sleep_out_delay);
+		msleep(lcd->pd->sleep_out_delay);
 
 	if (!ret)
 		lcd->ldi_state = LDI_STATE_ON;
@@ -546,11 +549,18 @@ static int s6d27a1_dpi_ldi_disable(struct s6d27a1_dpi *lcd)
 
 	ret = s6d27a1_write_dcs_sequence(lcd,
 			DCS_CMD_SEQ_S6D27A1_DISPLAY_OFF);
+
+	if (lcd->pd->display_off_delay)
+		msleep(lcd->pd->display_off_delay);
+
 	ret = s6d27a1_write_dcs_sequence(lcd,
 			DCS_CMD_SEQ_S6D27A1_ENTER_SLEEP_MODE);
 
 	if (lcd->pd->sleep_in_delay)
-		mdelay(lcd->pd->sleep_in_delay);
+		msleep(lcd->pd->sleep_in_delay);
+
+	if (!ret)
+		lcd->ldi_state = LDI_STATE_OFF;
 
 	return ret;
 }
@@ -580,12 +590,6 @@ static int s6d27a1_dpi_power_on(struct s6d27a1_dpi *lcd)
 	int ret = 0;
 	struct ssg_dpi_display_platform_data *dpd = NULL;
 
-	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
-			"mcde", PRCMU_QOS_MAX_VALUE);
-
-	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
-			"mcde", PRCMU_QOS_MAX_VALUE);
-
 	dpd = lcd->pd;
 	if (!dpd) {
 		dev_err(lcd->dev, "s6d27a1_dpi platform data is NULL.\n");
@@ -593,18 +597,15 @@ static int s6d27a1_dpi_power_on(struct s6d27a1_dpi *lcd)
 	}
 
 	dpd->power_on(dpd, LCD_POWER_UP);
-	if (dpd->power_on_delay)
-		mdelay(dpd->power_on_delay);
 
 	if (!dpd->gpio_cfg_lateresume) {
 		dev_err(lcd->dev, "gpio_cfg_lateresume is NULL.\n");
 		return -EFAULT;
-	} else
+	} else {
 		dpd->gpio_cfg_lateresume();
+	}
 
 	dpd->reset(dpd);
-	if (dpd->reset_delay)
-		mdelay(dpd->reset_delay);
 
 	ret = s6d27a1_dpi_ldi_init(lcd);
 	if (ret) {
@@ -687,12 +688,6 @@ static int s6d27a1_dpi_power_off(struct s6d27a1_dpi *lcd)
 		return -EFAULT;
 	} else
 		dpd->power_on(dpd, LCD_POWER_DOWN);
-
-	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
-			"mcde", PRCMU_QOS_DEFAULT_VALUE);
-
-	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
-			"mcde", PRCMU_QOS_DEFAULT_VALUE);
 
 	return 0;
 }
@@ -1163,6 +1158,8 @@ static int __devinit s6d27a1_dpi_spi_probe(struct spi_device *spi)
 	struct s6d27a1_dpi *lcd = container_of(spi->dev.driver,
 					 struct s6d27a1_dpi, spi_drv.driver);
 
+	pm_message_t dummy;
+
 	s6d = true;
 
 	dev_dbg(&spi->dev, "panel s6d27a1_dpi spi being probed\n");
@@ -1271,7 +1268,6 @@ static int __devinit s6d27a1_dpi_mcde_probe(
 
 	ddev->try_video_mode = try_video_mode;
 	ddev->set_video_mode = set_video_mode;
-	/* ddev->update = s6d27a1_display_update; */
 	ddev->set_rotation = s6d27a1_set_rotation;
 
 	lcd = kzalloc(sizeof(struct s6d27a1_dpi), GFP_KERNEL);
@@ -1408,6 +1404,12 @@ static int s6d27a1_dpi_mcde_resume(struct mcde_display_device *ddev)
 	struct s6d27a1_dpi *lcd = dev_get_drvdata(&ddev->dev);
 	DPI_DISP_TRACE;
 
+	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
+			"mcde", PRCMU_QOS_MAX_VALUE);
+
+	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
+			"mcde", PRCMU_QOS_MAX_VALUE);
+
 	/* set_power_mode will handle call platform_enable */
 	ret = ddev->set_power_mode(ddev, MCDE_DISPLAY_PM_STANDBY);
 	if (ret < 0)
@@ -1440,6 +1442,12 @@ static int s6d27a1_dpi_mcde_suspend(
 		dev_warn(&ddev->dev, "%s:Failed to suspend display\n"
 			, __func__);
 
+	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
+			"mcde", PRCMU_QOS_DEFAULT_VALUE);
+
+	prcmu_qos_update_requirement(PRCMU_QOS_DDR_OPP,
+			"mcde", PRCMU_QOS_DEFAULT_VALUE);
+
 	return ret;
 }
 
@@ -1471,7 +1479,7 @@ static struct mcde_display_driver s6d27a1_dpi_mcde __refdata = {
 	.probe          = s6d27a1_dpi_mcde_probe,
 	.remove         = s6d27a1_dpi_mcde_remove,
 	.shutdown	= s6d27a1_dpi_mcde_shutdown,
-#ifdef CONFIG_HAS_EARLYSUSPEND
+#ifndef CONFIG_HAS_EARLYSUSPEND
 	.suspend        = s6d27a1_dpi_mcde_suspend,
 	.resume         = s6d27a1_dpi_mcde_resume,
 #else

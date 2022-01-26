@@ -31,7 +31,7 @@ static void wait_while_running(u8 *io, struct device *dev)
 	u8 counter = DSI_READ_TIMEOUT_MS;
 
 	while (dsi_rfld(io, DSI_CMD_MODE_STS, CSM_RUNNING) && --counter)
-		udelay(DSI_READ_DELAY_US);
+		usleep_range(DSI_READ_DELAY_US, DSI_READ_DELAY_US);
 	WARN_ON(!counter);
 	if (!counter)
 		dev_warn(dev, "%s: read timeout!\n", __func__);
@@ -300,7 +300,7 @@ static void force_stop(u8 *io)
 {
 	dsi_wfld(io, DSI_MCTL_MAIN_PHY_CTL, FORCE_STOP_MODE, true);
 	dsi_wfld(io, DSI_MCTL_MAIN_PHY_CTL, CLOCK_FORCE_STOP_MODE, true);
-	udelay(20);
+	usleep_range(20, 20);
 	dsi_wfld(io, DSI_MCTL_MAIN_PHY_CTL, FORCE_STOP_MODE, false);
 	dsi_wfld(io, DSI_MCTL_MAIN_PHY_CTL, CLOCK_FORCE_STOP_MODE, false);
 }
@@ -514,7 +514,7 @@ static void enable_video_mode(u8 *io, bool enable)
 
 		/* Wait for DSI VSG to stop */
 		while (--i && dsi_rfld(io, DSI_VID_MODE_STS, VSG_RUNNING))
-			udelay(10);
+			usleep_range(10,10);
 		if (!i)
 			pr_warning("Stop DSI video mode failed!\n");
 	} else {
@@ -564,7 +564,7 @@ static int handle_ulpm(u8 *io, struct device *dev,
 		(dsi_rfld(io, DSI_MCTL_LANE_STS, DATLANE2_STATE)
 						!= lane_state &&
 							num_data_lanes > 1)) {
-		mdelay(DSI_WAIT_FOR_ULPM_STATE_MS);
+		msleep(DSI_WAIT_FOR_ULPM_STATE_MS);
 		if (nbr_of_retries++ == DSI_ULPM_STATE_NBR_OF_RETRIES) {
 			dev_warn(dev,
 				"Could not enter correct state=%d!\n",
@@ -579,7 +579,7 @@ static int handle_ulpm(u8 *io, struct device *dev,
 	/* Wait for clock lane to enter ULPM */
 	while (dsi_rfld(io, DSI_MCTL_LANE_STS, CLKLANE_STATE)
 						!= lane_state) {
-		mdelay(DSI_WAIT_FOR_ULPM_STATE_MS);
+		msleep(DSI_WAIT_FOR_ULPM_STATE_MS);
 		if (nbr_of_retries++ == DSI_ULPM_STATE_NBR_OF_RETRIES) {
 			dev_warn(dev,
 				"Could not enter correct state=%d!\n",
