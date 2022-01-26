@@ -13,8 +13,10 @@
 #include <linux/device.h>
 #include <linux/err.h>
 #include <linux/slab.h>
+#include <linux/delay.h>
 
 #include <video/mcde_dss.h>
+#include <video/mcde_display_ssg_dpi.h>
 
 #define to_overlay(x) container_of(x, struct mcde_overlay, kobj)
 
@@ -95,7 +97,7 @@ EXPORT_SYMBOL(mcde_dss_close_channel);
 static int dss_enable_display_locked(struct mcde_display_device *ddev)
 {
 	int ret;
-	mcde_chnl_enable(ddev->chnl_state);
+	//struct ssg_dpi_display_platform_data *pdata = ddev->dev.platform_data;
 
 	/* Initiate display communication */
 	ret = ddev->set_power_mode(ddev, MCDE_DISPLAY_PM_STANDBY);
@@ -103,6 +105,10 @@ static int dss_enable_display_locked(struct mcde_display_device *ddev)
 		dev_warn(&ddev->dev, "Failed to initialize display\n");
 		goto display_failed;
 	}
+
+	msleep(1);
+
+	mcde_chnl_enable(ddev->chnl_state);
 
 	ret = ddev->set_rotation(ddev, ddev->get_rotation(ddev));
 	if (ret < 0)

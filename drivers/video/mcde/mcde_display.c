@@ -11,9 +11,10 @@
 
 #include <linux/kernel.h>
 #include <linux/device.h>
+#include <linux/delay.h>
 
 #include <video/mcde_display.h>
-
+#include <video/mcde_display_ssg_dpi.h>
 
 static void mcde_display_get_native_resolution_default(
 	struct mcde_display_device *ddev, u16 *x_res, u16 *y_res)
@@ -56,10 +57,11 @@ static int mcde_display_set_power_mode_default(struct mcde_display_device *ddev,
 	enum mcde_display_power_mode power_mode)
 {
 	int ret = 0;
+	struct ssg_dpi_display_platform_data *pdata = ddev->dev.platform_data;
 
 	/* OFF -> STANDBY */
 	if (ddev->power_mode == MCDE_DISPLAY_PM_OFF &&
-		power_mode != MCDE_DISPLAY_PM_OFF) {
+			power_mode != MCDE_DISPLAY_PM_OFF) {
 		if (ddev->platform_enable) {
 			ret = ddev->platform_enable(ddev);
 			if (ret)
@@ -68,40 +70,42 @@ static int mcde_display_set_power_mode_default(struct mcde_display_device *ddev,
 		ddev->power_mode = MCDE_DISPLAY_PM_STANDBY;
 		/* force register settings */
 		if (ddev->port->type == MCDE_PORTTYPE_DPI)
-			ddev->update_flags = UPDATE_FLAG_VIDEO_MODE |
-						UPDATE_FLAG_PIXEL_FORMAT;
+				ddev->update_flags = UPDATE_FLAG_VIDEO_MODE |
+				UPDATE_FLAG_PIXEL_FORMAT;
 	}
 
 	if (ddev->port->type == MCDE_PORTTYPE_DSI) {
 		/* STANDBY -> ON */
 		if (ddev->power_mode == MCDE_DISPLAY_PM_STANDBY &&
-			power_mode == MCDE_DISPLAY_PM_ON) {
+				power_mode == MCDE_DISPLAY_PM_ON) {
 			ret = mcde_dsi_dcs_write(ddev->chnl_state,
-				DCS_CMD_EXIT_SLEEP_MODE, NULL, 0);
+					DCS_CMD_EXIT_SLEEP_MODE, NULL, 0);
 			if (ret)
 				return ret;
 
 			ret = mcde_dsi_dcs_write(ddev->chnl_state,
-				DCS_CMD_SET_DISPLAY_ON, NULL, 0);
+					DCS_CMD_SET_DISPLAY_ON, NULL, 0);
 			if (ret)
 				return ret;
 
 			ddev->power_mode = MCDE_DISPLAY_PM_ON;
+
 		} else if (ddev->power_mode == MCDE_DISPLAY_PM_ON &&
 			power_mode <= MCDE_DISPLAY_PM_STANDBY) {
 			/* ON -> STANDBY */
 			ret = mcde_dsi_dcs_write(ddev->chnl_state,
-				DCS_CMD_SET_DISPLAY_OFF, NULL, 0);
+					DCS_CMD_SET_DISPLAY_OFF, NULL, 0);
 			if (ret)
 				return ret;
 
 			ret = mcde_dsi_dcs_write(ddev->chnl_state,
-				DCS_CMD_ENTER_SLEEP_MODE, NULL, 0);
+					DCS_CMD_ENTER_SLEEP_MODE, NULL, 0);
 			if (ret)
 				return ret;
 
 			ddev->power_mode = MCDE_DISPLAY_PM_STANDBY;
 		}
+
 	} else if (ddev->port->type == MCDE_PORTTYPE_DPI) {
 		ddev->power_mode = power_mode;
 	} else if (ddev->power_mode != power_mode) {
@@ -110,7 +114,7 @@ static int mcde_display_set_power_mode_default(struct mcde_display_device *ddev,
 
 	/* SLEEP -> OFF */
 	if (ddev->power_mode == MCDE_DISPLAY_PM_STANDBY &&
-		power_mode == MCDE_DISPLAY_PM_OFF) {
+			power_mode == MCDE_DISPLAY_PM_OFF) {
 		if (ddev->platform_disable) {
 			ret = ddev->platform_disable(ddev);
 			if (ret)
@@ -120,6 +124,9 @@ static int mcde_display_set_power_mode_default(struct mcde_display_device *ddev,
 	}
 
 	mcde_chnl_set_power_mode(ddev->chnl_state, ddev->power_mode);
+
+	if (power_mode != MCDE_DISPLAY_PM_OFF)
+		msleep(pdata->power_on_delay);
 
 	return ret;
 }
@@ -356,12 +363,6 @@ static int mcde_display_update_default(struct mcde_display_device *ddev,
 {
 	int ret = 0;
 
-	ret = mcde_chnl_update(ddev->chnl_state, tripple_buffer);
-
-	if (ret < 0) {
-		dev_warn(&ddev->dev, "%s:Failed to update channel\n", __func__);
-		return ret;
-	}
 	if (ddev->first_update && ddev->on_first_update)
 		ddev->on_first_update(ddev);
 
@@ -373,6 +374,13 @@ static int mcde_display_update_default(struct mcde_display_device *ddev,
 				__func__);
 			return ret;
 		}
+	}
+
+	ret = mcde_chnl_update(ddev->chnl_state, tripple_buffer);
+
+	if (ret < 0) {
+		dev_warn(&ddev->dev, "%s:Failed to update channel\n", __func__);
+		return ret;
 	}
 
 	dev_vdbg(&ddev->dev, "Overlay updated, chnl=%d\n", ddev->chnl_id);
