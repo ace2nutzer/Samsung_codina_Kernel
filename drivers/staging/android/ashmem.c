@@ -384,7 +384,7 @@ static int ashmem_shrink(struct shrinker *s, struct shrink_control *sc)
 
 static struct shrinker ashmem_shrinker = {
 	.shrink = ashmem_shrink,
-	.seeks = DEFAULT_SEEKS * 4,
+	.seeks = DEFAULT_SEEKS
 };
 
 static int set_prot_mask(struct ashmem_area *asma, unsigned long prot)
