@@ -50,7 +50,7 @@ static unsigned int ac_curr_max = 800;
 static unsigned int usb_curr_max = 500;
 static int charging_curr = 0;
 static bool overheat_protection_ongoing = false;
-static unsigned int batt_max_temp = 35; /* °C */
+static unsigned int batt_max_temp = 40; /* °C */
 extern int get_bat_temp(void);
 static int bat_temp = 0;
 extern int get_bat_volt(void);
