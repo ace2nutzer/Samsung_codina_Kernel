@@ -77,7 +77,6 @@ static int __init early_modem_shared(char *p)
 }
 early_param("mem_mshared", early_modem_shared);
 
-#ifdef CONFIG_STE_TRACE_MODEM
 static int __init early_modem_trace(char *p)
 {
 	struct dbx500_ml_area *area = &modem_areas[0];
@@ -90,4 +89,3 @@ static int __init early_modem_trace(char *p)
 	return 0;
 }
 early_param("mem_mtrace", early_modem_trace);
-#endif

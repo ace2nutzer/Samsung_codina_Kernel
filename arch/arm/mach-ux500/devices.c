@@ -17,9 +17,7 @@
 
 #ifdef CONFIG_STE_TRACE_MODEM
 #include <linux/db8500-modem-trace.h>
-#endif
 
-#ifdef CONFIG_STE_TRACE_MODEM
 static struct resource trace_resource = {
 	.start	= 0,
 	.end	= 0,
