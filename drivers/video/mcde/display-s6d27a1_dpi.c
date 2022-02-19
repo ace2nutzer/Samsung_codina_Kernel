@@ -1479,7 +1479,7 @@ static struct mcde_display_driver s6d27a1_dpi_mcde __refdata = {
 	.probe          = s6d27a1_dpi_mcde_probe,
 	.remove         = s6d27a1_dpi_mcde_remove,
 	.shutdown	= s6d27a1_dpi_mcde_shutdown,
-#ifndef CONFIG_HAS_EARLYSUSPEND
+#ifdef CONFIG_HAS_EARLYSUSPEND
 	.suspend        = s6d27a1_dpi_mcde_suspend,
 	.resume         = s6d27a1_dpi_mcde_resume,
 #else

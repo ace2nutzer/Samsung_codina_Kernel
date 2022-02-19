@@ -316,7 +316,7 @@ static int display_postregistered_callback(struct notifier_block *nb,
 {
 	struct mcde_display_device *ddev = dev;
 	u16 width, height;
-	u16 virtual_height;
+	u16 virtual_width, virtual_height;
 	struct fb_info *fbi;
 #if defined(CONFIG_COMPDEV)
 	struct mcde_fb *mfb;
@@ -329,11 +329,11 @@ static int display_postregistered_callback(struct notifier_block *nb,
 		return 0;
 
 	mcde_dss_get_native_resolution(ddev, &width, &height);
+	virtual_width = width;
 	virtual_height = height * 3;
 
-
 	/* Create frame buffer */
-	fbi = mcde_fb_create(ddev, width, height, width, virtual_height,
+	fbi = mcde_fb_create(ddev, width, height, virtual_width, virtual_height,
 				ddev->default_pixel_format, FB_ROTATE_UR);
 
 	if (IS_ERR(fbi)) {
@@ -463,8 +463,7 @@ int __init init_codina_display_devices(void)
 	}
 
 	if (is_recovery || is_lpm) {
-		codina_dpi_pri_display_info.power_on_delay = 10;
-		codina_dpi_pri_display_info.reset_delay = 10;
+		codina_dpi_pri_display_info.display_off_delay = 1;
 		codina_dpi_pri_display_info.sleep_in_delay = 1;
 		codina_dpi_pri_display_info.sleep_out_delay = 1;
 	}

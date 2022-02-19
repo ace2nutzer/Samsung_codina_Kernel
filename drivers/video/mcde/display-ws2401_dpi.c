@@ -1594,7 +1594,7 @@ static struct mcde_display_driver ws2401_dpi_mcde __refdata = {
 	.probe          = ws2401_dpi_mcde_probe,
 	.remove         = ws2401_dpi_mcde_remove,
 	.shutdown	= ws2401_dpi_mcde_shutdown,
-#ifndef CONFIG_HAS_EARLYSUSPEND
+#ifdef CONFIG_HAS_EARLYSUSPEND
 	.suspend        = ws2401_dpi_mcde_suspend,
 	.resume         = ws2401_dpi_mcde_resume,
 #else
