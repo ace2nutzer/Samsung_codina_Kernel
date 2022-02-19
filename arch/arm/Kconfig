@@ -1599,7 +1599,6 @@ config FORCE_MAX_ZONEORDER
 	int "Maximum zone order"
 	range 11 64
 	default "9" if SA1111
-	default "12" if UX500_SOC_DB8500
 	default "11"
 	help
 	  The kernel memory allocator divides physically contiguous memory

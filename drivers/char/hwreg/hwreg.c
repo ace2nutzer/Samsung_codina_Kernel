@@ -166,10 +166,10 @@ static int hwreg_release(struct inode *inode, struct file *filp)
 	return 0;
 }
 
-static int hwreg_ioctl(struct inode *inode, struct file *filp,
+static long hwreg_ioctl(struct file *filp,
 		       unsigned int cmd, unsigned long arg)
 {
-	int retval;
+	long retval;
 	int i;
 	struct hwreg_ioctl_param param;
 	void *ptr;
