@@ -65,8 +65,9 @@
 
 #define MALI_UX500_VERSION		"2.2"
 
-#define MIN_SAMPLING_RATE_MS			jiffies_to_msecs(2) /* 2 ticks */
-#define SAMPLING_RATE_RATIO			3 /* like sampling_down_factor */
+#define MIN_SAMPLING_TICKS				10
+#define SAMPLING_DOWN_FACTOR		20
+#define MIN_SAMPLING_RATE_MS			20
 #define MAX_SAMPLING_RATE_MS			500
 
 #define MALI_MAX_UTILIZATION		256
@@ -107,6 +108,7 @@ static struct mali_dvfs_data mali_dvfs[] = {
 
 u32 mali_utilization_sampling_rate = 0;
 u32 mali_sampling_rate_ratio = 1;
+static u32 mali_sampling_rate_min = 0;
 static bool is_running = false;
 static bool is_initialized = false;
 static u32 mali_last_utilization = 0;
@@ -311,7 +313,7 @@ void mali_utilization_function(struct work_struct *ptr)
 
 			/* If switching to max speed, apply sampling_rate_ratio */
 			if (new_freq == max_freq)
-				mali_sampling_rate_ratio = SAMPLING_RATE_RATIO;
+				mali_sampling_rate_ratio = SAMPLING_DOWN_FACTOR;
 
 			mali_max_freq_apply(new_freq);
 
@@ -362,6 +364,7 @@ void mali_utilization_function(struct work_struct *ptr)
 static void update_down_threshold(void)
 {
 	down_threshold = ((up_threshold * mali_dvfs[DEF_FREQUENCY_STEP_300000].freq / mali_dvfs[DEF_FREQUENCY_STEP_350000].freq) - down_threshold_margin);
+	pr_info("[%s] for GPU: new value: %u\n",__func__, down_threshold);
 }
 
 #define ATTR_RO(_name)	\
@@ -590,7 +593,7 @@ ATTR_RW(up_threshold);
 
 static ssize_t sampling_rate_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
-	sprintf(buf, "%s min_sampling_rate: %u ms\n", buf, (u32)MIN_SAMPLING_RATE_MS);
+	sprintf(buf, "%s min_sampling_rate: %u ms\n", buf, mali_sampling_rate_min);
 	sprintf(buf, "%s max_sampling_rate: %u ms\n", buf, (u32)MAX_SAMPLING_RATE_MS);
 	sprintf(buf, "%s sampling_rate: %u ms\n", buf, mali_utilization_sampling_rate);
 	return strlen(buf);
@@ -603,8 +606,8 @@ static ssize_t sampling_rate_store(struct kobject *kobj, struct kobj_attribute *
 	if (sscanf(buf, "%u", &val)) {
 		if (val > MAX_SAMPLING_RATE_MS)
 			val = MAX_SAMPLING_RATE_MS;
-		else if (val < MIN_SAMPLING_RATE_MS)
-			val = MIN_SAMPLING_RATE_MS;
+		else if (val < mali_sampling_rate_min)
+			val = mali_sampling_rate_min;
 
 		mali_utilization_sampling_rate = val;
 
@@ -738,7 +741,9 @@ _mali_osk_errcode_t mali_platform_init()
 	int ret;
 
 	is_running = false;
-	mali_utilization_sampling_rate = (5 * MIN_SAMPLING_RATE_MS);
+	mali_sampling_rate_min = jiffies_to_msecs(MIN_SAMPLING_TICKS);
+	mali_sampling_rate_min = max((u32)MIN_SAMPLING_RATE_MS, mali_sampling_rate_min);
+	mali_utilization_sampling_rate = mali_sampling_rate_min;
 
 	if (!is_initialized) {
 		update_down_threshold();
