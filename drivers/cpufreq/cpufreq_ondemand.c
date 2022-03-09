@@ -38,8 +38,9 @@
  */
 #define DEF_FREQUENCY_UP_THRESHOLD		(95)
 #define DOWN_THRESHOLD_MARGIN			(25)
-#define DEF_SAMPLING_DOWN_FACTOR		(3)
+#define DEF_SAMPLING_DOWN_FACTOR		(20)
 #define MAX_SAMPLING_DOWN_FACTOR		(100000)
+#define MIN_SAMPLE_RATE			(20000)
 #define MICRO_FREQUENCY_UP_THRESHOLD		(95)
 #define MIN_FREQUENCY_UP_THRESHOLD		(60)
 #define MAX_FREQUENCY_UP_THRESHOLD		(100)
@@ -67,7 +68,7 @@
  * this governor will not work.
  * All times here are in uS.
  */
-#define MIN_SAMPLING_RATE_RATIO			(2)
+#define MIN_SAMPLING_RATE_RATIO			(10)
 
 #define LATENCY_MULTIPLIER			(1000)
 #define MIN_LATENCY_MULTIPLIER			(100)
@@ -193,6 +194,7 @@ static inline cputime64_t get_cpu_iowait_time(unsigned int cpu, cputime64_t *wal
 static void update_down_threshold(void)
 {
 	down_threshold = ((dbs_tuners_ins.up_threshold * DEF_FREQUENCY_STEP_0 / DEF_FREQUENCY_STEP_1) - DOWN_THRESHOLD_MARGIN);
+	pr_info("[%s] for CPU: new value: %u\n",__func__, down_threshold);
 }
 
 /************************** sysfs interface ************************/
@@ -730,7 +732,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 			min_sampling_rate = max(min_sampling_rate,
 					MIN_LATENCY_MULTIPLIER * latency);
 			dbs_tuners_ins.sampling_rate =
-				max(5 * min_sampling_rate,
+				max(min_sampling_rate,
 				    latency * LATENCY_MULTIPLIER);
 			dbs_tuners_ins.io_is_busy = IO_IS_BUSY;
 		}
@@ -836,8 +838,10 @@ static int __init cpufreq_gov_dbs_init(void)
 		min_sampling_rate = jiffies_to_usecs(MIN_SAMPLING_RATE_RATIO);
 	} else {
 		/* For correct statistics, we need 10 ticks for each measure */
-		min_sampling_rate = jiffies_to_usecs(10);
+		min_sampling_rate = jiffies_to_usecs(MIN_SAMPLING_RATE_RATIO);
 	}
+
+	min_sampling_rate = max((unsigned int)MIN_SAMPLE_RATE, min_sampling_rate);
 
 #ifdef CONFIG_CPU_FREQ_SUSPEND
 	early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
