@@ -64,8 +64,8 @@ extern bool landscape_mode;
 
 static unsigned int lcdclk_ws24_v = 5;
 static unsigned int lcdclk_ws24_h = 1;
-static unsigned int lcdclk_s6d_v = 1; /* 3 */
-static unsigned int lcdclk_s6d_h = 1; /* 2 */
+static unsigned int lcdclk_s6d_v = 3;
+static unsigned int lcdclk_s6d_h = 2;
 static unsigned int custom_lcdclk = 0;
 
 #define LCDCLK_SET(clk) prcmu_set_clock_rate(PRCMU_LCDCLK, (unsigned long) clk);

@@ -364,7 +364,7 @@ void mali_utilization_function(struct work_struct *ptr)
 static void update_down_threshold(void)
 {
 	down_threshold = ((up_threshold * mali_dvfs[DEF_FREQUENCY_STEP_300000].freq / mali_dvfs[DEF_FREQUENCY_STEP_350000].freq) - down_threshold_margin);
-	pr_info("[%s] for GPU: new value: %u\n",__func__, down_threshold);
+	pr_info("[%s] for GPU: new value: %u\n",__func__, (down_threshold * 100 / 256));
 }
 
 #define ATTR_RO(_name)	\
