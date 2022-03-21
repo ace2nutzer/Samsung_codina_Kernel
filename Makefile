@@ -245,12 +245,13 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   := -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer
-HOSTCXXFLAGS := -O2
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Wno-format-overflow -Wno-stringop-truncation \
+               -O3 -fomit-frame-pointer -fno-strict-aliasing -std=gnu89
+HOSTCXXFLAGS = -O3 -fomit-frame-pointer -fno-strict-aliasing -Wno-format-overflow -Wno-stringop-truncation
 
 # Host specific Flags
-HOSTCFLAGS   += -march=core2 -mtune=core2 -mfpmath=sse -mssse3 -mhard-float -ftree-vectorize -pipe -Wno-format-overflow
-HOSTCXXFLAGS += -march=core2 -mtune=core2 -mfpmath=sse -mssse3 -mhard-float -ftree-vectorize -pipe -Wno-format-overflow
+HOSTCFLAGS   += -march=core2 -mcpu=core2 -mtune=core2 -mfpmath=sse -mssse3 -mhard-float -pipe
+HOSTCXXFLAGS += -march=core2 -mcpu=core2 -mtune=core2 -mfpmath=sse -mssse3 -mhard-float -pipe
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -368,20 +369,24 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
 
 KBUILD_CPPFLAGS := -D__KERNEL__
 
-KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
+ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
+KBUILD_CFLAGS	:= -Os
+else
+KBUILD_CFLAGS	:= -O3
+endif
+
+KBUILD_CFLAGS   += -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
 		   -std=gnu89 \
-		   -D_FORTIFY_SOURCE=1 \
 		   -DNDEBUG \
 		   -pipe \
 		   -fdiagnostics-color=auto
 
 # Target specific Flags
-KBUILD_CFLAGS   += \
-		   -march=armv7-a \
+CFLAGS_ABI	:= -march=armv7-a \
 		   -mcpu=cortex-a9 \
 		   -mtune=cortex-a9 \
 		   -marm \
@@ -390,9 +395,11 @@ KBUILD_CFLAGS   += \
 		   -msoft-float \
 		   -mfloat-abi=soft
 
+KBUILD_CFLAGS   += $(CFLAGS_ABI)
+
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
-KBUILD_AFLAGS   := -D__ASSEMBLY__
+KBUILD_AFLAGS   := -D__ASSEMBLY__ $(CFLAGS_ABI)
 KBUILD_AFLAGS_MODULE  := -DMODULE
 KBUILD_CFLAGS_MODULE  := -DMODULE
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
@@ -584,12 +591,8 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning, format-truncation)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, format-overflow)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, int-in-bool-context)
 KBUILD_CFLAGS	+= $(call cc-disable-warning, maybe-uninitialized)
-
-ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
-KBUILD_CFLAGS	+= -Os
-else
-KBUILD_CFLAGS	+= -O2
-endif
+KBUILD_CFLAGS	+= $(call cc-disable-warning, stringop-truncation)
+KBUILD_CFLAGS	+= $(call cc-disable-warning, array-bounds)
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
 
