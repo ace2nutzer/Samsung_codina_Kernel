@@ -97,7 +97,7 @@ static int set_suspend_max_freq(const char *buf, struct kernel_param *kp)
 #if IS_ENABLED(CONFIG_A2N)
 	if (!a2n_allow) {
 		sscanf(buf, "%u", &tmp);
-		if ((tmp != 0) && (tmp != 800000)) {
+		if ((tmp != 0) && (tmp != 1000000)) {
 			pr_err("[%s] a2n: unprivileged access !\n",__func__);
 			goto err;
 		}
@@ -519,7 +519,7 @@ static ssize_t store_user_scaling_max_freq
 #if IS_ENABLED(CONFIG_A2N)
 	if (!a2n_allow) {
 		sscanf(buf, "%u", &val);
-		if ((val != 800000) && (val != 200000)) {
+		if ((val != 1000000) && (val != 200000)) {
 			pr_err("[%s] a2n: unprivileged access !\n",__func__);
 			goto err;
 		}
