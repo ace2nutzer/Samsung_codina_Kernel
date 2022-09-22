@@ -824,8 +824,8 @@ static const char *hw_mode_val_name[] = {
 /* AB8500 device - Varm_vsel in 12.5mV steps */
 #define AB8500_VARM_VSEL_MASK 0x3f
 static const struct regulator_volt_range ab8500_varm_vsel[] = {
-	{ {0x00,  700000}, {0x01,   12500}, {0x37, 1387500} },
-	{ {0x38, 1387500}, {0x01,       0}, {0x3f, 1387500} },
+	{ {0x00,  700000}, {0x01,   12500}, {0x3f, 1487500} },
+	{ {0x3f, 1487500}, {0x01,       0}, {0x3f, 1487500} },
 };
 
 /* AB9540/AB8505 device - Varm_vsel in 6.25mV steps */
@@ -835,8 +835,8 @@ static const struct regulator_volt_range ab9540_ab8505_varm_vsel[] = {
 };
 
 static const struct regulator_volt_range vape_vmod_vsel[] = {
-	{ {0x00,  700000}, {0x01,   12500}, {0x37, 1387500} },
-	{ {0x38, 1387500}, {0x01,       0}, {0x3f, 1387500} },
+	{ {0x00,  700000}, {0x01,   12500}, {0x3f, 1487500} },
+	{ {0x3f, 1487500}, {0x01,       0}, {0x3f, 1487500} },
 };
 
 /* AB8500 device - Vbbp_vsel and Vbbn_sel in 100mV steps */

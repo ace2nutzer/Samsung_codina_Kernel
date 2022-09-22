@@ -38,9 +38,8 @@
  */
 #define DEF_FREQUENCY_UP_THRESHOLD		(95)
 #define DOWN_THRESHOLD_MARGIN			(25)
-#define DEF_SAMPLING_DOWN_FACTOR		(20)
+#define DEF_SAMPLING_DOWN_FACTOR		(50)
 #define MAX_SAMPLING_DOWN_FACTOR		(100000)
-#define MIN_SAMPLE_RATE			(20000)
 #define MICRO_FREQUENCY_UP_THRESHOLD		(95)
 #define MIN_FREQUENCY_UP_THRESHOLD		(60)
 #define MAX_FREQUENCY_UP_THRESHOLD		(100)
@@ -501,12 +500,12 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 				requested_freq = DEF_FREQUENCY_STEP_7;
 			else if (policy->cur == DEF_FREQUENCY_STEP_7)
 				requested_freq = DEF_FREQUENCY_STEP_8;
-			else if (policy->cur == DEF_FREQUENCY_STEP_8)
-				requested_freq = DEF_FREQUENCY_STEP_9;
 			else
 				requested_freq = policy->max;
+
 			if (requested_freq > policy->max)
 				requested_freq = policy->max;
+
 		} else {
 			/* Boost */
 			requested_freq = policy->max;
@@ -550,8 +549,6 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 			requested_freq = DEF_FREQUENCY_STEP_2;
 		else if (policy->cur == DEF_FREQUENCY_STEP_2)
 			requested_freq = DEF_FREQUENCY_STEP_1;
-		else if (policy->cur == DEF_FREQUENCY_STEP_1)
-			requested_freq = DEF_FREQUENCY_STEP_0;
 		else
 			requested_freq = policy->min;
 
@@ -840,8 +837,6 @@ static int __init cpufreq_gov_dbs_init(void)
 		/* For correct statistics, we need 10 ticks for each measure */
 		min_sampling_rate = jiffies_to_usecs(MIN_SAMPLING_RATE_RATIO);
 	}
-
-	min_sampling_rate = max((unsigned int)MIN_SAMPLE_RATE, min_sampling_rate);
 
 #ifdef CONFIG_CPU_FREQ_SUSPEND
 	early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;

@@ -44,31 +44,26 @@
 #include <linux/a2n.h>
 #endif
 
-#define MIN_FREQ		0
-#define MAX_FREQ		2
+#define MIN_FREQ			0
+#define MAX_FREQ			2
 
-#define UP_THRESHOLD					95	/* min 35 %, max 100 % */
+#define UP_THRESHOLD			95	/* max 100 % */
+#define MIN_UP_THRESHOLD		40
 #define DOWN_THRESHOLD_MARGIN		25
-#define DEF_BOOST							1
+#define DEF_BOOST			1
 
-#define DEF_FREQUENCY_STEP_300000		0
-#define DEF_FREQUENCY_STEP_350000		1
-#define DEF_FREQUENCY_STEP_400000		2
-#define DEF_FREQUENCY_STEP_450000		3
-#define DEF_FREQUENCY_STEP_500000		4
-#define DEF_FREQUENCY_STEP_550000		5
-#define DEF_FREQUENCY_STEP_600000		6
-#define DEF_FREQUENCY_STEP_650000		7
-#define DEF_FREQUENCY_STEP_700000		8
-#define DEF_FREQUENCY_STEP_750000		9
-#define DEF_FREQUENCY_STEP_800000		10
+#define DEF_FREQUENCY_STEP_300000	0
+#define DEF_FREQUENCY_STEP_400000	1
+#define DEF_FREQUENCY_STEP_500000	2
+#define DEF_FREQUENCY_STEP_600000	3
+#define DEF_FREQUENCY_STEP_650000	4
+#define DEF_FREQUENCY_STEP_700000	5
+#define DEF_FREQUENCY_STEP_750000	6
 
-#define MALI_UX500_VERSION		"2.2"
+#define MALI_UX500_VERSION		"2.3"
 
-#define MIN_SAMPLING_TICKS				10
-#define SAMPLING_DOWN_FACTOR		20
-#define MIN_SAMPLING_RATE_MS			20
-#define MAX_SAMPLING_RATE_MS			500
+#define MIN_SAMPLING_TICKS		10
+#define SAMPLING_DOWN_FACTOR		50
 
 #define MALI_MAX_UTILIZATION		256
 
@@ -76,34 +71,30 @@
 #define PRCMU_PLLSOC0			0x0080
 
 #define PRCMU_SGACLK_INIT		0x00000121
-#define PRCMU_PLLSOC0_INIT		0x0105014E
+#define PRCMU_PLLSOC0_INIT		0x00050141
 
 #define AB8500_VAPE_SEL1 		0x0E
 #define AB8500_VAPE_SEL2	 	0x0F
 #define AB8500_VAPE_STEP_UV		12500
 #define AB8500_VAPE_MIN_UV		700000
-#define AB8500_VAPE_MAX_UV		1387500
+#define AB8500_VAPE_MAX_UV		1487500
 
 struct mali_dvfs_data
 {
-	u32 	freq;
-	u32 	freq_raw;
-	u32 	clkpll;
-	u8 	vape_raw;
+	u32	freq;
+	u32	freq_raw;
+	u32	clkpll;
+	u8	vape_raw;
 };
 
 static struct mali_dvfs_data mali_dvfs[] = {
-	{300000, 299520, 0x0105014E, 0x20},
-	{350000, 349440, 0x0105015B, 0x21},
-	{400000, 399360, 0x01050168, 0x22},
-	{450000, 449280, 0x01050175, 0x24},
-	{500000, 499200, 0x01050182, 0x28},
-	{550000, 549120, 0x0105018F, 0x2d},
-	{600000, 599040, 0x0105019C, 0x32},
-	{650000, 652800, 0x010501AA, 0x37},
-	{700000, 698880, 0x010501B6, 0x37},
-	{750000, 748800, 0x010501C3, 0x37},
-	{800000, 798720, 0x010501D0, 0x37},
+	{300000, 299520, 0x00050127, 0x20},
+	{400000, 399360, 0x00050134, 0x22},
+	{500000, 499200, 0x00050141, 0x28},
+	{600000, 599040, 0x0005014E, 0x30},
+	{650000, 652800, 0x00050155, 0x3f},
+	{700000, 698880, 0x0005015B, 0x3f},
+	{750000, 752640, 0x00050162, 0x3f},
 };
 
 u32 mali_utilization_sampling_rate = 0;
@@ -132,7 +123,7 @@ static bool boost = DEF_BOOST;
 
 static int vape_voltage(u8 raw)
 {
-	if (raw <= 0x36) {
+	if (raw <= 0x3e) {
 		return (AB8500_VAPE_MIN_UV + (raw * AB8500_VAPE_STEP_UV));
 	} else {
 		return AB8500_VAPE_MAX_UV;
@@ -183,9 +174,9 @@ static void mali_min_freq_apply(u32 freq)
 	udelay(20);
 
 	prcmu_abb_write(AB8500_REGU_CTRL2, 
-		AB8500_VAPE_SEL1, 
-		&vape, 
-		1);
+			AB8500_VAPE_SEL1, 
+			&vape, 
+			1);
 
 	last_freq = freq;
 }
@@ -198,16 +189,16 @@ static void mali_max_freq_apply(u32 freq)
 	vape = mali_dvfs[freq].vape_raw;
 	pll = mali_dvfs[freq].clkpll;
 
-		prcmu_abb_write(AB8500_REGU_CTRL2, 
+	prcmu_abb_write(AB8500_REGU_CTRL2, 
 			AB8500_VAPE_SEL1, 
 			&vape, 
 			1);
 
-		udelay(80);
+	udelay(80);
 
-		prcmu_write(PRCMU_PLLSOC0, pll);
+	prcmu_write(PRCMU_PLLSOC0, pll);
 
-		last_freq = freq;
+	last_freq = freq;
 }
 
 static void mali_boost_init(void)
@@ -273,52 +264,43 @@ void mali_utilization_function(struct work_struct *ptr)
 {
 	u32 new_freq = 0;
 
-	/* Check for frequency increase only if we are in APE_100_OPP mode */
-	if (prcmu_get_ape_opp() == APE_100_OPP) {
-		if (mali_last_utilization >= up_threshold) {
+	/* nothing to do */
+	if ((min_freq == max_freq) && (last_freq == max_freq))
+		return;
 
-			/* if we are already at full speed then break out early */
-			if (last_freq == max_freq)
-				return;
+	if (mali_last_utilization >= up_threshold) {
 
-			if (!boost) {
-				if (last_freq == DEF_FREQUENCY_STEP_300000)
-					new_freq = DEF_FREQUENCY_STEP_350000;
-				else if (last_freq == DEF_FREQUENCY_STEP_350000)
-					new_freq = DEF_FREQUENCY_STEP_400000;
-				else if (last_freq == DEF_FREQUENCY_STEP_400000)
-					new_freq = DEF_FREQUENCY_STEP_450000;
-				else if (last_freq == DEF_FREQUENCY_STEP_450000)
-					new_freq = DEF_FREQUENCY_STEP_500000;
-				else if (last_freq == DEF_FREQUENCY_STEP_500000)
-					new_freq = DEF_FREQUENCY_STEP_550000;
-				else if (last_freq == DEF_FREQUENCY_STEP_550000)
-					new_freq = DEF_FREQUENCY_STEP_600000;
-				else if (last_freq == DEF_FREQUENCY_STEP_600000)
-					new_freq = DEF_FREQUENCY_STEP_650000;
-				else if (last_freq == DEF_FREQUENCY_STEP_650000)
-					new_freq = DEF_FREQUENCY_STEP_700000;
-				else if (last_freq == DEF_FREQUENCY_STEP_700000)
-					new_freq = DEF_FREQUENCY_STEP_750000;
-				else if (last_freq == DEF_FREQUENCY_STEP_750000)
-					new_freq = DEF_FREQUENCY_STEP_800000;
-				else
-					new_freq = max_freq;
-				if (new_freq > max_freq)
-					new_freq = max_freq;
-			} else {
-				/* Boost */
-				new_freq = max_freq;
-			}
-
-			/* If switching to max speed, apply sampling_rate_ratio */
-			if (new_freq == max_freq)
-				mali_sampling_rate_ratio = SAMPLING_DOWN_FACTOR;
-
-			mali_max_freq_apply(new_freq);
-
+		/* if we are already at full speed then break out early */
+		if (last_freq == max_freq)
 			return;
+
+		if (!boost) {
+			if (last_freq == DEF_FREQUENCY_STEP_300000)
+				new_freq = DEF_FREQUENCY_STEP_400000;
+			else if (last_freq == DEF_FREQUENCY_STEP_400000)
+				new_freq = DEF_FREQUENCY_STEP_500000;
+			else if (last_freq == DEF_FREQUENCY_STEP_500000)
+				new_freq = DEF_FREQUENCY_STEP_600000;
+			else if (last_freq == DEF_FREQUENCY_STEP_600000)
+				new_freq = DEF_FREQUENCY_STEP_650000;
+			else if (last_freq == DEF_FREQUENCY_STEP_650000)
+				new_freq = DEF_FREQUENCY_STEP_700000;
+			else
+				new_freq = max_freq;
+
+			if (new_freq > max_freq)
+				new_freq = max_freq;
+		} else {
+			/* Boost */
+			new_freq = max_freq;
 		}
+		/* If switching to max speed, apply sampling_rate_ratio */
+		if (new_freq == max_freq)
+			mali_sampling_rate_ratio = SAMPLING_DOWN_FACTOR;
+
+		mali_max_freq_apply(new_freq);
+
+		return;
 	}
 
 	/* No longer fully busy, reset sampling_rate_ratio */
@@ -331,26 +313,16 @@ void mali_utilization_function(struct work_struct *ptr)
 	/* Check for frequency decrease */
 	if (mali_last_utilization < down_threshold) {
 
-		if (last_freq == DEF_FREQUENCY_STEP_800000)
-			new_freq = DEF_FREQUENCY_STEP_750000;
-		else if (last_freq == DEF_FREQUENCY_STEP_750000)
+		if (last_freq == DEF_FREQUENCY_STEP_750000)
 			new_freq = DEF_FREQUENCY_STEP_700000;
 		else if (last_freq == DEF_FREQUENCY_STEP_700000)
 			new_freq = DEF_FREQUENCY_STEP_650000;
 		else if (last_freq == DEF_FREQUENCY_STEP_650000)
 			new_freq = DEF_FREQUENCY_STEP_600000;
 		else if (last_freq == DEF_FREQUENCY_STEP_600000)
-			new_freq = DEF_FREQUENCY_STEP_550000;
-		else if (last_freq == DEF_FREQUENCY_STEP_550000)
 			new_freq = DEF_FREQUENCY_STEP_500000;
 		else if (last_freq == DEF_FREQUENCY_STEP_500000)
-			new_freq = DEF_FREQUENCY_STEP_450000;
-		else if (last_freq == DEF_FREQUENCY_STEP_450000)
 			new_freq = DEF_FREQUENCY_STEP_400000;
-		else if (last_freq == DEF_FREQUENCY_STEP_400000)
-			new_freq = DEF_FREQUENCY_STEP_350000;
-		else if (last_freq == DEF_FREQUENCY_STEP_350000)
-			new_freq = DEF_FREQUENCY_STEP_300000;
 		else
 			new_freq = min_freq;
 
@@ -363,7 +335,7 @@ void mali_utilization_function(struct work_struct *ptr)
 
 static void update_down_threshold(void)
 {
-	down_threshold = ((up_threshold * mali_dvfs[DEF_FREQUENCY_STEP_300000].freq / mali_dvfs[DEF_FREQUENCY_STEP_350000].freq) - down_threshold_margin);
+	down_threshold = ((up_threshold * mali_dvfs[DEF_FREQUENCY_STEP_300000].freq / mali_dvfs[DEF_FREQUENCY_STEP_400000].freq) - down_threshold_margin);
 	pr_info("[%s] for GPU: new value: %u\n",__func__, (down_threshold * 100 / 256));
 }
 
@@ -574,7 +546,7 @@ static ssize_t up_threshold_store(struct kobject *kobj, struct kobj_attribute *a
 #endif
 
 	if (sscanf(buf, "%u", &val)) {
-		if (val > 100 || val < 35)
+		if (val > 100 || val < MIN_UP_THRESHOLD)
 			goto err;
 		up_threshold = val * 256 / 100;
 		/* update down_threshold */
@@ -594,7 +566,6 @@ ATTR_RW(up_threshold);
 static ssize_t sampling_rate_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
 	sprintf(buf, "%s min_sampling_rate: %u ms\n", buf, mali_sampling_rate_min);
-	sprintf(buf, "%s max_sampling_rate: %u ms\n", buf, (u32)MAX_SAMPLING_RATE_MS);
 	sprintf(buf, "%s sampling_rate: %u ms\n", buf, mali_utilization_sampling_rate);
 	return strlen(buf);
 }
@@ -604,9 +575,7 @@ static ssize_t sampling_rate_store(struct kobject *kobj, struct kobj_attribute *
 	u32 val;
 
 	if (sscanf(buf, "%u", &val)) {
-		if (val > MAX_SAMPLING_RATE_MS)
-			val = MAX_SAMPLING_RATE_MS;
-		else if (val < mali_sampling_rate_min)
+		if (val < mali_sampling_rate_min)
 			val = mali_sampling_rate_min;
 
 		mali_utilization_sampling_rate = val;
@@ -742,7 +711,6 @@ _mali_osk_errcode_t mali_platform_init()
 
 	is_running = false;
 	mali_sampling_rate_min = jiffies_to_msecs(MIN_SAMPLING_TICKS);
-	mali_sampling_rate_min = max((u32)MIN_SAMPLING_RATE_MS, mali_sampling_rate_min);
 	mali_utilization_sampling_rate = mali_sampling_rate_min;
 
 	if (!is_initialized) {

@@ -1128,16 +1128,16 @@ static int liveopp_start = 0;
 
 static struct liveopp_arm_table liveopp_arm[] = {
 //	| SHOW     | CLK    | PLL        | VDD  | VBB  | DDR | APE
-	{ 200000,  199680,  0x0005011A,   0x18,  0xDB,   50,   25},
+	{ 200000,  199680,  0x0005011A,   0x18,  0xDB,   50,   50},
 	{ 400000,  399360,  0x00050134,   0x1a,  0xDB,  100,  100},
 	{ 600000,  599040,  0x0005014E,   0x20,  0xDB,  100,  100},
-	{ 800000,  798720,  0x00050168,   0x28,  0xDB,  100,  100},
+	{ 800000,  798720,  0x00050168,   0x27,  0xDB,  100,  100},
 	{1000000,  998400,  0x00050182,   0x32,  0xDB,  100,  100},
-	{1100000,  1098240, 0x0005018F,   0x37,  0x8F,  100,  100},
-	{1150000,  1152000, 0x00050196,   0x37,  0x8F,  100,  100},
-	{1200000,  1198080, 0x0005019C,   0x37,  0x8F,  100,  100},
-	{1250000,  1251840, 0x000501A3,   0x37,  0x8F,  100,  100},
-	{1300000,  1297920, 0x000501A9,   0x37,  0x8F,  100,  100},
+	{1100000,  1098240, 0x0005018F,   0x3f,  0x8F,  100,  100},
+	{1150000,  1152000, 0x00050196,   0x3f,  0x8F,  100,  100},
+	{1200000,  1198080, 0x0005019C,   0x3f,  0x8F,  100,  100},
+	{1250000,  1251840, 0x000501A3,   0x3f,  0x8F,  100,  100},
+	{1300000,  1297920, 0x000501A9,   0x3f,  0x8F,  100,  100},
 };
 
 static const char *armopp_name[] = 
@@ -1154,7 +1154,7 @@ static const char *armopp_name[] =
 
 static int varm_uv(u8 raw)
 {
-	if (raw <= 0x36) {
+	if (raw <= 0x3e) {
 		return (AB8500_VARM_MIN_UV + (raw * AB8500_VARM_STEP_UV));
 	} else {
 		return AB8500_VARM_MAX_UV;
@@ -1182,10 +1182,10 @@ static inline void liveopp_update_cpuhw(struct liveopp_arm_table table,
 					int last_idx, 
 					int next_idx)
 {
-	mutex_lock(&liveopp_lock);
-
 	if (last_idx == next_idx)
-		goto out;
+		return;
+
+	mutex_lock(&liveopp_lock);
 
 	if (last_idx < next_idx) {
 		prcmu_abb_write(AB8500_REGU_CTRL2, AB8500_VBBX_REG,  &table.vbbx_raw, 1);
@@ -1195,8 +1195,8 @@ static inline void liveopp_update_cpuhw(struct liveopp_arm_table table,
 	} else {
 		db8500_prcmu_writel(PRCMU_PLLARM_REG, table.pllarm_raw);
 		udelay(20);
-		prcmu_abb_write(AB8500_REGU_CTRL2, AB8500_VBBX_REG,  &table.vbbx_raw, 1);
 		prcmu_abb_write(AB8500_REGU_CTRL2, AB8500_VARM_SEL1, &table.varm_raw, 1);
+		prcmu_abb_write(AB8500_REGU_CTRL2, AB8500_VBBX_REG,  &table.vbbx_raw, 1);
 		udelay(40);
 	}
 
@@ -1211,7 +1211,6 @@ static inline void liveopp_update_cpuhw(struct liveopp_arm_table table,
 					"cpufreq",
 					(signed char)table.ddr_opp);
 
-out:
 	mutex_unlock(&liveopp_lock);
 }
 
