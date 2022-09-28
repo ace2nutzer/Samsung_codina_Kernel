@@ -42,8 +42,6 @@
 
 #include <linux/mfd/dbx500-prcmu.h>
 
-extern void lcdclk_set(void);
-
 #define ESD_PORT_NUM 			93
 #define SPI_COMMAND			0
 #define SPI_DATA			1
@@ -52,7 +50,6 @@ extern void lcdclk_set(void);
 #define LCD_POWER_DOWN			0
 #define LDI_STATE_ON			1
 #define LDI_STATE_OFF			0
-/* Taken from the programmed value of the LCD clock in PRCMU */
 #define VMODE_XRES			480
 #define VMODE_YRES			800
 #define POWER_IS_ON(pwr)		((pwr) <= FB_BLANK_NORMAL)
@@ -86,9 +83,8 @@ extern void lcdclk_set(void);
 /* to be removed when display works */
 //#define dev_dbg	dev_info
 //#define ESD_OPERATION
-/*
-#define ESD_TEST
-*/
+//#define ESD_TEST
+
 
 static struct s6d27a1_dpi *lcd_data;
 
@@ -511,6 +507,9 @@ static int s6d27a1_dpi_ldi_init(struct s6d27a1_dpi *lcd)
 
 	ret |= s6d27a1_write_dcs_sequence(lcd, DCS_CMD_SEQ_S6D27A1_INIT);
 
+	if (lcd->pd->power_on_delay)
+		msleep(lcd->pd->power_on_delay);
+
 	if (lcd->pd->bl_ctrl)
 		ret |= s6d27a1_write_dcs_sequence(lcd,
 				DCS_CMD_SEQ_S6D27A1_ENABLE_BACKLIGHT_CONTROL);
@@ -527,13 +526,10 @@ static int s6d27a1_dpi_ldi_enable(struct s6d27a1_dpi *lcd)
 
 	dev_dbg(lcd->dev, "s6d27a1_dpi_ldi_enable\n");
 
-	if (lcd->pd->sleep_out_delay)
-		msleep(lcd->pd->sleep_out_delay);
-
 	ret |= s6d27a1_write_dcs_sequence(lcd, DCS_CMD_SEQ_S6D27A1_DISPLAY_ON);
 
-	if (lcd->pd->sleep_out_delay)
-		msleep(lcd->pd->sleep_out_delay);
+	if (lcd->pd->power_on_delay)
+		msleep(lcd->pd->power_on_delay);
 
 	if (!ret)
 		lcd->ldi_state = LDI_STATE_ON;
@@ -596,14 +592,24 @@ static int s6d27a1_dpi_power_on(struct s6d27a1_dpi *lcd)
 		return -EFAULT;
 	}
 
-	dpd->power_on(dpd, LCD_POWER_UP);
+	ret = dpd->power_on(dpd, LCD_POWER_UP);
+	if (ret)
+		return ret;
+
+	if (dpd->power_on_delay)
+		msleep(dpd->power_on_delay);
 
 	if (!dpd->gpio_cfg_lateresume) {
 		dev_err(lcd->dev, "gpio_cfg_lateresume is NULL.\n");
 		return -EFAULT;
 	} else {
-		dpd->gpio_cfg_lateresume();
+		ret = dpd->gpio_cfg_lateresume();
+		if (ret)
+			return ret;
 	}
+
+	if (dpd->power_on_delay)
+		msleep(dpd->power_on_delay);
 
 	dpd->reset(dpd);
 
@@ -635,8 +641,6 @@ static int s6d27a1_dpi_power_on(struct s6d27a1_dpi *lcd)
 	} else
 		pr_info("%s lcd_connected : %d \n", __func__, lcd->lcd_connected);
 #endif
-
-	lcdclk_set();
 
 	return 0;
 }
@@ -840,10 +844,13 @@ static ssize_t s6d27a1_sysfs_show_mcde_chnl(struct device *dev,
 	sprintf(buf, "%svbp: %d\n", buf, lcd->mdd->video_mode.vbp);
 	sprintf(buf, "%svfp: %d\n", buf, lcd->mdd->video_mode.vfp);
 	sprintf(buf, "%svsw: %d\n\n", buf, lcd->mdd->video_mode.vsw);
+
+	sprintf(buf,   "[delays]\n");
+	sprintf(buf, "%ssleep_out_delay: %d\n", buf, lcd->pd->sleep_out_delay);
 	sprintf(buf, "%spower_on_delay: %d\n", buf, lcd->pd->power_on_delay);
 	sprintf(buf, "%sreset_delay: %d\n", buf, lcd->pd->reset_delay);
+	sprintf(buf, "%sdisplay_off_delay: %d\n", buf, lcd->pd->display_off_delay);
 	sprintf(buf, "%ssleep_in_delay: %d\n", buf, lcd->pd->sleep_in_delay);
-	sprintf(buf, "%ssleep_out_delay: %d\n", buf, lcd->pd->sleep_out_delay);
 
 	return strlen(buf);
 }
@@ -864,7 +871,7 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 
 	if (!strncmp(buf, "set_vmode", 8))
 	{
-		pr_err("[s6d27a1] Save chnl params\n");
+		pr_info("[s6d27a1] Save chnl params\n");
 		mcde_chnl_set_video_mode(lcd->mdd->chnl_state, &lcd->mdd->video_mode);
 
 		return len;
@@ -872,7 +879,7 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 
 	if (!strncmp(buf, "apply_config", 8)) 
 	{
-		pr_err("[s6d27a1] Apply chnl config!\n");
+		pr_info("[s6d27a1] Apply chnl config!\n");
 		mcde_chnl_apply(lcd->mdd->chnl_state);
 
 		return len;
@@ -880,7 +887,7 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 
 	if (!strncmp(buf, "stop_flow", 8)) 
 	{
-		pr_err("[s6d27a1] MCDE chnl stop flow!\n");
+		pr_info("[s6d27a1] MCDE chnl stop flow!\n");
 		mcde_chnl_stop_flow(lcd->mdd->chnl_state);
 
 		return len;
@@ -888,7 +895,7 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 
 	if (!strncmp(buf, "update", 6)) 
 	{
-		pr_err("[s6d27a1] Update MCDE chnl!\n");
+		pr_info("[s6d27a1] Update MCDE chnl!\n");
 		mcde_chnl_set_video_mode(lcd->mdd->chnl_state, &lcd->mdd->video_mode);
 		mcde_chnl_apply(lcd->mdd->chnl_state);
 		mcde_chnl_stop_flow(lcd->mdd->chnl_state);
@@ -899,7 +906,7 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 	if (!strncmp(&buf[0], "enable=", 7))
 	{
 		sscanf(&buf[7], "%d", &enable);
-		pr_err("[s6d27a1] %s chnl\n", enable ? "Enable" : "Disable");
+		pr_info("[s6d27a1] %s chnl\n", enable ? "Enable" : "Disable");
 
 		if (!enable)
 			mcde_chnl_disable(lcd->mdd->chnl_state);
@@ -918,7 +925,7 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 			return -EINVAL;
 		}
 
-		pr_err("[s6d27a1] hbp: %d\n", hbp);
+		pr_info("[s6d27a1] hbp: %d\n", hbp);
 		lcd->mdd->video_mode.hbp = hbp;
 
 		return len;
@@ -933,7 +940,7 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 			return -EINVAL;
 		}
 
-		pr_err("[s6d27a1] hfp: %d\n", hfp);
+		pr_info("[s6d27a1] hfp: %d\n", hfp);
 		lcd->mdd->video_mode.hfp = hfp;
 
 		return len;
@@ -948,7 +955,7 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 			return -EINVAL;
 		}
 
-		pr_err("[s6d27a1] hsw: %d\n", hsw);
+		pr_info("[s6d27a1] hsw: %d\n", hsw);
 		lcd->mdd->video_mode.hsw = hsw;
 
 		return len;
@@ -963,7 +970,7 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 			return -EINVAL;
 		}
 
-		pr_err("[s6d27a1] vbp: %d\n", vbp);
+		pr_info("[s6d27a1] vbp: %d\n", vbp);
 		lcd->mdd->video_mode.vbp = vbp;
 
 		return len;
@@ -978,7 +985,7 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 			return -EINVAL;
 		}
 
-		pr_err("[s6d27a1] vfp: %d\n", vfp);
+		pr_info("[s6d27a1] vfp: %d\n", vfp);
 		lcd->mdd->video_mode.vfp = vfp;
 
 		return len;
@@ -993,15 +1000,23 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 			return -EINVAL;
 		}
 
-		pr_err("[s6d27a1] vsw: %d\n", vsw);
+		pr_info("[s6d27a1] vsw: %d\n", vsw);
 		lcd->mdd->video_mode.vsw = vsw;
+
+		return len;
+	}
+
+	if (sscanf(buf, "sleep_out_delay=%d", &tmp))
+	{
+		pr_info("[s6d27a1] sleep_out_delay: %d\n", tmp);
+		lcd->pd->sleep_out_delay = tmp;
 
 		return len;
 	}
 
 	if (sscanf(buf, "power_on_delay=%d", &tmp))
 	{
-		pr_err("[s6d27a1] power_on_delay: %d\n", tmp);
+		pr_info("[s6d27a1] power_on_delay: %d\n", tmp);
 		lcd->pd->power_on_delay = tmp;
 
 		return len;
@@ -1009,24 +1024,24 @@ static ssize_t s6d27a1_sysfs_store_mcde_chnl(struct device *dev,
 
 	if (sscanf(buf, "reset_delay=%d", &tmp))
 	{
-		pr_err("[s6d27a1] reset_delay: %d\n", tmp);
+		pr_info("[s6d27a1] reset_delay: %d\n", tmp);
 		lcd->pd->reset_delay = tmp;
+
+		return len;
+	}
+
+	if (sscanf(buf, "display_off_delay=%d", &tmp))
+	{
+		pr_info("[s6d27a1] display_off_delay: %d\n", tmp);
+		lcd->pd->display_off_delay = tmp;
 
 		return len;
 	}
 
 	if (sscanf(buf, "sleep_in_delay=%d", &tmp))
 	{
-		pr_err("[s6d27a1] sleep_in_delay: %d\n", tmp);
+		pr_info("[s6d27a1] sleep_in_delay: %d\n", tmp);
 		lcd->pd->sleep_in_delay = tmp;
-
-		return len;
-	}
-
-	if (sscanf(buf, "sleep_out_delay=%d", &tmp))
-	{
-		pr_err("[s6d27a1] sleep_out_delay: %d\n", tmp);
-		lcd->pd->sleep_out_delay = tmp;
 
 		return len;
 	}
@@ -1402,6 +1417,7 @@ static int s6d27a1_dpi_mcde_resume(struct mcde_display_device *ddev)
 {
 	int ret = 0;
 	struct s6d27a1_dpi *lcd = dev_get_drvdata(&ddev->dev);
+
 	DPI_DISP_TRACE;
 
 	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
@@ -1413,8 +1429,10 @@ static int s6d27a1_dpi_mcde_resume(struct mcde_display_device *ddev)
 	/* set_power_mode will handle call platform_enable */
 	ret = ddev->set_power_mode(ddev, MCDE_DISPLAY_PM_STANDBY);
 	if (ret < 0)
-		dev_warn(&ddev->dev, "%s:Failed to resume display\n"
+		dev_err(&ddev->dev, "%s:Failed to resume display\n"
 			, __func__);
+
+	lcd->beforepower = lcd->power;
 
 	s6d27a1_dpi_power(lcd, FB_BLANK_UNBLANK);
 
@@ -1439,7 +1457,7 @@ static int s6d27a1_dpi_mcde_suspend(
 	/* set_power_mode will handle call platform_disable */
 	ret = ddev->set_power_mode(ddev, MCDE_DISPLAY_PM_OFF);
 	if (ret < 0)
-		dev_warn(&ddev->dev, "%s:Failed to suspend display\n"
+		dev_err(&ddev->dev, "%s:Failed to suspend display\n"
 			, __func__);
 
 	prcmu_qos_update_requirement(PRCMU_QOS_APE_OPP,
@@ -1479,7 +1497,7 @@ static struct mcde_display_driver s6d27a1_dpi_mcde __refdata = {
 	.probe          = s6d27a1_dpi_mcde_probe,
 	.remove         = s6d27a1_dpi_mcde_remove,
 	.shutdown	= s6d27a1_dpi_mcde_shutdown,
-#ifdef CONFIG_HAS_EARLYSUSPEND
+#ifndef CONFIG_HAS_EARLYSUSPEND
 	.suspend        = s6d27a1_dpi_mcde_suspend,
 	.resume         = s6d27a1_dpi_mcde_resume,
 #else

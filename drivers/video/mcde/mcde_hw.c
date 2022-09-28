@@ -47,6 +47,7 @@
 #endif
 
 #define MCDE_DPI_UNDERFLOW
+
 #ifdef MCDE_DPI_UNDERFLOW
 #include <linux/fb.h>
 #include <video/mcde_fb.h>
@@ -63,9 +64,9 @@ extern bool is_recovery;
 extern bool landscape_mode;
 
 static unsigned int lcdclk_ws24_v = 5;
-static unsigned int lcdclk_ws24_h = 1;
-static unsigned int lcdclk_s6d_v = 3;
-static unsigned int lcdclk_s6d_h = 2;
+static unsigned int lcdclk_ws24_h = 5;
+static unsigned int lcdclk_s6d_v = 6;
+static unsigned int lcdclk_s6d_h = 6;
 static unsigned int custom_lcdclk = 0;
 
 #define LCDCLK_SET(clk) prcmu_set_clock_rate(PRCMU_LCDCLK, (unsigned long) clk);
@@ -1245,8 +1246,6 @@ struct lcdclk_prop
 	unsigned int clk;
 };
 
-/* LCD Freqs in (...) are valid for PLLDDR_FREQ 1000 */
-
 // WS2401
 static struct lcdclk_prop lcdclk_ws24_prop[] = {
 		[1] = {
@@ -1254,56 +1253,84 @@ static struct lcdclk_prop lcdclk_ws24_prop[] = {
 			.clk = 49920000,
 		},
 		[2] = {
-			.name = "57(55) MHz",
-			.clk = 57051428,
+			.name = "55 MHz",
+			.clk = 54912000,
 		},
 		[3] = {
-			.name = "67(62) MHz",
-			.clk = 66560000,
+			.name = "60 MHz",
+			.clk = 61013333,
 		},
 		[4] = {
-			.name = "67(71) MHz",
-			.clk = 71314285,
+			.name = "70 MHz",
+			.clk = 68640000,
 		},
 		[5] = {
-			.name = "80(83) MHz",
-			.clk = 83200000,
+			.name = "80 MHz",
+			.clk = 78445714,
 		},
 		[6] = {
-			.name = "100 MHz",
-			.clk = 99840000,
+			.name = "90 MHz",
+			.clk = 91520000,
+		},
+		[7] = {
+			.name = "110 MHz",
+			.clk = 109824000,
 		},
 };
 
 // S6D27A1
 static struct lcdclk_prop lcdclk_s6d_prop[] = {
 		[1] = {
-			.name = "31 MHz",
-			.clk = 31200000,
+			.name = "30 MHz",
+			.clk = 30506666,
 		},
 		[2] = {
-			.name = "33 MHz",
-			.clk = 33280000,
+			.name = "32 MHz",
+			.clk = 32301176,
 		},
 		[3] = {
-			.name = "36 MHz",
-			.clk = 36305454,
+			.name = "34 MHz",
+			.clk = 34320000,
 		},
 		[4] = {
-			.name = "40(38) MHz",
-			.clk = 39936000,
+			.name = "37 MHz",
+			.clk = 36608000,
 		},
 		[5] = {
-			.name = "44(42) MHz",
-			.clk = 44373333,
+			.name = "39 MHz",
+			.clk = 39222857,
 		},
 		[6] = {
-			.name = "44(45) MHz",
-			.clk = 45381818,
+			.name = "42 MHz",
+			.clk = 42240000,
 		},
 		[7] = {
+			.name = "45 MHz",
+			.clk = 45760000,
+		},
+		[8] = {
 			.name = "50 MHz",
 			.clk = 49920000,
+		},
+		[9] = {
+			.name = "55 MHz",
+			.clk = 54912000,
+		},
+		[10] = {
+			.name = "60 MHz",
+			.clk = 61013333,
+		},
+		[11] = {
+			.name = "70 MHz",
+			.clk = 68640000,
+		},
+		[12] = {
+			.name = "80 MHz",
+			.clk = 78445714,
+		},
+		[13] = {
+			.name = "90 MHz",
+			.clk = 91520000,
 		},
 };
 
@@ -1588,6 +1615,8 @@ static int update_channel_static_registers(struct mcde_chnl_state *chnl)
 			lcdclk_s6d_v = 1;
 			lcdclk_ws24_v = 1;
 		}
+
+		lcdclk_set();
 	}
 
 	mcde_wfld(MCDE_CR, MCDEEN, true);
@@ -4576,7 +4605,7 @@ static int __devexit mcde_remove(struct platform_device *pdev)
 	return 0;
 }
 
-#if defined(CONFIG_HAS_EARLYSUSPEND) && defined(CONFIG_PM)
+#if !defined(CONFIG_HAS_EARLYSUSPEND) && defined(CONFIG_PM)
 static int mcde_resume(struct platform_device *pdev)
 {
 	dev_vdbg(&mcde_dev->dev, "%s\n", __func__);
@@ -4618,7 +4647,7 @@ static int mcde_suspend(struct platform_device *pdev, pm_message_t state)
 static struct platform_driver mcde_driver = {
 	.probe = mcde_probe,
 	.remove = mcde_remove,
-#if defined(CONFIG_HAS_EARLYSUSPEND) && defined(CONFIG_PM)
+#if !defined(CONFIG_HAS_EARLYSUSPEND) && defined(CONFIG_PM)
 	.suspend = mcde_suspend,
 	.resume = mcde_resume,
 #else

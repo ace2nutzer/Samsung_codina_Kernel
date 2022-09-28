@@ -125,9 +125,6 @@ static int mcde_display_set_power_mode_default(struct mcde_display_device *ddev,
 
 	mcde_chnl_set_power_mode(ddev->chnl_state, ddev->power_mode);
 
-	if (power_mode != MCDE_DISPLAY_PM_OFF)
-		msleep(pdata->power_on_delay);
-
 	return ret;
 }
 

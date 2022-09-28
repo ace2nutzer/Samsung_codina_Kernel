@@ -42,7 +42,7 @@
  * 30720000	[S6D27A1]
  * 49920000	[WS2401]
  */
-#define PRCMU_DPI_CLK_SHARP_FREQ	31200000	/* s6d27a1 */
+#define PRCMU_DPI_CLK_SHARP_FREQ	30720000	/* s6d27a1 */
 #define PRCMU_DPI_CLK_SMD_FREQ		49920000	/* ws2401 */
 
 enum {
@@ -96,13 +96,11 @@ static struct mcde_port port0 = {
 	.phy = {
 		.dpi = {
 			.tv_mode = false,
-			.clock_div = 1,
 			.polarity =
 				DPI_ACT_LOW_VSYNC |
 				DPI_ACT_LOW_HSYNC |
 				/* DPI_ACT_LOW_DATA_ENABLE | */
 				DPI_ACT_ON_FALLING_EDGE,
-			.lcd_freq = PRCMU_DPI_CLK_SHARP_FREQ
 		},
 	},
 };
@@ -112,14 +110,19 @@ static int dpi_display_platform_enable(struct mcde_display_device *ddev)
 	struct ssg_dpi_display_platform_data *pdata = ddev->dev.platform_data;
 	int res = 0;
 
-	dev_info(&ddev->dev, "%s\n", __func__);
-	res = ux500_pins_enable(dpi_pins);
-	if (res) {
-		dev_warn(&ddev->dev, "Failure during %s\n", __func__);
-	} else {
-		if (pdata->power_on_delay)
-			msleep(pdata->power_on_delay);
+	if (!pdata) {
+		dev_err(&ddev->dev, "platform data is NULL.\n");
+		return -EFAULT;
 	}
+
+	dev_info(&ddev->dev, "%s\n", __func__);
+
+	res = ux500_pins_enable(dpi_pins);
+	if (res)
+		dev_err(&ddev->dev, "Failure during %s\n", __func__);
+
+	if (pdata->power_on_delay)
+		msleep(pdata->power_on_delay);
 
 	return res;
 }
@@ -127,10 +130,13 @@ static int dpi_display_platform_enable(struct mcde_display_device *ddev)
 static int dpi_display_platform_disable(struct mcde_display_device *ddev)
 {
 	int res = 0;
+
 	dev_info(&ddev->dev, "%s\n", __func__);
+
 	res = ux500_pins_disable(dpi_pins);	/* disabled to save power */
 	if (res)
-		dev_warn(&ddev->dev, "Failure during %s\n", __func__);
+		dev_err(&ddev->dev, "Failure during %s\n", __func__);
+
 	return res;
 }
 
@@ -144,7 +150,7 @@ static int lcd_gpio_cfg_lateresume(void);
 extern void codina_backlight_on_off(bool on);
 
 /* Taken from the programmed value of the LCD clock in PRCMU */
-#define FRAME_PERIOD_MS		17	/* rounded up to the nearest ms */
+//#define FRAME_PERIOD_MS		17	/* rounded up to the nearest ms */
 
 struct ssg_dpi_display_platform_data codina_dpi_pri_display_info = {
 	.platform_enabled	= false,
@@ -153,11 +159,11 @@ struct ssg_dpi_display_platform_data codina_dpi_pri_display_info = {
 	.pwr_gpio		= LCD_PWR_EN_CODINA_R0_0,
 	.bl_ctrl		= false,
 
-	.power_on_delay = 10,
-	.reset_delay = 10,
-	.display_off_delay = 25,
-	.sleep_in_delay = 200,
 	.sleep_out_delay = 200,
+	.power_on_delay = 10,
+	.reset_delay = 100,
+	.display_off_delay = 25,
+	.sleep_in_delay = 120,
 
 	.video_mode.xres	= 480,
 	.video_mode.yres	= 800,
@@ -198,7 +204,6 @@ static void pri_lcd_pwr_setup(struct device *dev)
 		ret = regulator_enable(vreg_lcd_1v8_regulator);
 		if (ret < 0) {
 			regulator_put(vreg_lcd_1v8_regulator);
-			return;
 		}
 	}
 }
@@ -209,23 +214,24 @@ static int pri_display_power_on(struct ssg_dpi_display_platform_data *pd,
 	int res = 0;
 	
 	if (system_rev > CODINA_TMO_R0_4) {
-
 		if (vreg_lcd_1v8_regulator == NULL) {
 			printk(KERN_ERR "%s: no regulator\n", __func__);
 			return res;
 		}
 
-		if (enable) {
-			regulator_enable(vreg_lcd_1v8_regulator);
-			msleep(1);
-		} else {
-			regulator_disable(vreg_lcd_1v8_regulator);
-		}
-	}
+		if (enable)
+			res = regulator_enable(vreg_lcd_1v8_regulator);
+		else
+			res = regulator_disable(vreg_lcd_1v8_regulator);
 
-	gpio_set_value(pd->pwr_gpio, enable);
-	if (enable && pd->power_on_delay)
-		msleep(pd->power_on_delay);
+		gpio_set_value(pd->pwr_gpio, enable);
+	} else {
+		/*
+		* In case of widechip's LDI,
+		* lcd power off caused wakeup issue when phone is sleep state
+		*/
+		gpio_set_value(pd->pwr_gpio, enable);
+	}
 
 	return res;
 }
@@ -238,15 +244,13 @@ static int pri_display_reset(struct ssg_dpi_display_platform_data *pd)
 	if (pd->reset_delay)
 		msleep(pd->reset_delay);
 
-	/* Reset LCD */
+	// Reset LCD
 	gpio_set_value(pd->reset_gpio, pd->reset_high);
-	if (pd->reset_delay)
-		msleep(pd->reset_delay);
+	msleep(1);
 
-	/* Release LCD from reset */
+	// Release LCD from reset
 	gpio_set_value(pd->reset_gpio, !pd->reset_high);
-	if (pd->reset_delay)
-		msleep(pd->reset_delay);
+	msleep(1);
 
 	return 0;
 }
@@ -285,9 +289,6 @@ static int lcd_gpio_cfg_lateresume(void)
 
 	ret = nmk_config_pins(codina_lcd_spi_pins_enable,
 			ARRAY_SIZE(codina_lcd_spi_pins_enable));
-
-	if (codina_dpi_pri_display_info.power_on_delay)
-		msleep(codina_dpi_pri_display_info.power_on_delay);
 
 	return ret;
 }
@@ -433,7 +434,7 @@ int __init init_codina_display_devices(void)
 	 * The pixel fetcher FIFO is 128*64bit = 8192bits = 1024bytes.
 	 * Overlay 0 is assumed 32bpp and overlay 1 is assumed 16bpp
 	 */
-    pdata->pixelfetchwtrmrk[0] = 160; /* 160 -> 160px*32bpp/8=640bytes */
+	pdata->pixelfetchwtrmrk[0] = 160; /* 160 -> 160px*32bpp/8=640bytes */
 	pdata->pixelfetchwtrmrk[1] = 192; /* 192 -> 192px*16bpp/8=384bytes */
 #else /* 24 bit overlay */
 	u32 fifo = (1024*8 - 8 * BITS_PER_WORD) / 7;
@@ -448,24 +449,23 @@ int __init init_codina_display_devices(void)
 		generic_display0.name = LCD_DRIVER_NAME_WS2401;
 		codina_dpi_pri_display_info.video_mode.hbp = 8;
 		codina_dpi_pri_display_info.video_mode.hfp = 8;
-		codina_dpi_pri_display_info.video_mode.hsw = 8;
+		codina_dpi_pri_display_info.video_mode.hsw = 10;
 		codina_dpi_pri_display_info.video_mode.vbp = 8;
 		codina_dpi_pri_display_info.video_mode.vfp = 8;
-		codina_dpi_pri_display_info.video_mode.vsw = 8;
+		codina_dpi_pri_display_info.video_mode.vsw = 2;
 	} else {
 		generic_display0.name = LCD_DRIVER_NAME_S6D27A1;
-		codina_dpi_pri_display_info.video_mode.hbp = 6;
-		codina_dpi_pri_display_info.video_mode.hfp = 6;
-		codina_dpi_pri_display_info.video_mode.hsw = 6;
-		codina_dpi_pri_display_info.video_mode.vbp = 6;
-		codina_dpi_pri_display_info.video_mode.vfp = 6;
-		codina_dpi_pri_display_info.video_mode.vsw = 6;
+		codina_dpi_pri_display_info.video_mode.hbp = 63;
+		codina_dpi_pri_display_info.video_mode.hfp = 63;
+		codina_dpi_pri_display_info.video_mode.hsw = 2;
+		codina_dpi_pri_display_info.video_mode.vbp = 11;
+		codina_dpi_pri_display_info.video_mode.vfp = 3;
+		codina_dpi_pri_display_info.video_mode.vsw = 2;
 	}
 
 	if (is_recovery || is_lpm) {
-		codina_dpi_pri_display_info.display_off_delay = 1;
-		codina_dpi_pri_display_info.sleep_in_delay = 1;
 		codina_dpi_pri_display_info.sleep_out_delay = 1;
+		codina_dpi_pri_display_info.sleep_in_delay = 1;
 	}
 
 	prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP,
