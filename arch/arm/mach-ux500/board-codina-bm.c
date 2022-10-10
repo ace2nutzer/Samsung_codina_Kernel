@@ -343,7 +343,7 @@ static const struct battery_type bat_type[] = {
 		.subsequent_timeout_time = HZ*60*90,
 			/* After an error stop charging for a minute. */
 		.error_charge_stoptime = HZ*60,
-		.over_voltage_threshold =  4350,
+		.over_voltage_threshold =  4300,
 #else
 		.n_batres_tbl_elements = ARRAY_SIZE(temp_to_batres_tbl),
 		.batres_tbl = temp_to_batres_tbl,
@@ -412,7 +412,7 @@ static const struct battery_type bat_type[] = {
 		.subsequent_timeout_time = HZ*60*90,
 			/* After an error stop charging for a minute. */
 		.error_charge_stoptime = HZ*60,
-		.over_voltage_threshold =  4500,
+		.over_voltage_threshold =  4450,
 #else
 		.n_batres_tbl_elements = ARRAY_SIZE(temp_to_batres_tbl),
 		.batres_tbl = temp_to_batres_tbl,
@@ -525,7 +525,7 @@ struct ab8500_bm_data ab8500_bm_data = {
 	.temp_interval_nochg	= 120,
 #if defined( CONFIG_USB_SWITCHER ) || defined( CONFIG_INPUT_AB8505_MICRO_USB_DETECT )
 	.ta_chg_current		= 1500,
-	.ta_chg_current_input	= 1000,
+	.ta_chg_current_input	= 800,
 	.ta_chg_voltage		= 4200,
 
 	.usb_chg_current	= 1500,
