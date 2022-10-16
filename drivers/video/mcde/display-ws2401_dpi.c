@@ -733,10 +733,14 @@ static int ws2401_dpi_power_on(struct ws2401_dpi *lcd)
 			return ret;
 	}
 
+	ws2401_update_brightness(lcd);
+
 	if (dpd->power_on_delay)
 		msleep(dpd->power_on_delay);
 
 	dpd->reset(dpd);
+	if (dpd->reset_delay)
+		msleep(dpd->reset_delay);
 
 	ret = ws2401_dpi_ldi_init(lcd);
 	if (ret) {
@@ -751,8 +755,6 @@ static int ws2401_dpi_power_on(struct ws2401_dpi *lcd)
 		return ret;
 	}
 	dev_dbg(lcd->dev, "ldi enable successful\n");
-
-	ws2401_update_brightness(lcd);
 
 	return 0;
 }

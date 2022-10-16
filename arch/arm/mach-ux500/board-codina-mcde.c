@@ -161,20 +161,13 @@ struct ssg_dpi_display_platform_data codina_dpi_pri_display_info = {
 
 	.sleep_out_delay = 200,
 	.power_on_delay = 10,
-	.reset_delay = 100,
+	.reset_delay = 10,
 	.display_off_delay = 25,
 	.sleep_in_delay = 120,
 
 	.video_mode.xres	= 480,
 	.video_mode.yres	= 800,
 	.video_mode.interlaced	= false,
-
-	/*
-	 * The pixclock setting is not used within MCDE. The clock is
-	 * setup elsewhere. But the pixclock value is visible in user
-	 * space.
-	 */
-	.video_mode.pixclock = (int)(1e+12 * (1.0 / PRCMU_DPI_CLK_SHARP_FREQ)),
 
 	.reset		= pri_display_reset,
 	.lcd_pwr_setup = pri_lcd_pwr_setup,	
@@ -241,8 +234,7 @@ static int pri_display_reset(struct ssg_dpi_display_platform_data *pd)
 	/* Active Reset */
 	/* Release LCD from reset */
 	gpio_set_value(pd->reset_gpio, !pd->reset_high);
-	if (pd->reset_delay)
-		msleep(pd->reset_delay);
+	msleep(1);
 
 	// Reset LCD
 	gpio_set_value(pd->reset_gpio, pd->reset_high);
@@ -250,7 +242,6 @@ static int pri_display_reset(struct ssg_dpi_display_platform_data *pd)
 
 	// Release LCD from reset
 	gpio_set_value(pd->reset_gpio, !pd->reset_high);
-	msleep(1);
 
 	return 0;
 }

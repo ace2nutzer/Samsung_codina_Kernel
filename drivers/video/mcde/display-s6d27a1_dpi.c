@@ -608,10 +608,14 @@ static int s6d27a1_dpi_power_on(struct s6d27a1_dpi *lcd)
 			return ret;
 	}
 
+	s6d27a1_update_brightness(lcd);
+
 	if (dpd->power_on_delay)
 		msleep(dpd->power_on_delay);
 
 	dpd->reset(dpd);
+	if (dpd->reset_delay)
+		msleep(dpd->reset_delay);
 
 	ret = s6d27a1_dpi_ldi_init(lcd);
 	if (ret) {
@@ -626,8 +630,6 @@ static int s6d27a1_dpi_power_on(struct s6d27a1_dpi *lcd)
 		return ret;
 	}
 	dev_dbg(lcd->dev, "ldi enable successful\n");
-
-	s6d27a1_update_brightness(lcd);
 
 #ifdef ESD_OPERATION
 	if (lcd->lcd_connected)
