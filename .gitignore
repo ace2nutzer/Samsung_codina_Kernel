@@ -144,3 +144,4 @@ build_kernel_sdcard_only.sh
 edit_kernel.sh
 clean.sh
 rejects
+drivers/gpu/mali/mali400ko/driver/src/devicedrv/mali/__malidrv_build_info.c

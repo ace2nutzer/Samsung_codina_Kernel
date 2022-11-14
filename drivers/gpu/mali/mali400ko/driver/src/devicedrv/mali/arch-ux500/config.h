@@ -23,8 +23,6 @@
 #endif
 
 #define MEGABYTE (1024*1024)
-#define MALI_MEM_BASE (256 * MEGABYTE)
-#define MALI_MEM_SIZE ( 84 * MEGABYTE)
 #define OS_MEM_SIZE   (2047 * MEGABYTE)
 
 /* Hardware revision u8500 v1: GX570-BU-00000-r0p1
@@ -79,7 +77,7 @@ static _mali_osk_resource_t arch_configuration [] =
 		.type = MEMORY,
 		.description = "Mali SDRAM",
 		.alloc_order = 0, /* Highest preference for this memory */
-		.base = MALI_MEM_BASE,
+		.base = 0,
 		.size = 0,
 		.flags = _MALI_CPU_WRITEABLE | _MALI_CPU_READABLE | _MALI_PP_READABLE | _MALI_PP_WRITEABLE |_MALI_GP_READABLE | _MALI_GP_WRITEABLE
 	},
