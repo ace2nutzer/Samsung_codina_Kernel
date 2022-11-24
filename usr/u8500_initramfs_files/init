@@ -9,10 +9,10 @@ rm init
 mount -t proc proc /proc
 mount -t sysfs sysfs /sys
 
-mount -t ext4 /dev/block/mmcblk0p17 /ramdisk
-
 # disable APETRACECLK
 echo 0x0060 0x0 > /sys/kernel/prcmu/prcmu_wreg
+
+mount -t ext4 /dev/block/mmcblk0p17 /ramdisk
 
 if ! grep -q bootmode=2 /proc/cmdline ; then
 if ! grep -q lpm_boot=1 /proc/cmdline ; then
