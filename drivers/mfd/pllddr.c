@@ -69,8 +69,10 @@
 
 static __iomem void *prcmu_base = NULL;
 
-static bool ddr_oc_on_suspend = false; // set true if needed to schedule DDR OC on suspend
+static unsigned int ddr_oc_delay_ms = 1000;
+module_param(ddr_oc_delay_ms, uint, 0644);
 
+static bool ddr_oc_on_suspend = false; // set true if needed to schedule DDR OC on suspend
 static u32 pending_pllddr_val; // scheduled PLLDDR value
 static int pending_pllddr_freq; // scheduled PLLDDR freq
 static int pllddr_oc_delay_us = 100; // delay between graduate PLLDDR changing
@@ -389,7 +391,7 @@ static void do_oc_ddr_fn(struct work_struct *work)
 
 	if (!(perx_is_calibrated && sdmmc_is_calibrated && pllddr_is_calibrated)) {
 		do_oc_ddr(pending_pllddr_val);
-		schedule_delayed_work(&do_oc_ddr_delayedwork, msecs_to_jiffies(100));
+		schedule_delayed_work(&do_oc_ddr_delayedwork, msecs_to_jiffies(ddr_oc_delay_ms));
 	} else {
 		perx_is_calibrated = false;
 		sdmmc_is_calibrated = false;
@@ -407,9 +409,6 @@ static void do_oc_ddr_fn(struct work_struct *work)
 }
 
 static struct early_suspend early_suspend;
-
-static unsigned int ddr_oc_delay_ms = 1000;
-module_param(ddr_oc_delay_ms, uint, 0644);
 
 static void pllddr_early_suspend(struct early_suspend *h)
 {
@@ -493,7 +492,7 @@ schedule:
 	pending_pllddr_val = new_val;
 	pending_pllddr_freq = freq;
 
-	schedule_delayed_work(&do_oc_ddr_delayedwork, 0);
+	schedule_delayed_work(&do_oc_ddr_delayedwork, msecs_to_jiffies(ddr_oc_delay_ms));
 
 	return count;
 }
