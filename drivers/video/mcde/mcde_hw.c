@@ -1603,8 +1603,7 @@ static int update_channel_static_registers(struct mcde_chnl_state *chnl)
 	}
 
 	if (port->type == MCDE_PORTTYPE_DPI) {
-		if (port->phy.dpi.lcd_freq != clk_round_rate(chnl->clk_dpi,
-				port->phy.dpi.lcd_freq))
+		if (clk_round_rate(chnl->clk_dpi, port->phy.dpi.lcd_freq) < 0)
 			dev_warn(&mcde_dev->dev, "Could not set lcd freq"
 					" to %d\n", port->phy.dpi.lcd_freq);
 		WARN_ON_ONCE(clk_set_rate(chnl->clk_dpi,
