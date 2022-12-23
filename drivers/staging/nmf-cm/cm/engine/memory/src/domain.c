@@ -505,7 +505,7 @@ PUBLIC t_memory_handle cm_DM_Alloc(t_cm_domain_id domainId, t_dsp_memory_type_id
                     cm_MM_GetSize(handle));
         }
     } else {
-        LOG_INTERNAL(0, "CM_NO_MORE_MEMORY domainId: %d, memType %d, wordSize %d, alignement %d\n",
+        LOG_INTERNAL(0, "CM_NO_MORE_MEMORY domainId: %d, memType %d, wordSize %d, alignment %d\n",
                 domainId, memType, wordSize, memAlignment, 0, 0);
         cm_MM_DumpMemory(alloc, offset, offset + size);
     }
