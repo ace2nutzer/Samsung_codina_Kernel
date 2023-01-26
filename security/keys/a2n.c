@@ -15,12 +15,6 @@ bool a2n_allow = false;
 static int set_a2n_allow(const char *buf, struct kernel_param *kp)
 {
 	unsigned int temp = 0;
-	static int tries = 0;
-
-	if (tries >= 3) {
-		pr_err("[%s] a2n: unprivileged access !\n",__func__);
-		return -EINVAL;
-	}
 
 	sscanf(buf, "%u", &temp);
 
@@ -34,7 +28,6 @@ static int set_a2n_allow(const char *buf, struct kernel_param *kp)
 		a2n_allow = false;
 		pr_info("[%s] a2n: bye bye !\n",__func__);
 	} else {
-		tries = tries +1;
 		pr_warn("[%s] a2n: wrong input !\n",__func__);
 		return -EINVAL;
 	}
@@ -46,7 +39,7 @@ module_param_call(a2n_allow, set_a2n_allow, param_get_bool, &a2n_allow, 0644);
 static int __init a2n_init(void)
 {
 	a2n = 1;
-	a2n_allow = false;
+	a2n_allow = true;
 	pr_info("%s: initialized\n", __func__);
 	return 0;
 }
