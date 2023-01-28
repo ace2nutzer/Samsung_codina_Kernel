@@ -43,7 +43,7 @@
 #define MICRO_FREQUENCY_UP_THRESHOLD		(95)
 #define MIN_FREQUENCY_UP_THRESHOLD		(60)
 #define MAX_FREQUENCY_UP_THRESHOLD		(100)
-#define DEF_BOOST				(1)
+#define DEF_BOOST				(0)
 #define IO_IS_BUSY				(0)
 
 #define DEF_FREQUENCY_STEP_0		(200000)
