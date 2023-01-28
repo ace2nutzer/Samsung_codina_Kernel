@@ -50,7 +50,7 @@
 #define UP_THRESHOLD			95	/* max 100 % */
 #define MIN_UP_THRESHOLD		40
 #define DOWN_THRESHOLD_MARGIN		25
-#define DEF_BOOST			1
+#define DEF_BOOST			0
 
 #define DEF_FREQUENCY_STEP_300000	0
 #define DEF_FREQUENCY_STEP_400000	1
