@@ -63,6 +63,8 @@
 #define MALI_UX500_VERSION		"2.3"
 
 #define MIN_SAMPLING_TICKS		10
+#define SAMPLING_RATE_MS		40
+
 #define SAMPLING_DOWN_FACTOR		50
 
 #define MALI_MAX_UTILIZATION		256
@@ -120,6 +122,8 @@ static u32 up_threshold = UP_THRESHOLD * 256 / 100;
 static u32 down_threshold = 0;
 static u32 down_threshold_margin = DOWN_THRESHOLD_MARGIN * 256 / 100;
 static bool boost = DEF_BOOST;
+static bool gaming_mode = false;
+bool should_boost_cpu_for_gpu = false;
 
 static int vape_voltage(u8 raw)
 {
@@ -179,6 +183,9 @@ static void mali_min_freq_apply(u32 freq)
 			1);
 
 	last_freq = freq;
+
+	if ((last_freq == MIN_FREQ) && (!gaming_mode))
+		should_boost_cpu_for_gpu = false;
 }
 
 static void mali_max_freq_apply(u32 freq)
@@ -199,6 +206,9 @@ static void mali_max_freq_apply(u32 freq)
 	prcmu_write(PRCMU_PLLSOC0, pll);
 
 	last_freq = freq;
+
+	if (last_freq > MIN_FREQ)
+		should_boost_cpu_for_gpu = true;
 }
 
 static void mali_boost_init(void)
@@ -213,13 +223,17 @@ static void mali_boost_init(void)
 
 static _mali_osk_errcode_t mali_platform_powerdown(void)
 {
+	int ret = 0;
+
 	if (is_running) {
+		mali_min_freq_apply(MIN_FREQ);
+		should_boost_cpu_for_gpu = false;
 #if CONFIG_HAS_WAKELOCK
 		wake_unlock(&wakelock);
 #endif
 		clk_disable(clk_sga);
 		if (regulator) {
-			int ret = regulator_disable(regulator);
+			ret = regulator_disable(regulator);
 			if (ret < 0) {
 				MALI_DEBUG_PRINT(2, ("%s: Failed to disable regulator %s\n", __func__, "v-mali"));
 				is_running = false;
@@ -234,8 +248,12 @@ static _mali_osk_errcode_t mali_platform_powerdown(void)
 
 static _mali_osk_errcode_t mali_platform_powerup(void)
 {
+	int ret = 0;
+
 	if (!is_running) {
-		int ret = regulator_enable(regulator);
+		if (gaming_mode)
+			should_boost_cpu_for_gpu = true;
+		ret = regulator_enable(regulator);
 		if (ret < 0) {
 			MALI_DEBUG_PRINT(2, ("%s: Failed to enable regulator %s\n", __func__, "v-mali"));
 			goto error;
@@ -574,11 +592,27 @@ static ssize_t sampling_rate_store(struct kobject *kobj, struct kobj_attribute *
 {
 	u32 val;
 
+#if IS_ENABLED(CONFIG_A2N)
+	if (!a2n_allow) {
+		pr_err("[%s] a2n: unprivileged access !\n",__func__);
+		return -EINVAL;
+	}
+#endif
+
 	if (sscanf(buf, "%u", &val)) {
 		if (val < mali_sampling_rate_min)
 			val = mali_sampling_rate_min;
 
 		mali_utilization_sampling_rate = val;
+
+		if (val < 40) {
+			gaming_mode = true;
+			pr_info("[%s:] Gaming mode: ON.\n",__func__);
+		} else {
+			gaming_mode = false;
+			should_boost_cpu_for_gpu = false;
+			pr_info("[%s:] Gaming mode: OFF.\n",__func__);
+		}
 
 		return count;
 	}
@@ -711,7 +745,7 @@ _mali_osk_errcode_t mali_platform_init()
 
 	is_running = false;
 	mali_sampling_rate_min = jiffies_to_msecs(MIN_SAMPLING_TICKS);
-	mali_utilization_sampling_rate = mali_sampling_rate_min;
+	mali_utilization_sampling_rate = SAMPLING_RATE_MS;
 
 	if (!is_initialized) {
 		update_down_threshold();

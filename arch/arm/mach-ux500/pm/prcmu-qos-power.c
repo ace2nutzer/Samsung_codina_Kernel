@@ -222,8 +222,8 @@ static DEFINE_SPINLOCK(prcmu_qos_lock);
 
 static bool ape_opp_50_partly_25_enabled;
 
-#define CPUFREQ_OPP_DELAY 0
-#define CPUFREQ_OPP_DELAY_VOICECALL 0
+#define CPUFREQ_OPP_DELAY (HZ/5)
+#define CPUFREQ_OPP_DELAY_VOICECALL HZ
 static unsigned long cpufreq_opp_delay = CPUFREQ_OPP_DELAY;
 
 static bool prcmu_qos_cpufreq_init_done;
@@ -965,10 +965,10 @@ static int __init prcmu_qos_power_init(void)
 
 	cpufreq_requirement_set = PRCMU_QOS_DEFAULT_VALUE;
 	cpufreq_requirement_queued = PRCMU_QOS_DEFAULT_VALUE;
-/*
+
 	cpufreq_register_notifier(&qos_delayed_cpufreq_notifier_block,
 			CPUFREQ_TRANSITION_NOTIFIER);
-*/
+
 	if (cpu_is_u9540()) {
 		prcmu_qos_add_requirement(PRCMU_QOS_ARM_KHZ, "cpufreq",
 				PRCMU_QOS_DEFAULT_VALUE);
