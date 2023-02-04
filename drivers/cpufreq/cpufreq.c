@@ -85,8 +85,8 @@ module_param(suspend_min_freq, uint, 0644);
 
 static unsigned int suspend_max_freq = 0;
 
-static unsigned int min_freq = 0;
-static unsigned int max_freq = 0;
+static unsigned int cpu_min_freq = 0;
+static unsigned int cpu_max_freq = 0;
 
 static bool update_freqs = false;
 
@@ -128,7 +128,7 @@ static void cpufreq_early_suspend(struct early_suspend *h)
 	if (enable_suspend_freqs) {
 		if (suspend_max_freq) {
 			if (!suspend_min_freq)
-				suspend_min_freq = min_freq;
+				suspend_min_freq = cpu_min_freq;
 			/* set min/max cpu freq for suspend */
 			cpufreq_update_freq(0, suspend_min_freq, suspend_max_freq);
 			update_freqs = true;
@@ -142,7 +142,7 @@ static void cpufreq_late_resume(struct early_suspend *h)
 #ifdef CONFIG_CPU_FREQ_SUSPEND
 	if (update_freqs) {
 		/* restore previous min/max cpufreq */
-		cpufreq_update_freq(0, min_freq, max_freq);
+		cpufreq_update_freq(0, cpu_min_freq, cpu_max_freq);
 		update_freqs = false;
 	}
 #endif
@@ -499,7 +499,7 @@ static ssize_t store_user_scaling_min_freq
 	ret = __cpufreq_set_policy(policy, &new_policy);
 	policy->user_policy.min = policy->min;
 #ifdef CONFIG_CPU_FREQ_SUSPEND
-	min_freq = policy->min;
+	cpu_min_freq = policy->min;
 #endif
 
 	return ret ? ret : count;
@@ -537,7 +537,7 @@ static ssize_t store_user_scaling_max_freq
 	ret = __cpufreq_set_policy(policy, &new_policy);
 	policy->user_policy.max = policy->max;
 #ifdef CONFIG_CPU_FREQ_SUSPEND
-	max_freq = policy->max;
+	cpu_max_freq = policy->max;
 #endif
 
 	return ret ? ret : count;
