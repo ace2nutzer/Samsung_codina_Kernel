@@ -42,6 +42,11 @@
 #include <linux/notifier.h>
 #include <linux/proc_fs.h>
 
+#if defined(CONFIG_ZRAM)
+extern unsigned long zram_pool_pages;
+extern atomic_t zram_stored_pages;
+#endif
+
 static uint32_t lowmem_debug_level = 0;
 static int lowmem_adj[6] = {
 	0,
@@ -59,7 +64,7 @@ static int lowmem_minfree[6] = {
 static int lowmem_minfree_size = 4;
 static unsigned int lowmem_lmkcount = 0;
 
-static unsigned long lowmem_deathpending_timeout;
+static unsigned long lowmem_deathpending_timeout = 0;
 
 #define lowmem_print(level, x...)			\
 	do {						\
@@ -69,15 +74,15 @@ static unsigned long lowmem_deathpending_timeout;
 
 static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 {
-	struct task_struct *tsk;
+	struct task_struct *tsk = NULL;
 	struct task_struct *selected = NULL;
 	int rem = 0;
-	int tasksize;
-	int i;
+	int tasksize = 0;
+	int i = 0;
 	int min_score_adj = OOM_SCORE_ADJ_MAX + 1;
 	int minfree = 0;
-	int selected_tasksize = 0;
-	int selected_oom_score_adj;
+	int selected_oom_score_adj = 0;
+	static char adj_lvl = 0;
 	int array_size = ARRAY_SIZE(lowmem_adj);
 	int other_free = global_page_state(NR_FREE_PAGES) - totalreserve_pages;
 	int other_file = global_page_state(NR_FILE_PAGES) -
@@ -89,15 +94,16 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 		array_size = lowmem_adj_size;
 	if (lowmem_minfree_size < array_size)
 		array_size = lowmem_minfree_size;
-	for (i = 0; i < array_size; i++) {
+
+	for (i = array_size - 1 - adj_lvl; i >= 0; i--) {
 		minfree = lowmem_minfree[i];
-		if (other_free < minfree && other_file < minfree) {
+		if ((other_free < minfree) && (other_file < minfree)) {
 			min_score_adj = lowmem_adj[i];
 			break;
 		}
 	}
 	if (sc->nr_to_scan > 0)
-		lowmem_print(3, "lowmem_shrink %lu, %x, ofree %d %d, ma %d\n",
+		lowmem_print(4, "lowmem_shrink %lu, %x, ofree %d %d, ma %d\n",
 				sc->nr_to_scan, sc->gfp_mask, other_free,
 				other_file, min_score_adj);
 	rem = global_page_state(NR_ACTIVE_ANON) +
@@ -113,8 +119,8 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 
 	rcu_read_lock();
 	for_each_process(tsk) {
-		struct task_struct *p;
-		int oom_score_adj;
+		struct task_struct *p = NULL;
+		int oom_score_adj = 0;
 
 		if (tsk->flags & PF_KTHREAD)
 			continue;
@@ -135,46 +141,60 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 			continue;
 		}
 		tasksize = get_mm_rss(p->mm);
+
+#if defined(CONFIG_ZRAM)
+		if (atomic_read(&zram_stored_pages)) {
+			lowmem_print(3, "shown tasksize : %d\n", tasksize);
+			tasksize += (int)zram_pool_pages * get_mm_counter(p->mm, MM_SWAPENTS)
+					/ atomic_read(&zram_stored_pages);
+			lowmem_print(3, "real tasksize : %d\n", tasksize);
+		}
+#endif
+
 		task_unlock(p);
 		if (tasksize <= 0)
 			continue;
 		if (selected) {
 			if (oom_score_adj < selected_oom_score_adj)
 				continue;
-			if (oom_score_adj == selected_oom_score_adj &&
-			    tasksize <= selected_tasksize)
-				continue;
+			else
+				break;
 		}
 		selected = p;
-		selected_tasksize = tasksize;
 		selected_oom_score_adj = oom_score_adj;
 		lowmem_print(2, "select '%s' (%d), adj %d, size %d, to kill\n",
 			     p->comm, p->pid, oom_score_adj, tasksize);
 	}
 	if (selected) {
+		task_lock(selected);
+		send_sig(SIGKILL, selected, 0);
+		task_set_lmk_waiting(selected);
+		task_unlock(selected);
 		lowmem_print(1, "Killing '%s' (%d), adj %d,\n" \
 				"   to free %ldkB on behalf of '%s' (%d) because\n" \
 				"   cache %ldkB is below limit %ldkB for oom_score_adj %d\n" \
 				"   Free memory is %ldkB above reserved\n",
 			     selected->comm, selected->pid,
 			     selected_oom_score_adj,
-			     selected_tasksize * (long)(PAGE_SIZE / 1024),
+			     tasksize * (long)(PAGE_SIZE / 1024),
 			     current->comm, current->pid,
 			     other_file * (long)(PAGE_SIZE / 1024),
 			     minfree * (long)(PAGE_SIZE / 1024),
 			     min_score_adj,
 			     other_free * (long)(PAGE_SIZE / 1024));
-		task_lock(selected);
-		send_sig(SIGKILL, selected, 0);
-		if (selected->mm)
-			task_set_lmk_waiting(selected);
-		task_unlock(selected);
 		lowmem_deathpending_timeout = jiffies + HZ;
-		rem -= selected_tasksize;
+		rem -= tasksize;
 		lowmem_lmkcount++;
+		adj_lvl = 0;
+
+		lowmem_print(4, "lowmem_shrink %lu, %x, return %d\n",
+			     sc->nr_to_scan, sc->gfp_mask, rem);
+	} else {
+		if ((array_size -1) > adj_lvl)
+			adj_lvl++;
+		lowmem_print(2, "lowmem_scan: no killable task for oom_score_adj %hd\n",
+			     min_score_adj);
 	}
-	lowmem_print(4, "lowmem_shrink %lu, %x, return %d\n",
-		     sc->nr_to_scan, sc->gfp_mask, rem);
 	rcu_read_unlock();
 	return rem;
 }
