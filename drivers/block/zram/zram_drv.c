@@ -35,6 +35,14 @@
 
 #include "zram_drv.h"
 
+/*************************************
+* statistics required for android-lmk
+*************************************/
+/* Number of memory pages used by the compressed pool */
+unsigned long zram_pool_pages = 0;
+/* The number of compressed pages currently stored in zRam */
+atomic_t zram_stored_pages = ATOMIC_INIT(0);
+
 /* Globals */
 static int zram_major;
 static struct zram *zram_devices;
@@ -472,9 +480,11 @@ static void zram_free_page(struct zram *zram, size_t index)
 	atomic64_sub(zram_get_obj_size(meta, index),
 			&zram->stats.compr_data_size);
 	atomic64_dec(&zram->stats.pages_stored);
+	atomic_dec(&zram_stored_pages);
 
 	meta->table[index].handle = 0;
 	zram_set_obj_size(meta, index, 0);
+	zram_pool_pages = zs_get_total_pages(zram->meta->mem_pool);
 }
 
 static int zram_decompress_page(struct zram *zram, char *mem, u32 index)
@@ -696,11 +706,13 @@ static int zram_bvec_write(struct zram *zram, struct bio_vec *bvec, u32 index,
 	/* Update stats */
 	atomic64_add(clen, &zram->stats.compr_data_size);
 	atomic64_inc(&zram->stats.pages_stored);
+	atomic_inc(&zram_stored_pages);
 out:
 	if (locked)
 		zcomp_strm_release(zram->comp, zstrm);
 	if (is_partial_io(bvec))
 		kfree(uncmem);
+	zram_pool_pages = zs_get_total_pages(zram->meta->mem_pool);
 	return ret;
 }
 
