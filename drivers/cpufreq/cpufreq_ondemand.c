@@ -32,8 +32,6 @@
 #include <linux/a2n.h>
 #endif
 
-extern bool should_boost_cpu_for_gpu;
-
 /*
  * dbs is used in this file as a shortform for demandbased switching
  * It helps to keep variable names smaller, simpler
@@ -523,10 +521,6 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 
 		return;
 	}
-
-	/* Gaming mode: don't reduce CPU Freq */
-	if (should_boost_cpu_for_gpu)
-		return;
 
 	/* No longer fully busy, reset rate_mult */
 	this_dbs_info->rate_mult = 1;
