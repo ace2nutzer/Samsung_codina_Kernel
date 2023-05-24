@@ -32,6 +32,8 @@
 
 #include "input-compat.h"
 
+extern bool is_suspend;
+
 MODULE_AUTHOR("Vojtech Pavlik <vojtech@suse.cz>");
 MODULE_DESCRIPTION("Input core");
 MODULE_LICENSE("GPL");
@@ -342,7 +344,8 @@ static void input_handle_event(struct input_dev *dev,
 static void input_booster_thread(struct work_struct *input_booster_work)
 {
 	msleep(input_booster_time);
-	cpufreq_max_boost(false);
+	if (!is_suspend)
+		cpufreq_max_boost(false);
 	input_booster_ongoing = false;
 }
 static DECLARE_WORK(input_booster_work, input_booster_thread);
@@ -371,7 +374,7 @@ void input_event(struct input_dev *dev,
 
 	if (is_event_supported(type, dev->evbit, EV_MAX)) {
 
-		if (use_input_booster && !input_booster_ongoing) {
+		if (use_input_booster && !input_booster_ongoing && !is_suspend) {
 			cpufreq_max_boost(true);
 			input_booster_ongoing = true;
 			schedule_work(&input_booster_work);

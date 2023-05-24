@@ -96,6 +96,8 @@ static char *fw_project_name(u8 project);
 #define PRCM_AVS_ISMODEENABLE		7
 #define PRCM_AVS_ISMODEENABLE_MASK	(1 << PRCM_AVS_ISMODEENABLE)
 
+#define AB8500_VARM_MAX_RAW		PRCM_AVS_VOLTAGE_MASK
+
 #define PRCM_BOOT_STATUS	0xFFF
 #define PRCM_ROMCODE_A2P	0xFFE
 #define PRCM_ROMCODE_P2A	0xFFD
@@ -1129,13 +1131,13 @@ static int liveopp_start = 0;
 static struct liveopp_arm_table liveopp_arm[] = {
 //	| SHOW     | CLK    | PLL        | VDD  | VBB  | DDR | APE
 	{ 200000,  199680,  0x0005011A,   0x18,  0xDB,   50,   50},
-	{ 400000,  399360,  0x00050134,   0x1a,  0xDB,  100,  100},
-	{ 600000,  599040,  0x0005014E,   0x20,  0xDB,  100,  100},
-	{ 800000,  798720,  0x00050168,   0x27,  0xDB,  100,  100},
-	{1000000,  998400,  0x00050182,   0x32,  0xDB,  100,  100},
-	{1100000,  1098240, 0x0005018F,   0x3f,  0x8F,  100,  100},
-	{1150000,  1152000, 0x00050196,   0x3f,  0x8F,  100,  100},
-	{1200000,  1198080, 0x0005019C,   0x3f,  0x8F,  100,  100},
+	{ 400000,  399360,  0x00050134,   0x20,  0xDB,  100,  100},
+	{ 600000,  599040,  0x0005014E,   0x24,  0xDB,  100,  100},
+	{ 800000,  798720,  0x00050168,   0x28,  0xDB,  100,  100},
+	{1000000,  998400,  0x00050182,   0x30,  0xDB,  100,  100},
+	{1100000,  1098240, 0x0005018F,   0x34,  0x8F,  100,  100},
+	{1150000,  1152000, 0x00050196,   0x38,  0x8F,  100,  100},
+	{1200000,  1198080, 0x0005019C,   0x3c,  0x8F,  100,  100},
 	{1250000,  1251840, 0x000501A3,   0x3f,  0x8F,  100,  100},
 	{1300000,  1297920, 0x000501A9,   0x3f,  0x8F,  100,  100},
 };
@@ -1341,6 +1343,8 @@ static ssize_t arm_step_store(struct kobject *kobj, struct kobj_attribute *attr,
 			pr_err("[LiveOPP] Invalid value\n");
 			goto err;
 		}
+		if (val > AB8500_VARM_MAX_RAW)
+			val = AB8500_VARM_MAX_RAW;
 		liveopp_arm[_index].varm_raw = val;
 		goto out;
 	}
