@@ -19,7 +19,6 @@
 //#define TSP_VERBOSE_DEBUG
 #define TSP_FACTORY
 
-//#define TOUCH_BOOSTER
 #define DISABLE_TOUCHSCREEN_SPAM
 
 #include <linux/kernel.h>
@@ -330,20 +329,14 @@ struct bt404_ts_data {
 	u16				reported_key_val;
 	u16				event_type;
 	u32				irq;
-
 	u8				button[MAX_SUPPORTED_BUTTON_NUM];
 	u8				work_state;
 	struct semaphore		work_lock;
-
 	u8				use_esd_timer;
 	struct timer_list		esd_timeout_tmr;
 	struct timer_list		*pesd_timeout_tmr;
-
 	u8				*fw_data;
-
-#if defined(TOUCH_BOOSTER)
 	u8				finger_cnt;
-#endif
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
 	struct early_suspend		early_suspend;
@@ -1507,23 +1500,7 @@ static void bt404_ts_report_touch_data(struct bt404_ts_data *data,
 		}
 		input_sync(data->input_dev_ts);
 
-#if defined(TOUCH_BOOSTER)
 		data->finger_cnt = 0;
-/*
-		prcmu_qos_update_requirement(
-			PRCMU_QOS_APE_OPP,
-			(char *)data->client->name,
-			PRCMU_QOS_DEFAULT_VALUE);
-		prcmu_qos_update_requirement(
-			PRCMU_QOS_DDR_OPP,
-			(char *)data->client->name,
-			PRCMU_QOS_DEFAULT_VALUE);
-		prcmu_qos_update_requirement(
-			PRCMU_QOS_ARM_KHZ,
-			(char *)data->client->name,
-			PRCMU_QOS_DEFAULT_VALUE);
-*/
-#endif
 		return;
 	}
 
@@ -1552,27 +1529,9 @@ static void bt404_ts_report_touch_data(struct bt404_ts_data *data,
 			input_mt_slot(data->input_dev_ts, i);
 			input_mt_report_slot_state(data->input_dev_ts,
 						   MT_TOOL_FINGER, false);
-#if defined(TOUCH_BOOSTER)
+
 			if (data->finger_cnt > 0)
 				data->finger_cnt--;
-
-			if (!data->finger_cnt) {
-/*
-				prcmu_qos_update_requirement(
-					PRCMU_QOS_APE_OPP,
-					(char *)data->client->name,
-					PRCMU_QOS_DEFAULT_VALUE);
-				prcmu_qos_update_requirement(
-					PRCMU_QOS_DDR_OPP,
-					(char *)data->client->name,
-					PRCMU_QOS_DEFAULT_VALUE);
-				prcmu_qos_update_requirement(
-					PRCMU_QOS_ARM_KHZ,
-					(char *)data->client->name,
-					PRCMU_QOS_DEFAULT_VALUE);
-*/
-			}
-#endif
 			continue;
 		} else if (cur_move || cur_down) {
 
@@ -1583,27 +1542,7 @@ static void bt404_ts_report_touch_data(struct bt404_ts_data *data,
 			}
 
 			if (cur_down) {
-#if defined(TOUCH_BOOSTER)
-				if (!data->finger_cnt) {
-/*
-					prcmu_qos_update_requirement(
-						PRCMU_QOS_APE_OPP,
-						(char *)data->client->name,
-						PRCMU_QOS_APE_OPP_MAX);
-					prcmu_qos_update_requirement(
-						PRCMU_QOS_DDR_OPP,
-						(char *)data->client->name,
-						PRCMU_QOS_DDR_OPP_MAX);
-					prcmu_qos_update_requirement(
-						PRCMU_QOS_ARM_KHZ,
-						(char *)data->client->name,
-						800000);
-*/
-				}
-
 				data->finger_cnt++;
-#endif
-
 #if !defined(CONFIG_SAMSUNG_PRODUCT_SHIP)
 #ifndef DISABLE_TOUCHSCREEN_SPAM
 				dev_info(&client->dev,
@@ -4033,19 +3972,6 @@ static int bt404_ts_probe(struct i2c_client *client,
 
 	data->work_state = NOTHING;
 	sema_init(&data->work_lock, 1);
-
-#if defined(TOUCH_BOOSTER)
-/*
-	prcmu_qos_add_requirement(PRCMU_QOS_APE_OPP, (char *)client->name,
-				  PRCMU_QOS_DEFAULT_VALUE);
-	prcmu_qos_add_requirement(PRCMU_QOS_DDR_OPP, (char *)client->name,
-				  PRCMU_QOS_DEFAULT_VALUE);
-	prcmu_qos_add_requirement(PRCMU_QOS_ARM_KHZ, (char *)client->name,
-				  PRCMU_QOS_DEFAULT_VALUE);
-	dev_info(&client->dev, "add_prcmu_qos is added\n");
-*/
-#endif
-
 	data->irq = client->irq;
 
 	if (data->irq) {
@@ -4134,13 +4060,6 @@ static int bt404_ts_probe(struct i2c_client *client,
 
 err_create_sysfs:
 err_request_irq:
-#if defined(TOUCH_BOOSTER)
-/*
-	prcmu_qos_remove_requirement(PRCMU_QOS_APE_OPP, (char *)client->name);
-	prcmu_qos_remove_requirement(PRCMU_QOS_DDR_OPP, (char *)client->name);
-	prcmu_qos_remove_requirement(PRCMU_QOS_ARM_KHZ, (char *)client->name);
-*/
-#endif
 	if (data->pdata->power_con == LDO_CON)
 		gpio_set_value(pdata->gpio_ldo_en, 0);
 
@@ -4195,14 +4114,6 @@ static int bt404_ts_remove(struct i2c_client *client)
 
 	if (data->irq)
 		free_irq(data->irq, data);
-
-#if defined(TOUCH_BOOSTER)
-/*
-	prcmu_qos_remove_requirement(PRCMU_QOS_APE_OPP, (char *)client->name);
-	prcmu_qos_remove_requirement(PRCMU_QOS_DDR_OPP, (char *)client->name);
-	prcmu_qos_remove_requirement(PRCMU_QOS_ARM_KHZ, (char *)client->name);
-*/
-#endif
 
 #if USE_TEST_RAW_TH_DATA_MODE
 	device_remove_file(touch_misc_device.this_device,
