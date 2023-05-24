@@ -79,15 +79,13 @@ static unsigned int cpu_max_freq = 0;
 
 #ifdef CONFIG_CPU_FREQ_SUSPEND
 /* suspend min/max cpufreq tunable */
-bool enable_suspend_freqs = false;
+static bool enable_suspend_freqs = false;
 module_param(enable_suspend_freqs, bool, 0644);
 
 static unsigned int suspend_min_freq = 0;
 module_param(suspend_min_freq, uint, 0644);
 
 static unsigned int suspend_max_freq = 0;
-
-static bool suspend_freqs_ongoing = false;
 
 static int set_suspend_max_freq(const char *buf, struct kernel_param *kp)
 {
@@ -96,7 +94,7 @@ static int set_suspend_max_freq(const char *buf, struct kernel_param *kp)
 #if IS_ENABLED(CONFIG_A2N)
 	if (!a2n_allow) {
 		sscanf(buf, "%u", &tmp);
-		if ((tmp != 0) && (tmp != 1000000)) {
+		if ((tmp != 0) && (tmp != 800000)) {
 			pr_err("[%s] a2n: unprivileged access !\n",__func__);
 			goto err;
 		}
@@ -124,26 +122,23 @@ module_param_call(suspend_max_freq, set_suspend_max_freq, param_get_int, &suspen
 static void cpufreq_early_suspend(struct early_suspend *h)
 {
 #ifdef CONFIG_CPU_FREQ_SUSPEND
-	if (enable_suspend_freqs) {
-		if (suspend_max_freq) {
-			if (!suspend_min_freq)
-				suspend_min_freq = cpu_min_freq;
-			/* set min/max cpu freq for suspend */
-			cpufreq_update_freq(0, suspend_min_freq, suspend_max_freq);
-			suspend_freqs_ongoing = true;
-		}
-	}
+	if (!enable_suspend_freqs || !suspend_max_freq)
+		return;
+
+	if (!suspend_min_freq)
+		suspend_min_freq = cpu_min_freq;
+	/* set min/max cpu freq for suspend */
+	cpufreq_update_freq(0, suspend_min_freq, suspend_max_freq);
 #endif
 }
 
 static void cpufreq_late_resume(struct early_suspend *h)
 {
 #ifdef CONFIG_CPU_FREQ_SUSPEND
-	if (suspend_freqs_ongoing) {
-		/* restore previous min/max cpufreq */
-		cpufreq_update_freq(0, cpu_min_freq, cpu_max_freq);
-		suspend_freqs_ongoing = false;
-	}
+	if (!enable_suspend_freqs)
+		return;
+	/* restore previous min/max cpufreq */
+	cpufreq_update_freq(0, cpu_min_freq, cpu_max_freq);
 #endif
 }
 
@@ -451,22 +446,24 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 
 int cpufreq_update_freq(int cpu, unsigned int min, unsigned int max)
 {
-	int ret;
-	struct cpufreq_policy new_policy;
-	struct cpufreq_policy *policy = cpufreq_cpu_get(cpu);
+	struct cpufreq_policy *policy = NULL;
 
-	ret = cpufreq_get_policy(&new_policy, cpu);
-	if (ret)
-		return -EINVAL;
+	policy = cpufreq_cpu_get(cpu);
+	if (policy) {
+		cpufreq_cpu_put(policy);
+	} else {
+		pr_warn("%s: failed for policy%d\n", __func__, cpu);
+		return -ENODEV;
+	}
 
-	new_policy.min = min;
-	new_policy.max = max;
+	if (policy->min != min || policy->max != max) {
+		pr_info("cpufreq: new min and max freqs are %u - %u kHz\n",
+				min, max);
+		policy->min = min;
+		policy->max = max;
+	}
 
-	ret = __cpufreq_set_policy(policy, &new_policy);
-	policy->user_policy.min = policy->min;
-	policy->user_policy.max = policy->max;
-
-	return ret;
+	return 0;
 }
 EXPORT_SYMBOL(cpufreq_update_freq);
 
@@ -496,10 +493,12 @@ static ssize_t store_user_scaling_min_freq
 		goto err;
 
 	ret = __cpufreq_set_policy(policy, &new_policy);
-	policy->user_policy.min = policy->min;
-	cpu_min_freq = policy->min;
+	if (ret)
+		goto err;
 
-	return ret ? ret : count;
+	policy->user_policy.min = new_policy.min;
+	cpu_min_freq = new_policy.min;
+	return count;
 err:
 	pr_err("[%s] invalid cmd\n",__func__);
 	return -EINVAL;
@@ -515,12 +514,15 @@ static ssize_t store_user_scaling_max_freq
 #if IS_ENABLED(CONFIG_A2N)
 	if (!a2n_allow) {
 		sscanf(buf, "%u", &val);
-		if ((val != 1000000) && (val != 200000)) {
+		if ((val != 800000) && (val != 200000)) {
 			pr_err("[%s] a2n: unprivileged access !\n",__func__);
 			goto err;
 		}
 	}
 #endif
+
+	/* fix for input booster */
+	policy->min = cpu_min_freq;
 
 	ret = cpufreq_get_policy(&new_policy, policy->cpu);
 	if (ret)
@@ -531,10 +533,12 @@ static ssize_t store_user_scaling_max_freq
 		goto err;
 
 	ret = __cpufreq_set_policy(policy, &new_policy);
-	policy->user_policy.max = policy->max;
-	cpu_max_freq = policy->max;
+	if (ret)
+		goto err;
 
-	return ret ? ret : count;
+	policy->user_policy.max = new_policy.max;
+	cpu_max_freq = new_policy.max;
+	return count;
 err:
 	pr_err("[%s] invalid cmd\n",__func__);
 	return -EINVAL;
@@ -544,14 +548,11 @@ inline void cpufreq_max_boost(bool boost)
 {
 	struct cpufreq_policy *policy = NULL;
 
-	if (suspend_freqs_ongoing)
-		return;
-
 	policy = cpufreq_cpu_get(0);
 	if (policy) {
 		cpufreq_cpu_put(policy);
 	} else {
-		pr_err("%s: failed for policy0\n", __func__);
+		pr_warn("%s: failed for policy0\n", __func__);
 		return;
 	}
 
@@ -1113,8 +1114,10 @@ static int cpufreq_add_dev(struct sys_device *sys_dev)
 	}
 	policy->user_policy.min = policy->min;
 	policy->user_policy.max = policy->max;
-	cpu_min_freq = policy->min;
-	cpu_max_freq = policy->max;
+	if (!cpu_min_freq)
+		cpu_min_freq = policy->min;
+	if (!cpu_max_freq)
+		cpu_max_freq = policy->max;
 
 	blocking_notifier_call_chain(&cpufreq_policy_notifier_list,
 				     CPUFREQ_START, policy);
@@ -2050,6 +2053,8 @@ int cpufreq_unregister_driver(struct cpufreq_driver *driver)
 	spin_lock_irqsave(&cpufreq_driver_lock, flags);
 	cpufreq_driver = NULL;
 	spin_unlock_irqrestore(&cpufreq_driver_lock, flags);
+
+	unregister_early_suspend(&early_suspend);
 
 	return 0;
 }

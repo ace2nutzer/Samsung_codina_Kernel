@@ -141,7 +141,6 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 			continue;
 		}
 		tasksize = get_mm_rss(p->mm);
-
 #if defined(CONFIG_ZRAM)
 		if (atomic_read(&zram_stored_pages)) {
 			lowmem_print(3, "shown tasksize : %d\n", tasksize);
@@ -150,10 +149,10 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 			lowmem_print(3, "real tasksize : %d\n", tasksize);
 		}
 #endif
-
 		task_unlock(p);
 		if (tasksize <= 0)
 			continue;
+
 		if (selected) {
 			if (oom_score_adj < selected_oom_score_adj)
 				continue;
@@ -188,13 +187,13 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 		lowmem_deathpending_timeout = jiffies + HZ;
 		rem -= selected_tasksize;
 		lowmem_lmkcount++;
-
-		lowmem_print(4, "lowmem_shrink %lu, %x, return %d\n",
-			     sc->nr_to_scan, sc->gfp_mask, rem);
 	} else {
 		lowmem_print(2, "lowmem_scan: no killable task for oom_score_adj %hd\n",
 				min_score_adj);
 	}
+	lowmem_print(4, "lowmem_shrink %lu, %x, return %d\n",
+			sc->nr_to_scan, sc->gfp_mask, rem);
+
 	rcu_read_unlock();
 	return rem;
 }

@@ -38,7 +38,7 @@
  */
 #define DEF_FREQUENCY_UP_THRESHOLD		(75)
 #define DOWN_THRESHOLD_MARGIN			(25)
-#define DEF_SAMPLING_DOWN_FACTOR		(4)
+#define DEF_SAMPLING_DOWN_FACTOR		(5)
 #define MAX_SAMPLING_DOWN_FACTOR		(100000)
 #define MICRO_FREQUENCY_UP_THRESHOLD		(75)
 #define MIN_FREQUENCY_UP_THRESHOLD		(60)
@@ -76,8 +76,6 @@ static unsigned int min_sampling_rate = 0;
 
 #ifdef CONFIG_CPU_FREQ_SUSPEND
 static struct early_suspend early_suspend;
-extern bool enable_suspend_freqs;
-static bool update_gov_tunables = false;
 #endif
 
 static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
@@ -137,7 +135,7 @@ static struct dbs_tuners {
 	bool boost_suspend;
 	bool boost_resume;
 } dbs_tuners_ins = {
-	.up_threshold = DEF_FREQUENCY_UP_THRESHOLD,
+	.up_threshold = 0,
 	.down_threshold = 0,
 	.sampling_down_factor = DEF_SAMPLING_DOWN_FACTOR,
 	.ignore_nice_load = IGNORE_NICE_LOAD,
@@ -797,21 +795,14 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 #ifdef CONFIG_CPU_FREQ_SUSPEND
 static void cpufreq_od_early_suspend(struct early_suspend *h)
 {
-	if (!enable_suspend_freqs)
-		return;
-
 	dbs_tuners_ins.up_threshold = dbs_tuners_ins.up_threshold_suspend;
 	dbs_tuners_ins.boost = dbs_tuners_ins.boost_suspend;
-	update_gov_tunables = true;
 }
 
 static void cpufreq_od_late_resume(struct early_suspend *h)
 {
-	if (update_gov_tunables) {
-		dbs_tuners_ins.up_threshold = dbs_tuners_ins.up_threshold_resume;
-		dbs_tuners_ins.boost = dbs_tuners_ins.boost_resume;
-		update_gov_tunables = false;
-	}
+	dbs_tuners_ins.up_threshold = dbs_tuners_ins.up_threshold_resume;
+	dbs_tuners_ins.boost = dbs_tuners_ins.boost_resume;
 }
 #endif
 

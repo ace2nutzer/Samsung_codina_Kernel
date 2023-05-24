@@ -45,7 +45,7 @@
 #endif
 
 #define MIN_FREQ			0
-#define MAX_FREQ			2
+#define MAX_FREQ			1
 
 #define UP_THRESHOLD			95	/* max 100 % */
 #define MIN_UP_THRESHOLD		40
@@ -62,7 +62,7 @@
 
 #define MALI_UX500_VERSION		"2.3"
 
-#define SAMPLING_DOWN_FACTOR		4
+#define SAMPLING_DOWN_FACTOR		5
 
 #define MALI_MAX_UTILIZATION		256
 
@@ -70,13 +70,14 @@
 #define PRCMU_PLLSOC0			0x0080
 
 #define PRCMU_SGACLK_INIT		0x00000121
-#define PRCMU_PLLSOC0_INIT		0x00050141
+#define PRCMU_PLLSOC0_INIT		0x00050127
 
 #define AB8500_VAPE_SEL1 		0x0E
 #define AB8500_VAPE_SEL2	 	0x0F
 #define AB8500_VAPE_STEP_UV		12500
 #define AB8500_VAPE_MIN_UV		700000
 #define AB8500_VAPE_MAX_UV		1487500
+#define AB8500_VAPE_MAX_RAW		0x3f
 
 struct mali_dvfs_data
 {
@@ -89,10 +90,10 @@ struct mali_dvfs_data
 static struct mali_dvfs_data mali_dvfs[] = {
 	{300000, 299520, 0x00050127, 0x20},
 	{400000, 399360, 0x00050134, 0x22},
-	{500000, 499200, 0x00050141, 0x28},
-	{600000, 599040, 0x0005014E, 0x30},
-	{650000, 652800, 0x00050155, 0x3f},
-	{700000, 698880, 0x0005015B, 0x3f},
+	{500000, 499200, 0x00050141, 0x26},
+	{600000, 599040, 0x0005014E, 0x2e},
+	{650000, 652800, 0x00050155, 0x32},
+	{700000, 698880, 0x0005015B, 0x3b},
 	{750000, 752640, 0x00050162, 0x3f},
 };
 
@@ -473,8 +474,8 @@ err:
 	return -EINVAL;
 
 out:
-	pr_info("[Mali] new min freqs is %u kHz\n", 
-			mali_dvfs[min_freq].freq);
+	pr_info("[Mali] new min and max freqs are %u - %u kHz\n", 
+			mali_dvfs[min_freq].freq, mali_dvfs[max_freq].freq);
 
 	return count;
 }
@@ -523,8 +524,8 @@ err:
 	return -EINVAL;
 
 out:
-	pr_info("[Mali] new max freqs is %u kHz\n", 
-			mali_dvfs[max_freq].freq);
+	pr_info("[Mali] new min and max freqs are %u - %u kHz\n", 
+			mali_dvfs[min_freq].freq, mali_dvfs[max_freq].freq);
 
 	return count;
 }
@@ -631,6 +632,8 @@ static ssize_t dvfs_config_store(struct kobject *kobj, struct kobj_attribute *at
 	}
 
 	if (sscanf(buf, "%u vape=%x", &idx, &val) == 2) {
+		if (val > AB8500_VAPE_MAX_RAW)
+			val = AB8500_VAPE_MAX_RAW;
 		mali_dvfs[idx].vape_raw = val;
 		goto out;
 	}
