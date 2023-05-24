@@ -74,6 +74,8 @@ static DEFINE_PER_CPU(int, cpufreq_policy_cpu);
 static DEFINE_PER_CPU(struct rw_semaphore, cpu_policy_rwsem);
 
 static struct early_suspend early_suspend;
+static unsigned int cpu_min_freq = 0;
+static unsigned int cpu_max_freq = 0;
 
 #ifdef CONFIG_CPU_FREQ_SUSPEND
 /* suspend min/max cpufreq tunable */
@@ -85,10 +87,7 @@ module_param(suspend_min_freq, uint, 0644);
 
 static unsigned int suspend_max_freq = 0;
 
-static unsigned int cpu_min_freq = 0;
-static unsigned int cpu_max_freq = 0;
-
-static bool update_freqs = false;
+static bool suspend_freqs_ongoing = false;
 
 static int set_suspend_max_freq(const char *buf, struct kernel_param *kp)
 {
@@ -131,7 +130,7 @@ static void cpufreq_early_suspend(struct early_suspend *h)
 				suspend_min_freq = cpu_min_freq;
 			/* set min/max cpu freq for suspend */
 			cpufreq_update_freq(0, suspend_min_freq, suspend_max_freq);
-			update_freqs = true;
+			suspend_freqs_ongoing = true;
 		}
 	}
 #endif
@@ -140,10 +139,10 @@ static void cpufreq_early_suspend(struct early_suspend *h)
 static void cpufreq_late_resume(struct early_suspend *h)
 {
 #ifdef CONFIG_CPU_FREQ_SUSPEND
-	if (update_freqs) {
+	if (suspend_freqs_ongoing) {
 		/* restore previous min/max cpufreq */
 		cpufreq_update_freq(0, cpu_min_freq, cpu_max_freq);
-		update_freqs = false;
+		suspend_freqs_ongoing = false;
 	}
 #endif
 }
@@ -498,12 +497,9 @@ static ssize_t store_user_scaling_min_freq
 
 	ret = __cpufreq_set_policy(policy, &new_policy);
 	policy->user_policy.min = policy->min;
-#ifdef CONFIG_CPU_FREQ_SUSPEND
 	cpu_min_freq = policy->min;
-#endif
 
 	return ret ? ret : count;
-
 err:
 	pr_err("[%s] invalid cmd\n",__func__);
 	return -EINVAL;
@@ -536,15 +532,33 @@ static ssize_t store_user_scaling_max_freq
 
 	ret = __cpufreq_set_policy(policy, &new_policy);
 	policy->user_policy.max = policy->max;
-#ifdef CONFIG_CPU_FREQ_SUSPEND
 	cpu_max_freq = policy->max;
-#endif
 
 	return ret ? ret : count;
-
 err:
 	pr_err("[%s] invalid cmd\n",__func__);
 	return -EINVAL;
+}
+
+inline void cpufreq_max_boost(bool boost)
+{
+	struct cpufreq_policy *policy = NULL;
+
+	if (suspend_freqs_ongoing)
+		return;
+
+	policy = cpufreq_cpu_get(0);
+	if (policy) {
+		cpufreq_cpu_put(policy);
+	} else {
+		pr_err("%s: failed for policy0\n", __func__);
+		return;
+	}
+
+	if (boost)
+		policy->min = policy->max;
+	else
+		policy->min = cpu_min_freq;
 }
 
 /**
@@ -1099,6 +1113,8 @@ static int cpufreq_add_dev(struct sys_device *sys_dev)
 	}
 	policy->user_policy.min = policy->min;
 	policy->user_policy.max = policy->max;
+	cpu_min_freq = policy->min;
+	cpu_max_freq = policy->max;
 
 	blocking_notifier_call_chain(&cpufreq_policy_notifier_list,
 				     CPUFREQ_START, policy);

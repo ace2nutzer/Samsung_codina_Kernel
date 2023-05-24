@@ -26,6 +26,10 @@
 #include <linux/device.h>
 #include <linux/mutex.h>
 #include <linux/rcupdate.h>
+#include <linux/cpufreq.h>
+#include <linux/delay.h>
+#include <linux/moduleparam.h>
+
 #include "input-compat.h"
 
 MODULE_AUTHOR("Vojtech Pavlik <vojtech@suse.cz>");
@@ -36,6 +40,14 @@ MODULE_LICENSE("GPL");
 
 static LIST_HEAD(input_dev_list);
 static LIST_HEAD(input_handler_list);
+
+static bool use_input_booster = true;
+module_param(use_input_booster, bool, 0644);
+
+static unsigned int input_booster_time = 1000; /* ms */
+module_param(input_booster_time, uint, 0644);
+
+static bool input_booster_ongoing = false;
 
 /*
  * input_mutex protects access to both input_dev_list and input_handler_list.
@@ -327,6 +339,14 @@ static void input_handle_event(struct input_dev *dev,
 		input_pass_event(dev, type, code, value);
 }
 
+static void input_booster_thread(struct work_struct *input_booster_work)
+{
+	msleep(input_booster_time);
+	cpufreq_max_boost(false);
+	input_booster_ongoing = false;
+}
+static DECLARE_WORK(input_booster_work, input_booster_thread);
+
 /**
  * input_event() - report new input event
  * @dev: device that generated the event
@@ -350,6 +370,12 @@ void input_event(struct input_dev *dev,
 	unsigned long flags;
 
 	if (is_event_supported(type, dev->evbit, EV_MAX)) {
+
+		if (use_input_booster && !input_booster_ongoing) {
+			cpufreq_max_boost(true);
+			input_booster_ongoing = true;
+			schedule_work(&input_booster_work);
+		}
 
 		spin_lock_irqsave(&dev->event_lock, flags);
 		add_input_randomness(type, code, value);
@@ -1162,7 +1188,7 @@ static const struct file_operations input_handlers_fileops = {
 	.release	= seq_release,
 };
 
-static int __init input_proc_init(void)
+static int input_proc_init(void)
 {
 	struct proc_dir_entry *entry;
 
