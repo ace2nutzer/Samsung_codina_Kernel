@@ -247,16 +247,15 @@ static AllocationList * _allocation_list_item_get(void)
 static void _allocation_list_item_release(AllocationList * item)
 {
 	unsigned long flags;
-	spin_lock_irqsave(&allocation_list_spinlock,flags);
-	if ( pre_allocated_memory_size_current < pre_allocated_memory_size_max)
-	{
+
+	if ( pre_allocated_memory_size_current < pre_allocated_memory_size_max) {
+		spin_lock_irqsave(&allocation_list_spinlock,flags);
 		item->next = pre_allocated_memory;
 		pre_allocated_memory = item;
 		pre_allocated_memory_size_current += PAGE_SIZE;
 		spin_unlock_irqrestore(&allocation_list_spinlock,flags);
 		return;
 	}
-	spin_unlock_irqrestore(&allocation_list_spinlock,flags);
 
 	_kernel_page_release(item->physaddr);
 	_mali_osk_free( item );
