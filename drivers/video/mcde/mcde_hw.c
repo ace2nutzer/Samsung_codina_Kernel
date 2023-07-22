@@ -63,10 +63,10 @@ extern bool is_lpm;
 extern bool is_recovery;
 extern bool landscape_mode;
 
-static unsigned int lcdclk_ws24_v = 5;
-static unsigned int lcdclk_ws24_h = 5;
-static unsigned int lcdclk_s6d_v = 6;
-static unsigned int lcdclk_s6d_h = 6;
+static unsigned int lcdclk_ws24_v = 1; /* 4 for boost */
+static unsigned int lcdclk_ws24_h = 1; /* 4 for boost */
+static unsigned int lcdclk_s6d_v = 1; /* 6 for boost */
+static unsigned int lcdclk_s6d_h = 1; /* 6 for boost */
 static unsigned int custom_lcdclk = 0;
 
 #define LCDCLK_SET(clk) prcmu_set_clock_rate(PRCMU_LCDCLK, (unsigned long) clk);
@@ -1235,7 +1235,7 @@ static int wait_for_vsync(struct mcde_chnl_state *chnl)
 	}
 }
 
-/* PRCMU LCDCLK
+/* PRCMU LCDCLK with PLLDDR 800 MHz
  * 30720000	[S6D27A1]
  * 49920000	[WS2401]
  */
@@ -1246,7 +1246,7 @@ struct lcdclk_prop
 	unsigned int clk;
 };
 
-// WS2401
+/* with PLLDDR 1000 MHz */
 static struct lcdclk_prop lcdclk_ws24_prop[] = {
 		[1] = {
 			.name = "50 MHz",
@@ -1254,94 +1254,85 @@ static struct lcdclk_prop lcdclk_ws24_prop[] = {
 		},
 		[2] = {
 			.name = "55 MHz",
-			.clk = 54912000,
+			.clk = 55466666,
 		},
 		[3] = {
-			.name = "60 MHz",
-			.clk = 61013333,
+			.name = "62 MHz",
+			.clk = 62400000,
 		},
 		[4] = {
-			.name = "70 MHz",
-			.clk = 68640000,
+			.name = "71 MHz",
+			.clk = 71314285,
 		},
 		[5] = {
-			.name = "80 MHz",
-			.clk = 78445714,
+			.name = "83 MHz",
+			.clk = 83200000,
 		},
 		[6] = {
-			.name = "90 MHz",
-			.clk = 91520000,
-		},
-		[7] = {
-			.name = "110 MHz",
-			.clk = 109824000,
+			.name = "100 MHz",
+			.clk = 99840000,
 		},
 };
 
-// S6D27A1
 static struct lcdclk_prop lcdclk_s6d_prop[] = {
 		[1] = {
-			.name = "30 MHz",
-			.clk = 30506666,
+			.name = "31 MHz",
+			.clk = 31200000,
 		},
 		[2] = {
-			.name = "32 MHz",
-			.clk = 32301176,
+			.name = "33 MHz",
+			.clk = 33280000,
 		},
 		[3] = {
-			.name = "34 MHz",
-			.clk = 34320000,
+			.name = "36 MHz",
+			.clk = 35657142,
 		},
 		[4] = {
-			.name = "37 MHz",
-			.clk = 36608000,
+			.name = "38 MHz",
+			.clk = 38400000,
 		},
 		[5] = {
-			.name = "39 MHz",
-			.clk = 39222857,
+			.name = "42 MHz",
+			.clk = 41600000,
 		},
 		[6] = {
-			.name = "42 MHz",
-			.clk = 42240000,
+			.name = "45 MHz",
+			.clk = 45381818,
 		},
 		[7] = {
-			.name = "45 MHz",
-			.clk = 45760000,
-		},
-		[8] = {
 			.name = "50 MHz",
 			.clk = 49920000,
 		},
-		[9] = {
+		[8] = {
 			.name = "55 MHz",
-			.clk = 54912000,
+			.clk = 55466666,
+		},
+		[9] = {
+			.name = "62 MHz",
+			.clk = 62400000,
 		},
 		[10] = {
-			.name = "60 MHz",
-			.clk = 61013333,
+			.name = "71 MHz",
+			.clk = 71314285,
 		},
 		[11] = {
-			.name = "70 MHz",
-			.clk = 68640000,
+			.name = "83 MHz",
+			.clk = 83200000,
 		},
 		[12] = {
-			.name = "80 MHz",
-			.clk = 78445714,
-		},
-		[13] = {
-			.name = "90 MHz",
-			.clk = 91520000,
+			.name = "100 MHz",
+			.clk = 99840000,
 		},
 };
 
-static void lcdclk_thread(struct work_struct *lcdclk_work)
+void lcdclk_set(void)
 {
 	int ret = 0;
 
-	if ((is_recovery) || (is_lpm))
-		return;
-
-	msleep(1000);
+	if ((is_recovery) || (is_lpm)) {
+		lcdclk_s6d_v = 1;
+		lcdclk_ws24_v = 1;
+	}
 
 	if (custom_lcdclk) {
 		ret = LCDCLK_SET(custom_lcdclk);
@@ -1381,12 +1372,6 @@ static void lcdclk_thread(struct work_struct *lcdclk_work)
 				pr_info("[MCDE] Set LCDCLK H to %d Hz\n",  lcdclk_ws24_prop[lcdclk_ws24_h].clk);
 		}
 	}
-}
-static DECLARE_WORK(lcdclk_work, lcdclk_thread);
-
-void lcdclk_set(void)
-{
-	schedule_work(&lcdclk_work);
 }
 
 #define ATTR_RO(_name)	\
@@ -1440,7 +1425,7 @@ static ssize_t lcd_clk_store(struct kobject *kobj, struct kobj_attribute *attr, 
 	int ret, tmp;
 
 	if (sscanf(buf, "lcdclk=%d", &tmp)) {
-		if (tmp < 20000000 || tmp > 100000000) {
+		if (tmp < 20000000 || tmp > 120000000) {
 			pr_err("[MCDE] Bad cmd\n");
 			return -EINVAL;
 		} else {
@@ -1603,19 +1588,8 @@ static int update_channel_static_registers(struct mcde_chnl_state *chnl)
 	}
 
 	if (port->type == MCDE_PORTTYPE_DPI) {
-		if (clk_round_rate(chnl->clk_dpi, port->phy.dpi.lcd_freq) < 0)
-			dev_warn(&mcde_dev->dev, "Could not set lcd freq"
-					" to %d\n", port->phy.dpi.lcd_freq);
-		WARN_ON_ONCE(clk_set_rate(chnl->clk_dpi,
-				port->phy.dpi.lcd_freq));
-		WARN_ON_ONCE(clk_enable(chnl->clk_dpi));
-
-		if ((is_recovery) || (is_lpm)) {
-			lcdclk_s6d_v = 1;
-			lcdclk_ws24_v = 1;
-		}
-
 		lcdclk_set();
+		WARN_ON_ONCE(clk_enable(chnl->clk_dpi));
 	}
 
 	mcde_wfld(MCDE_CR, MCDEEN, true);
