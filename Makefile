@@ -250,8 +250,8 @@ HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Wno-format-overfl
 HOSTCXXFLAGS = -O3 -fomit-frame-pointer -fno-strict-aliasing -Wno-format-overflow -Wno-stringop-truncation
 
 # Host specific Flags
-HOSTCFLAGS   += -march=core2 -mcpu=core2 -mtune=core2 -mfpmath=sse -mssse3 -mhard-float -pipe
-HOSTCXXFLAGS += -march=core2 -mcpu=core2 -mtune=core2 -mfpmath=sse -mssse3 -mhard-float -pipe
+HOSTCFLAGS   += -march=core2 -mcpu=core2 -mtune=core2 -pipe
+HOSTCXXFLAGS += -march=core2 -mcpu=core2 -mtune=core2 -pipe
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -391,7 +391,6 @@ CFLAGS_ABI	:= -march=armv7-a \
 		   -mtune=cortex-a9 \
 		   -marm \
 		   -mno-thumb-interwork \
-		   -mfpu=neon \
 		   -msoft-float \
 		   -mfloat-abi=soft
 
