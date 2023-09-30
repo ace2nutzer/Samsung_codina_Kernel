@@ -521,9 +521,6 @@ static ssize_t store_user_scaling_max_freq
 	}
 #endif
 
-	/* fix for input booster */
-	policy->min = cpu_min_freq;
-
 	ret = cpufreq_get_policy(&new_policy, policy->cpu);
 	if (ret)
 		goto err;
@@ -542,24 +539,6 @@ static ssize_t store_user_scaling_max_freq
 err:
 	pr_err("[%s] invalid cmd\n",__func__);
 	return -EINVAL;
-}
-
-inline void cpufreq_max_boost(bool boost)
-{
-	struct cpufreq_policy *policy = NULL;
-
-	policy = cpufreq_cpu_get(0);
-	if (policy) {
-		cpufreq_cpu_put(policy);
-	} else {
-		pr_warn("%s: failed for policy0\n", __func__);
-		return;
-	}
-
-	if (boost)
-		policy->min = policy->max;
-	else
-		policy->min = cpu_min_freq;
 }
 
 /**

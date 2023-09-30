@@ -404,6 +404,4 @@ void cpufreq_frequency_table_get_attr(struct cpufreq_frequency_table *table,
 
 void cpufreq_frequency_table_put_attr(unsigned int cpu);
 
-extern void cpufreq_max_boost(bool boost);
-
 #endif /* _LINUX_CPUFREQ_H */
