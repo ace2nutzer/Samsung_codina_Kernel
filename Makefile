@@ -246,8 +246,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 HOSTCC       = gcc
 HOSTCXX      = g++
 HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -Wno-format-overflow -Wno-stringop-truncation \
-               -O3 -fomit-frame-pointer -fno-strict-aliasing -std=gnu89
-HOSTCXXFLAGS = -O3 -fomit-frame-pointer -fno-strict-aliasing -Wno-format-overflow -Wno-stringop-truncation
+               -O2 -fomit-frame-pointer -fno-strict-aliasing -std=gnu89
+HOSTCXXFLAGS = -O2 -fomit-frame-pointer -fno-strict-aliasing -Wno-format-overflow -Wno-stringop-truncation
 
 # Host specific Flags
 HOSTCFLAGS   += -march=core2 -mcpu=core2 -mtune=core2 -pipe
@@ -372,7 +372,7 @@ KBUILD_CPPFLAGS := -D__KERNEL__
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	:= -Os
 else
-KBUILD_CFLAGS	:= -O3
+KBUILD_CFLAGS	:= -O2
 endif
 
 KBUILD_CFLAGS   += -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
