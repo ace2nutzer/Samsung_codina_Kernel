@@ -505,7 +505,7 @@ static const struct chg_parameters chg = {
 
 static const struct battery_info battery_info = {
 	.charge_full_design = 1500,
-	.nominal_voltage = 3820,
+	.nominal_voltage = 3800,
 	.n_v_cap_tbl_elements = ARRAY_SIZE(cap_tbl_5ma),
 	.v_to_cap_tbl = cap_tbl_5ma,
 
