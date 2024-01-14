@@ -107,7 +107,7 @@
 
 #define VALID_CAPACITY_SEC		(45 * 60) /* 45 minutes */
 
-#define VBAT_ADC_CAL			3700
+#define VBAT_ADC_CAL			3800
 
 #define CONFIG_BATT_CAPACITY_PARAM
 #define BATT_CAPACITY_PATH		"/efs/last_battery_capacity"
@@ -158,13 +158,13 @@ static unsigned int count_discharged = 0;
 static unsigned int count_recharged = 0;
 
 /* Threshold to trigger refreshing */
-static unsigned int threshold_reinit = 10;
+static unsigned int threshold_reinit = 20;
 
 /* Threshold that recharging starts in % */ 
-static unsigned int threshold_rechar = 78;
+static unsigned int threshold_rechar = 50;
 
 /* Threshold that charging stops in % */
-static unsigned int threshold_dischar = 80;
+static unsigned int threshold_dischar = 55;
 
 /* This list came from ab8500_chargalg.c */
 static char *states[] = {
@@ -2324,7 +2324,6 @@ static int ab8500_fg_charger_status(struct ab8500_fg *di)
  */
 static void ab8500_fg_algorithm(struct ab8500_fg *di)
 {
-
 	if (di->flags.calibrate) {
 		ab8500_init_columbcounter(di);
 		ab8500_fg_algorithm_calibrate(di);
@@ -2775,7 +2774,7 @@ static int ab8500_fg_get_ext_psy_data(struct device *dev, void *data)
 
 			break;
 
-		/* Calibarating vbat */
+		/* Calibrating vbat */
 		case POWER_SUPPLY_PROP_BATT_CAL:
 			if (ret.intval)
 				di->vbat_cal_offset =
