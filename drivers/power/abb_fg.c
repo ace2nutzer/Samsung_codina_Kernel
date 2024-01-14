@@ -148,9 +148,6 @@ static unsigned int lowbat_tolerance_volt = LOWBAT_TOLERANCE;
 /* Cycle charging control toggle */
 static bool cycle_charging = false;
 
-/* Count that fg calibrated */
-static unsigned int count_calibrated = 0;
-
 /* Count that battery discharged */
 static unsigned int count_discharged = 0;
 
@@ -158,13 +155,13 @@ static unsigned int count_discharged = 0;
 static unsigned int count_recharged = 0;
 
 /* Threshold to trigger refreshing */
-static unsigned int threshold_reinit = 10;
+static unsigned int threshold_reinit = 4;
 
 /* Threshold that recharging starts in % */ 
-static unsigned int threshold_rechar = 78;
+static unsigned int threshold_rechar = 89;
 
 /* Threshold that charging stops in % */
-static unsigned int threshold_dischar = 80;
+static unsigned int threshold_dischar = 90;
 
 /* This list came from ab8500_chargalg.c */
 static char *states[] = {
@@ -2324,6 +2321,7 @@ static int ab8500_fg_charger_status(struct ab8500_fg *di)
  */
 static void ab8500_fg_algorithm(struct ab8500_fg *di)
 {
+	static unsigned int count_calibrated = 0;
 
 	if (di->flags.calibrate) {
 		ab8500_init_columbcounter(di);
@@ -2406,7 +2404,7 @@ static void ab8500_fg_algorithm(struct ab8500_fg *di)
 
 			count_calibrated++;
 
-			if (count_calibrated >= threshold_reinit) {
+			if (count_calibrated == threshold_reinit) {
 				/* Refresh FG machine completely */
 				ab8500_fg_reinit();
 				pr_info("[ABB-FG] ReInit triggered \n");
@@ -2775,7 +2773,7 @@ static int ab8500_fg_get_ext_psy_data(struct device *dev, void *data)
 
 			break;
 
-		/* Calibarating vbat */
+		/* Calibrating vbat */
 		case POWER_SUPPLY_PROP_BATT_CAL:
 			if (ret.intval)
 				di->vbat_cal_offset =
@@ -3310,7 +3308,6 @@ static ssize_t abb_fg_cycle_charging_show(struct kobject *kobj, struct kobj_attr
 	sprintf(buf, "%sThreshold ReCharge [%d %%]\n", buf, threshold_rechar);
 	sprintf(buf, "%sThreshold DisCharge [%d %%]\n\n", buf, threshold_dischar);
 	sprintf(buf, "%sDisCharge Count [%d]\n", buf, count_discharged);
-	sprintf(buf, "%sCalibrate Count [%d]\n", buf, count_calibrated);
 
 	return strlen(buf);
 }
