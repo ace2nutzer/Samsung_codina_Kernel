@@ -307,7 +307,7 @@ static sec_charging_current_t charging_current_table[] = {
 	{0,	0,	0,	0},
 	{0,	0,	0,	0},
 	{1500,	1500,	195,	40 * 60}, /* POWER_SUPPLY_TYPE_MAINS */
-	{1500,	1500,	195,	40 * 60}, /* POWER_SUPPLY_TYPE_USB */
+	{500,	500,	195,	40 * 60}, /* POWER_SUPPLY_TYPE_USB */
 	{1500,	1500,	195,	40 * 60}, /* POWER_SUPPLY_TYPE_DCP */
 	{1500,	1500,	195,	40 * 60}, /* POWER_SUPPLY_TYPE_CDP */
 	{1500,	1500,	195,	40 * 60},   /* POWER_SUPPLY_TYPE_ACA */
@@ -323,7 +323,7 @@ static sec_charging_current_t charging_current_recharging_table[] = {
 	{0,	0,	0,	0},
 	{0,	0,	0,	0},
 	{1500,	1500,	185,	105}, /* POWER_SUPPLY_TYPE_MAINS */
-	{1500,	1500,	185,	105}, /* POWER_SUPPLY_TYPE_USB */
+	{500,	500,	185,	105}, /* POWER_SUPPLY_TYPE_USB */
 	{1500,	1500,	185,	105}, /* POWER_SUPPLY_TYPE_DCP */
 	{1500,	1500,	185,	105}, /* POWER_SUPPLY_TYPE_CDP */
 	{1500,	1500,	185,	105},   /* POWER_SUPPLY_TYPE_ACA */
@@ -342,10 +342,10 @@ static int polling_time_table[] = {
 	300,	/* SLEEP */
 };
 
-/* UNKNOWN Battery | 3.7V | 1700mA | 4.2V */
+/* UNKNOWN Battery | 3.7 V | 1500 mA | 4.2 V */
 static struct v_to_cap cap_tbl[] = {
-	{4162, 100},
-	{4131, 99},
+	{4100, 100},
+	{4098, 99},
 	{4088, 95},
 	{4045, 90},
 	{4024, 87},
@@ -372,12 +372,12 @@ static struct v_to_cap cap_tbl[] = {
 	{3320, 0},
 };
 
-/* SAMSUNG Battery | 3.8V | 1500mA | 4.35V */
+/* SAMSUNG Battery | 3.8 V | 1500 mA | 4.35 V */
 static struct v_to_cap cap_tbl_5ma[] = {
-	{4328,	100},
-	{4299,	99},
-	{4281,	98},
-	{4241,	95},
+	{4250,	100},
+	{4248,	99},
+	{4245,	98},
+	{4235,	95},
 	{4183,	90},
 	{4150,	87},
 	{4116,	84},
@@ -652,18 +652,18 @@ sec_battery_platform_data_t sec_battery_pdata = {
 
 	.temp_check_type = SEC_BATTERY_TEMP_CHECK_TEMP,
 	.temp_check_count = 2,
-	.temp_high_threshold_event = 470,
-	.temp_high_recovery_event = 460,
-	.temp_low_threshold_event = -30,
-	.temp_low_recovery_event = 0,
-	.temp_high_threshold_normal = 460,
-	.temp_high_recovery_normal = 450,
-	.temp_low_threshold_normal = -50,
-	.temp_low_recovery_normal = 0,
-	.temp_high_threshold_lpm = 460,
-	.temp_high_recovery_lpm = 450,
-	.temp_low_threshold_lpm = -50,
-	.temp_low_recovery_lpm = 0,
+	.temp_high_threshold_event = 510,
+	.temp_high_recovery_event = 490,
+	.temp_low_threshold_event = -11,
+	.temp_low_recovery_event = -8,
+	.temp_high_threshold_normal = 510,
+	.temp_high_recovery_normal = 490,
+	.temp_low_threshold_normal = -11,
+	.temp_low_recovery_normal = -8,
+	.temp_high_threshold_lpm = 510,
+	.temp_high_recovery_lpm = 490,
+	.temp_low_threshold_lpm = -11,
+	.temp_low_recovery_lpm = -8,
 
 	.full_check_type = SEC_BATTERY_FULLCHARGED_ADC,
 	.full_check_type_2nd = SEC_BATTERY_FULLCHARGED_TIME,
@@ -675,11 +675,11 @@ sec_battery_platform_data_t sec_battery_pdata = {
 		SEC_BATTERY_FULL_CONDITION_SOC |
 		SEC_BATTERY_FULL_CONDITION_VCELL |
 		SEC_BATTERY_FULL_CONDITION_NOTIMEFULL,
-		.full_condition_soc = 95,
+		.full_condition_soc = 100,
 
 	.recharge_condition_type =
 		SEC_BATTERY_RECHARGE_CONDITION_VCELL,
-		.recharge_condition_soc = 98,
+		.recharge_condition_soc = 99,
 
 	.recharge_check_count = 4,
 

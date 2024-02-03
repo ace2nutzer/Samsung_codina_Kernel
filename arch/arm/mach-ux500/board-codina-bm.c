@@ -100,10 +100,10 @@ static struct v_to_cap cap_tbl_B[] = {
 };
 #endif
 
-/* UNKNOWN Battery | 3.7V | 1700mA | 4.2V */
+/* UNKNOWN Battery | 3.7 V | 1500 mA | 4.2 V */
 static struct v_to_cap cap_tbl[] = {
-	{4162, 100},
-	{4131, 99},
+	{4100, 100},
+	{4098, 99},
 	{4088, 95},
 	{4045, 90},
 	{4024, 87},
@@ -130,12 +130,12 @@ static struct v_to_cap cap_tbl[] = {
 	{3320, 0},
 };
 
-/* SAMSUNG Battery | 3.8V | 1500mA | 4.35V */
+/* SAMSUNG Battery | 3.8 V | 1500 mA | 4.35 V */
 static struct v_to_cap cap_tbl_5ma[] = {
-	{4328,	100},
-	{4299,	99},
-	{4281,	98},
-	{4241,	95},
+	{4250,	100},
+	{4248,	99},
+	{4245,	98},
+	{4235,	95},
 	{4183,	90},
 	{4150,	87},
 	{4116,	84},
@@ -301,15 +301,15 @@ static const struct battery_type bat_type[] = {
 		.line_impedance = 36,
 		.battery_resistance_for_charging = 200,
 #endif
-		.charge_full_design = 1700,
+		.charge_full_design = 1500,
 		.nominal_voltage = 3700,
 		.termination_vol = 4200,
 #ifdef CONFIG_SAMSUNG_CHARGER_SPEC
-		.termination_curr_1st = 175,
-		.termination_curr_2nd = 170,
+		.termination_curr_1st = 300,
+		.termination_curr_2nd = 250,
 		.recharge_vol = 4100,
 #else
-		.termination_curr = 170,
+		.termination_curr = 300,
 #endif
 		.normal_cur_lvl = 1500,
 		.normal_vol_lvl = 4200,
@@ -374,11 +374,11 @@ static const struct battery_type bat_type[] = {
 		.nominal_voltage = 3800,
 		.termination_vol =  4350,
 #ifdef CONFIG_SAMSUNG_CHARGER_SPEC
-		.termination_curr_1st = 155,
-		.termination_curr_2nd = 150,
+		.termination_curr_1st = 300,
+		.termination_curr_2nd = 250,
 		.recharge_vol = 4250,
 #else
-		.termination_curr = 150,
+		.termination_curr = 300,
 #endif
 		.normal_cur_lvl = 1500,
 		.normal_vol_lvl = 4350,
@@ -497,7 +497,7 @@ static const struct ab8500_maxim_parameters maxi_params = {
 
 static const struct ab8500_bm_charger_parameters chg = {
 	.usb_volt_max		= 5500,
-	.usb_curr_max		= 1500,
+	.usb_curr_max		= 500,
 	/* When power supply set as 7000mV (OVP SPEC above 6.8V)
 	   SET read it as .ac_volt_max.
 	   After charging is disabled, SET read the voltage
@@ -518,17 +518,17 @@ static const struct ab8500_bm_charger_parameters chg = {
 struct ab8500_bm_data ab8500_bm_data = {
 	.temp_under		= -5,
 	.temp_low		= 0,
-	.temp_high		= 40,
-	.temp_over		= 60,
+	.temp_high		= 51,
+	.temp_over		= 52,
 	.main_safety_tmr_h	= 4,
 	.temp_interval_chg	= 20,
 	.temp_interval_nochg	= 120,
 #if defined( CONFIG_USB_SWITCHER ) || defined( CONFIG_INPUT_AB8505_MICRO_USB_DETECT )
-	.ta_chg_current		= 1500,
-	.ta_chg_current_input	= 800,
+	.ta_chg_current		= 800,
+	.ta_chg_current_input	= 1500,
 	.ta_chg_voltage		= 4200,
 
-	.usb_chg_current	= 1500,
+	.usb_chg_current	= 500,
 	.usb_chg_current_input	= 500,
 	.usb_chg_voltage	= 4200,
 #endif
@@ -542,7 +542,7 @@ struct ab8500_bm_data ab8500_bm_data = {
 #else
 	.adc_therm		= ADC_THERM_BATTEMP,
 #endif
-	.chg_unknown_bat	= true,
+	.chg_unknown_bat	= false,
 	.enable_overshoot	= false,
 	/* Please find the real setting for fg_res
 	   in the ab8500_fg.c probe function  */
